@@ -400,13 +400,14 @@ Never evaluate only whether a citation exists. A real case can still be cited fo
 
 ## Fork operations
 
-The workspace is cloned and the local branch exists, but the configured GitHub CLI token for `legalbuilder13-spec` is invalid. After re-authentication:
+The fork is published at `legalbuilder13-spec/Open-Legal-Harness`. The local checkout uses:
 
 ```bash
-gh auth login -h github.com
-gh repo fork anomalyco/opencode --clone=false --remote --remote-name origin
-git remote -v
+origin    https://github.com/legalbuilder13-spec/Open-Legal-Harness.git
+upstream  https://github.com/anomalyco/opencode.git
 ```
+
+Product planning is tracked on `legal-research`, based on upstream's `dev` branch.
 
 Keep upstream updates isolated from product work:
 
