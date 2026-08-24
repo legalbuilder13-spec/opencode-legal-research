@@ -106,7 +106,10 @@ try {
 async function findManagedPython(root: string, version: string) {
   const name = process.platform === "win32" ? "python.exe" : `python${version.split(".").slice(0, 2).join(".")}`
   const candidates = await findFiles(root, name)
-  const candidate = candidates.find((path) => path.includes(`${sep}bin${sep}`) || path.includes(`${sep}Scripts${sep}`))
+  const candidate =
+    process.platform === "win32"
+      ? candidates[0]
+      : candidates.find((path) => path.includes(`${sep}bin${sep}`) || path.includes(`${sep}Scripts${sep}`))
   if (!candidate) throw new Error(`uv did not install the expected managed Python executable: ${name}`)
   return candidate
 }
