@@ -1,6 +1,6 @@
 # Milestone C3 progress: public-web capture
 
-Status: structural product flow passed; strict renderer contract passed; packaged renderer pending
+Status: structural product flow passed; packaged strict-renderer alpha transaction passed; production security gate partial
 
 Date: 2026-08-24
 
@@ -17,6 +17,6 @@ The Sources screen now captures public URLs rather than leaving SRC-02 as a stor
 - Workbench suite: 16 passing tests, 97 assertions.
 - Browser: URL controls render with accessible names; a loopback URL is rejected in the live status region; no browser warnings or errors.
 
-## Remaining gate
+## Renderer follow-on and remaining gate
 
-ING-04 remains partial until the desktop/installer bundles a supervised renderer and a reviewed live-web corpus verifies rendered snapshots, subresource policy, DNS-rebinding resistance, OCR, and structural/visual agreement.
+ADR 0017 now supervises the desktop's isolated Electron Chromium over an authenticated loopback contract. A real public-page HTML/PNG capture and the compiled renderer-to-packaged-OCR transaction pass. ING-04 remains partial until connection-level DNS pinning and a reviewed live-web corpus verify rendered snapshots, subresource exclusions, rebinding resistance, OCR, structural/visual agreement, long pages, and supported-platform behavior.

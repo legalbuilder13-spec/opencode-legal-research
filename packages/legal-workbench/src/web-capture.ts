@@ -1,13 +1,19 @@
-import { lookup } from "node:dns/promises"
-import { isIP } from "node:net"
+import {
+  publicHttpUrl as publicUrl,
+  resolvePublicAddresses,
+  type PublicAddressResolver as WebAddressResolver,
+} from "@legalbuilder/legal-research-core/public-network"
+
+export { publicUrl }
+export type { WebAddressResolver }
 
 const MAX_REDIRECTS = 5
 const MAX_HTML_BYTES = 20 * 1024 * 1024
 const MAX_SCREENSHOT_BYTES = 40 * 1024 * 1024
+const MAX_RENDERER_RESPONSE_BYTES = 84 * 1024 * 1024
 
 export type WebCaptureMode = "structural" | "strict_visual"
 export type WebCaptureFetcher = (url: string, init: RequestInit) => Promise<Response>
-export type WebAddressResolver = (hostname: string) => Promise<string[]>
 
 export interface RenderedWebCapture {
   finalUrl: string
@@ -18,6 +24,59 @@ export interface RenderedWebCapture {
 }
 
 export type WebCaptureRenderer = (url: string) => Promise<RenderedWebCapture>
+
+export function httpWebCaptureRenderer(options: {
+  endpoint: string
+  token: string
+  fetcher?: WebCaptureFetcher
+}): WebCaptureRenderer {
+  const endpoint = rendererEndpoint(options.endpoint)
+  const fetcher = options.fetcher ?? ((url, init) => fetch(url, init))
+  if (options.token.length < 32) throw new Error("Supervised renderer token is invalid")
+  return async (url) => {
+    const response = await fetcher(new URL("/render", endpoint).toString(), {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${options.token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(45_000),
+    })
+    const body = JSON.parse(new TextDecoder().decode(await responseBytes(response, MAX_RENDERER_RESPONSE_BYTES)))
+    if (!response.ok) throw new Error(requiredString(body?.error, "renderer error"))
+    if (body?.contractVersion !== 1 || body?.screenshotMime !== "image/png")
+      throw new Error("Supervised renderer returned an unsupported contract")
+    return {
+      finalUrl: requiredString(body.finalUrl, "final URL"),
+      status: requiredInteger(body.status, "HTTP status"),
+      html: base64Bytes(body.htmlBase64, "rendered HTML"),
+      screenshot: base64Bytes(body.screenshotBase64, "rendered screenshot"),
+      screenshotMime: "image/png",
+    }
+  }
+}
+
+export async function rendererHealth(options: { endpoint: string; fetcher?: WebCaptureFetcher }) {
+  const fetcher = options.fetcher ?? ((url, init) => fetch(url, init))
+  try {
+    const endpoint = rendererEndpoint(options.endpoint)
+    const response = await fetcher(new URL("/health", endpoint).toString(), {
+      method: "GET",
+      signal: AbortSignal.timeout(1_000),
+    })
+    if (!response.ok) return false
+    const value: unknown = await response.json()
+    return (
+      isRecord(value) &&
+      value.service === "legalbuilder-web-renderer" &&
+      value.contractVersion === 1 &&
+      value.status === "ok"
+    )
+  } catch {
+    return false
+  }
+}
 
 export interface CapturedWebSource {
   title: string
@@ -44,7 +103,7 @@ export class WebCaptureService {
     } = {},
   ) {
     this.fetcher = options.fetcher ?? ((url, init) => fetch(url, init))
-    this.resolver = options.resolver ?? resolveAddresses
+    this.resolver = options.resolver ?? resolvePublicAddresses
     this.renderer = options.renderer
   }
 
@@ -115,64 +174,6 @@ export class WebCaptureService {
   }
 }
 
-async function resolveAddresses(hostname: string) {
-  return (await lookup(hostname, { all: true, verbatim: true })).map((entry) => entry.address)
-}
-
-export async function publicUrl(value: string, resolver: WebAddressResolver = resolveAddresses) {
-  let url: URL
-  try {
-    url = new URL(value)
-  } catch {
-    throw new Error("Enter a valid public HTTP(S) URL")
-  }
-  if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Only public HTTP(S) URLs are allowed")
-  if (url.username || url.password) throw new Error("URL credentials are not allowed")
-  if (url.port && url.port !== "80" && url.port !== "443") throw new Error("Only standard HTTP(S) ports are allowed")
-  const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase()
-  if (!hostname || hostname === "localhost" || hostname.endsWith(".localhost"))
-    throw new Error("Local and private URLs are not allowed")
-  const addresses = isIP(hostname) ? [hostname] : await resolver(hostname)
-  if (!addresses.length || addresses.some((address) => !isPublicAddress(address)))
-    throw new Error("Local, private, and reserved network addresses are not allowed")
-  url.hash = ""
-  return url
-}
-
-function isPublicAddress(value: string): boolean {
-  if (value.includes(":")) {
-    const address = value.toLowerCase()
-    if (address === "::" || address === "::1" || address.startsWith("fc") || address.startsWith("fd")) return false
-    if (/^fe[89ab]/.test(address) || address.startsWith("ff") || address.startsWith("2001:db8:")) return false
-    const mapped = mappedIpv4(address)
-    return mapped ? isPublicAddress(mapped) : true
-  }
-  const parts = value.split(".").map(Number)
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false
-  const [a = 0, b = 0, c = 0] = parts
-  if (a === 0 || a === 10 || a === 127 || a >= 224) return false
-  if (a === 100 && b >= 64 && b <= 127) return false
-  if (a === 169 && b === 254) return false
-  if (a === 172 && b >= 16 && b <= 31) return false
-  if (a === 192 && b === 168) return false
-  if (a === 192 && b === 0) return false
-  if (a === 192 && b === 0 && c === 2) return false
-  if (a === 198 && (b === 18 || b === 19 || b === 51)) return false
-  if (a === 203 && b === 0 && c === 113) return false
-  return true
-}
-
-function mappedIpv4(address: string) {
-  const suffix = address.startsWith("::ffff:") ? address.slice("::ffff:".length) : undefined
-  if (!suffix) return undefined
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(suffix)) return suffix
-  const groups = suffix.split(":")
-  if (groups.length !== 2 || groups.some((group) => !/^[a-f0-9]{1,4}$/.test(group))) return undefined
-  const high = Number.parseInt(groups[0] ?? "", 16)
-  const low = Number.parseInt(groups[1] ?? "", 16)
-  return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`
-}
-
 async function responseBytes(response: Response, limit: number) {
   const length = Number(response.headers.get("content-length"))
   if (Number.isFinite(length) && length > limit) throw new Error(`URL body exceeds the ${limit}-byte limit`)
@@ -205,7 +206,11 @@ function bounded(value: Uint8Array, limit: number, label: string) {
 }
 
 function documentTitle(html: string, url: URL) {
-  const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1]?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+  const title = html
+    .match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i)?.[1]
+    ?.replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
   return title || url.hostname
 }
 
@@ -230,4 +235,40 @@ function canonicalUrl(html: string, base: URL): string | undefined {
 function attribute(tag: string, name: string) {
   const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"))
   return match?.[1] ?? match?.[2] ?? match?.[3]
+}
+
+function rendererEndpoint(value: string) {
+  const endpoint = new URL(value)
+  if (
+    endpoint.protocol !== "http:" ||
+    endpoint.hostname !== "127.0.0.1" ||
+    !endpoint.port ||
+    endpoint.username ||
+    endpoint.password ||
+    endpoint.pathname !== "/" ||
+    endpoint.search ||
+    endpoint.hash
+  )
+    throw new Error("Supervised renderer endpoint must be an isolated IPv4 loopback origin")
+  return endpoint
+}
+
+function requiredString(value: unknown, label: string) {
+  if (typeof value !== "string" || !value) throw new Error(`Supervised renderer returned no ${label}`)
+  return value
+}
+
+function requiredInteger(value: unknown, label: string) {
+  if (!Number.isInteger(value)) throw new Error(`Supervised renderer returned an invalid ${label}`)
+  return Number(value)
+}
+
+function base64Bytes(value: unknown, label: string) {
+  if (typeof value !== "string" || !value || !/^[a-zA-Z0-9+/]*={0,2}$/.test(value))
+    throw new Error(`Supervised renderer returned invalid ${label}`)
+  return new Uint8Array(Buffer.from(value, "base64"))
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
 }

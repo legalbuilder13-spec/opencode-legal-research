@@ -16,8 +16,8 @@ The host accepts only HTTP(S), standard ports, credential-free URLs, bounded red
 
 - Lawyers can add an ordinary public URL from the Sources screen and receive an inert, reproducible structural representation.
 - A strict renderer cannot silently downgrade to HTML-only capture; missing renderer support returns a visible recoverable error.
-- No Playwright or other browser runtime is promoted from test tooling to a packaged dependency by this decision.
-- Production packaging must select and supervise a renderer, pin network connections against DNS rebinding, apply request interception/allowlists to subresources, and exercise a reviewed live-web corpus before ING-04 can pass fully.
+- ADR 0017 selects and supervises the Electron Chromium already present in the desktop package rather than promoting Playwright or another browser runtime into production dependencies.
+- The selected renderer applies request interception, private-network checks, active-channel blocking, ephemeral sessions, and authenticated loopback transport. Production must still pin network connections against DNS rebinding and exercise the reviewed live-web corpus before ING-04 can pass fully.
 
 ## Evidence
 

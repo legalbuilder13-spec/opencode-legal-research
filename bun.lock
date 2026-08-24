@@ -392,6 +392,7 @@
       "name": "@opencode-ai/desktop",
       "version": "1.18.21",
       "dependencies": {
+        "@legalbuilder/legal-research-core": "workspace:*",
         "@zip.js/zip.js": "2.7.62",
         "drizzle-orm": "catalog:",
         "effect": "catalog:",

@@ -14,7 +14,7 @@ The process inherits the user's environment. On macOS it may use the Codex execu
 
 ## Capability boundary
 
-ADR 0016 adds a relocatable, manifest-validated Python/Docling/RapidOCR resource to Electron release builds instead of bundling the repository virtual environment. `/api/health` and `/api/bootstrap` report the evidence worker ready only when its interpreter, package, offline models, and manifest pass discovery. The Sources screen shows the capability state and disables upload/reprocessing controls when the worker is absent. Strict visual browser rendering remains unavailable; its mode is disabled while structural URL capture remains usable. Missing capabilities fail visibly instead of searching an invalid compiled path or downloading models.
+ADR 0016 adds a relocatable, manifest-validated Python/Docling/RapidOCR resource to Electron release builds instead of bundling the repository virtual environment. ADR 0017 supplies strict-visual capture through an authenticated renderer service using the desktop's isolated Electron Chromium. `/api/health` and `/api/bootstrap` report each capability ready only when its local runtime passes discovery/health. Missing capabilities fail visibly instead of searching an invalid compiled path, downloading models, or silently falling back.
 
 ## Evidence
 
@@ -26,4 +26,4 @@ ADR 0016 adds a relocatable, manifest-validated Python/Docling/RapidOCR resource
 
 ## Remaining packaging gates
 
-Apply OS-level sandboxing to the evidence worker; select and sandbox a strict-visual renderer; smoke-test signed installer artifacts on every supported operating system; complete the dependency/model license audit; provide reviewed localization; and test the complete Electron window-to-answer restart flow.
+Apply OS-level sandboxing to the evidence worker; add connection-level DNS pinning and complete the renderer live-web corpus; smoke-test signed installer artifacts on every supported operating system; complete the dependency/model license audit; provide reviewed localization; and test the complete Electron window-to-answer restart flow.

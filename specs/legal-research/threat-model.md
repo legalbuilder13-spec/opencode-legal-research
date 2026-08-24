@@ -10,16 +10,16 @@ Protected assets include privileged matter content, original source bytes, ChatG
 
 ## Trust boundaries
 
-| Boundary                       | Untrusted input                                       | Required control                                                                                      |
-| ------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Boundary                       | Untrusted input                                       | Required control                                                                                          |
+| ------------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | User/device to local app       | Files, pasted text, URLs, matter labels               | Validate size/type; restrict URLs to public HTTP(S); label confidentiality; never execute active content. |
-| Source/tool to materializer    | Web bodies, connector blocks, CourtListener JSON/HTML | Persist before inference; hash originals; strip active HTML; mark text as untrusted source data.      |
-| Parser worker to host          | OCR text, coordinates, warnings, page assets          | Supervised protocol; version engines; validate counts/geometry/hashes; fail closed on partial output. |
-| Retrieval to model context     | Ranked and neighboring passages                       | Enforce matter ID; send only persisted passage envelopes; log every admitted passage.                 |
-| Local app to ChatGPT workspace | Matter question and selected evidence                 | Show backend/workspace egress before first use; no API-key implication; redact diagnostics.           |
-| Local app to CourtListener     | Search query and token                                | Disclose query egress; keep token out of logs/exports; handle rate/auth failures distinctly.          |
-| Model output to final UI       | Prose, proposed claims, passage IDs                   | Treat as untrusted; reload IDs; verify hashes/ownership; mint anchors in application code only.       |
-| Export to external file        | Answer and provenance metadata                        | Require explicit user action; name matter/scope; avoid embedding unrelated matter content.            |
+| Source/tool to materializer    | Web bodies, connector blocks, CourtListener JSON/HTML | Persist before inference; hash originals; strip active HTML; mark text as untrusted source data.          |
+| Parser worker to host          | OCR text, coordinates, warnings, page assets          | Supervised protocol; version engines; validate counts/geometry/hashes; fail closed on partial output.     |
+| Retrieval to model context     | Ranked and neighboring passages                       | Enforce matter ID; send only persisted passage envelopes; log every admitted passage.                     |
+| Local app to ChatGPT workspace | Matter question and selected evidence                 | Show backend/workspace egress before first use; no API-key implication; redact diagnostics.               |
+| Local app to CourtListener     | Search query and token                                | Disclose query egress; keep token out of logs/exports; handle rate/auth failures distinctly.              |
+| Model output to final UI       | Prose, proposed claims, passage IDs                   | Treat as untrusted; reload IDs; verify hashes/ownership; mint anchors in application code only.           |
+| Export to external file        | Answer and provenance metadata                        | Require explicit user action; name matter/scope; avoid embedding unrelated matter content.                |
 
 ## Principal threats and controls
 
@@ -38,6 +38,8 @@ Model prose can fabricate footnotes, URLs, quotes, cases, or verification labels
 ### Parser and active-content compromise
 
 PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. The worker applies OS CPU, output-file, core-dump, and descriptor limits before parser import; it also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio, and malformed images. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs OS memory/network isolation and broader malformed-file fuzzing.
+
+Strict-visual web capture runs active pages only inside a fresh sandboxed Electron session with no Node integration, permissions, popups, webviews, downloads, or persistent storage. An authenticated loopback service admits one bounded capture at a time. Request interception blocks private/reserved targets, writes, frames, XHR, WebSockets, pings, media, objects, and excessive requests/resources. Node resolves each HTTP(S) target before Chromium sends it, and private actual redirect IPs fail capture. This does not eliminate the DNS time-of-check/time-of-use gap because Chromium's connection is not yet pinned to Node's resolved address; a pinned proxy/equivalent and rebinding corpus remain production blockers.
 
 ### Public-web SSRF and active content
 

@@ -6,7 +6,8 @@
   "type": "module",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./public-network": "./src/public-network.ts"
   },
   "scripts": {
     "test": "bun test --timeout 10000",

@@ -20,4 +20,4 @@ The compiled artifact embeds its interface and no longer depends on repository-o
 
 ## Follow-on packaging
 
-ADR 0016 now packages the OCR/Docling resource and proves a relocated offline macOS arm64 runtime, with a complete Linux x64 build/smoke in CI. The strict-visual browser renderer, OS-level worker sandboxing, signed installer artifacts for every supported OS, license review, and the complete Electron UI restart transaction remain release gates. Health, bootstrap, and the Sources screen continue to fail closed for any absent or invalid installed capability.
+ADR 0016 now packages the OCR/Docling resource and proves a relocated offline macOS arm64 runtime, with a complete Linux x64 build/smoke in CI. ADR 0017 adds the authenticated isolated Electron renderer and passes a compiled strict-visual renderer-to-OCR transaction. Renderer DNS pinning/live-web evaluation, OS-level worker sandboxing, signed installer artifacts for every supported OS, license review, and the complete Electron UI restart transaction remain release gates. Health, bootstrap, and the Sources screen continue to fail closed for any absent or invalid installed capability.

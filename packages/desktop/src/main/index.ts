@@ -50,6 +50,7 @@ import { cleanupStoreFiles } from "./store-cleanup"
 import { startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
 import { spawnLegalWorkbench } from "./legal-workbench"
+import { startElectronLegalWebRenderer } from "./legal-web-renderer-electron"
 
 const APP_NAMES: Record<string, string> = {
   dev: "OpenCode Dev",
@@ -68,6 +69,7 @@ const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 let logger: ReturnType<typeof initLogging>
 let server: SidecarListener | null = null
 let legalWorkbench: SidecarListener | null = null
+let legalWebRenderer: SidecarListener | null = null
 
 const pendingDeepLinks: string[] = []
 
@@ -98,6 +100,13 @@ async function killLegalWorkbench() {
   if (!legalWorkbench) return
   const current = legalWorkbench
   legalWorkbench = null
+  await current.stop()
+}
+
+async function killLegalWebRenderer() {
+  if (!legalWebRenderer) return
+  const current = legalWebRenderer
+  legalWebRenderer = null
   await current.stop()
 }
 
@@ -174,7 +183,7 @@ const main = Effect.gen(function* () {
     },
   )
   const stopSidecars = async () => {
-    await Promise.all([killSidecar(), killLegalWorkbench()])
+    await Promise.all([killSidecar(), killLegalWorkbench(), killLegalWebRenderer()])
     wslServers.stopAll()
   }
   const relaunch = () => {
@@ -263,12 +272,27 @@ const main = Effect.gen(function* () {
 
   yield* Effect.promise(() => app.whenReady())
 
+  let legalWorkbenchEnvironment: NodeJS.ProcessEnv | undefined
+  try {
+    const renderer = yield* Effect.promise(() => startElectronLegalWebRenderer())
+    legalWebRenderer = renderer.listener
+    legalWorkbenchEnvironment = {
+      ...process.env,
+      LEGAL_WEB_RENDERER_URL: renderer.url,
+      LEGAL_WEB_RENDERER_TOKEN: renderer.token,
+    }
+    logger.log("legal web renderer ready")
+  } catch (error) {
+    logger.error("legal web renderer failed to start", error)
+  }
+
   try {
     const result = yield* Effect.promise(() =>
       spawnLegalWorkbench({
         packaged: app.isPackaged,
         resourcesPath: app.isPackaged ? process.resourcesPath : join(import.meta.dirname, "../../resources"),
         userDataPath: app.getPath("userData"),
+        environment: legalWorkbenchEnvironment,
         onStdout: (message) => writeLog("legal-workbench", "stdout", { message }),
         onStderr: (message) => writeLog("legal-workbench", "stderr", { message }, "warn"),
         onExit: (code, signal) => writeLog("legal-workbench", "sidecar exited", { code, signal }, "warn"),

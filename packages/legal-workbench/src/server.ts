@@ -1,6 +1,7 @@
 import { resolve } from "node:path"
 import { createWorkbench } from "./app"
 import { localEvidenceWorker, unavailableEvidenceWorker } from "./ingestion"
+import { httpWebCaptureRenderer, rendererHealth } from "./web-capture"
 import { discoverEvidenceWorkerRuntime } from "./worker-runtime"
 
 const dataRoot = resolve(process.env.LEGAL_RESEARCH_DATA_DIR ?? resolve(import.meta.dir, "../.data"))
@@ -9,16 +10,29 @@ const workerRoot = resolve(configuredWorkerRoot ?? resolve(import.meta.dir, "../
 const worker = discoverEvidenceWorkerRuntime(workerRoot)
 const workerReady = worker.status === "ready"
 const workerDetail = worker.detail
+const rendererEndpoint = process.env.LEGAL_WEB_RENDERER_URL
+const rendererToken = process.env.LEGAL_WEB_RENDERER_TOKEN
+const rendererConfigured = Boolean(rendererEndpoint && rendererToken)
+const rendererReady = rendererConfigured && (await rendererHealth({ endpoint: rendererEndpoint! }))
+const renderer = rendererReady
+  ? httpWebCaptureRenderer({ endpoint: rendererEndpoint!, token: rendererToken! })
+  : undefined
+const rendererDetail = rendererReady
+  ? "Supervised isolated Electron renderer is ready"
+  : rendererConfigured
+    ? "Configured supervised renderer failed its health contract"
+    : "No packaged supervised browser renderer is available"
 const workbench = await createWorkbench({
   dataRoot,
   fixtureAccount: process.env.LEGAL_WORKBENCH_FIXTURE_ACCOUNT === "1",
   citationDemo: false,
   workerRunner: workerReady ? localEvidenceWorker(workerRoot) : unavailableEvidenceWorker(workerDetail),
+  webCapture: renderer ? { renderer } : undefined,
   runtimeCapabilities: {
     evidenceWorker: { status: workerReady ? "ready" : "unavailable", detail: workerDetail },
     strictVisualWebRenderer: {
-      status: "unavailable",
-      detail: "No packaged supervised browser renderer is available",
+      status: rendererReady ? "ready" : "unavailable",
+      detail: rendererDetail,
     },
   },
 })
