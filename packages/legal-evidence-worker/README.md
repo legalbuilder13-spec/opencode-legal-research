@@ -1,18 +1,19 @@
 # Legal evidence worker spike
 
-This isolated Python package evaluates Docling and portable Tesseract OCR for immutable legal-source ingestion. It does not yet run inside OpenCode or process client material.
+This isolated Python package provides the supervised Docling and portable Tesseract boundary used by the legal workbench for immutable legal-source ingestion. It remains an alpha local worker and is not a production parser sandbox.
 
 ## Proven boundary
 
 - Verifies the original source SHA-256 before parsing.
 - Runs Docling locally with remote services disabled.
-- Supports `adaptive` OCR and full-page `strict_visual` OCR.
-- Materializes a canonical PNG for every processed PDF page.
+- Supports PDF and PNG/JPEG `adaptive` OCR and full-page `strict_visual` OCR.
+- Parses HTML and DOCX through an inert `structural` mode.
+- Materializes a canonical PNG for every processed visual page.
 - Converts every Docling provenance box to top-left page coordinates while preserving the source origin and box.
 - Persists exact item text, text hashes, page hashes, parser/OCR versions, quality warnings, and an immutable result.
 - Exposes a versioned JSONL protocol with `accepted`, `progress`, `completed`, `failed`, and `cancelled` states.
 
-The host remains responsible for minting final source, representation, passage, and region IDs. Worker IDs are deterministic processing references, not database authority.
+The host remains responsible for minting final source, representation, passage, and region IDs. Worker IDs are deterministic processing references, not database authority. The host allowlists the worker environment, enforces time/output limits, and independently validates hashes, counts, geometry, and output paths.
 
 ## Setup and checks
 
@@ -62,4 +63,4 @@ Write one JSON object per line using `{"command":"ingest","request":{...}}` or `
 
 On the synthetic corpus, both modes achieved 100% exact text recovery, correct-page association, and region hits. The deliberately faint/skewed page was the only page that produced a low-ink-contrast warning. See `fixtures/results/evaluation.json` and `fixtures/results/overlay-gallery.png`.
 
-This is conditional evidence, not a corpus-wide accuracy claim. The remaining real-opinion, DOCX, HTML, rotation/crop, multilingual, malformed-input, and alternative-OCR matrix remains a release gate.
+This is conditional evidence, not a corpus-wide accuracy claim. Real Docling tests also cover scanned-image OCR, inert HTML, and structural DOCX. The remaining real-opinion, rotation/crop, multilingual, malformed-input, and alternative-OCR matrix remains a release gate.

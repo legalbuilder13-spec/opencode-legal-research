@@ -8,6 +8,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -29,6 +30,18 @@ class ContractTests(unittest.TestCase):
     def test_rejects_reversed_page_range(self) -> None:
         with self.assertRaises(ValidationError):
             IngestRequest.model_validate({**request_values(), "page_range": {"start": 2, "end": 1}})
+
+    def test_requires_structural_mode_for_html_and_docx(self) -> None:
+        html = {**request_values(), "mime": "text/html", "mode": "structural"}
+        self.assertEqual(IngestRequest.model_validate(html).mode, "structural")
+        with self.assertRaises(ValidationError):
+            IngestRequest.model_validate({**html, "mode": "strict_visual"})
+
+    def test_accepts_image_ocr_modes(self) -> None:
+        image = {**request_values(), "mime": "image/png", "mode": "strict_visual"}
+        self.assertEqual(IngestRequest.model_validate(image).mime, "image/png")
+        with self.assertRaises(ValidationError):
+            IngestRequest.model_validate({**image, "mode": "structural"})
 
     def test_normalizes_bottom_left_coordinates(self) -> None:
         provenance = SimpleNamespace(
@@ -83,6 +96,66 @@ class IngestionSafetyTests(unittest.TestCase):
         changed = request.model_copy(update={"source_version_id": "a-different-source-version"})
         with self.assertRaisesRegex(IngestError, "different immutable representation"):
             ingest(changed)
+
+    def test_html_is_structurally_parsed_without_executing_source_script(self) -> None:
+        source = GENERATED / "structural_legal_opinion.html"
+        with tempfile.TemporaryDirectory() as directory:
+            request = IngestRequest(
+                job_id="structural-html-test",
+                source_version_id="fixture-structural-html",
+                blob_path=str(source),
+                output_dir=directory,
+                expected_sha256=sha256(source),
+                mime="text/html",
+                mode="structural",
+                language_hints=[],
+            )
+            result = ingest(request)
+        self.assertIn("complete captured authority", result.normalized_text)
+        self.assertNotIn("BYPASS_SUCCESS", result.normalized_text)
+        self.assertEqual(result.ocr_engine, "none")
+        self.assertEqual(result.pages, [])
+        self.assertTrue(all(not item.regions for item in result.items))
+
+    def test_image_is_ocr_parsed_with_a_hashed_canonical_page(self) -> None:
+        source = GENERATED / "scan_page_1.png"
+        with tempfile.TemporaryDirectory() as directory:
+            request = IngestRequest(
+                job_id="image-ocr-test",
+                source_version_id="fixture-image-ocr",
+                blob_path=str(source),
+                output_dir=directory,
+                expected_sha256=sha256(source),
+                mime="image/png",
+                mode="strict_visual",
+                language_hints=["eng"],
+            )
+            result = ingest(request)
+            page_path = Path(directory) / result.pages[0].image_path
+            self.assertEqual(sha256(page_path), result.pages[0].image_sha256)
+        self.assertEqual(result.page_count, 1)
+        self.assertTrue(result.items)
+        self.assertTrue(any(item.regions for item in result.items))
+
+    def test_docx_is_structurally_parsed_with_stable_passages(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "synthetic-memorandum.docx"
+            make_docx(source, "The memorandum preserves a stable structural legal passage.")
+            request = IngestRequest(
+                job_id="structural-docx-test",
+                source_version_id="fixture-structural-docx",
+                blob_path=str(source),
+                output_dir=str(Path(directory) / "output"),
+                expected_sha256=sha256(source),
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                mode="structural",
+                language_hints=[],
+            )
+            result = ingest(request)
+        self.assertIn("stable structural legal passage", result.normalized_text)
+        self.assertEqual(result.ocr_engine, "none")
+        self.assertTrue(result.items)
+        self.assertTrue(all(not item.regions for item in result.items))
 
 
 class EvaluationArtifactTests(unittest.TestCase):
@@ -170,6 +243,27 @@ def fixture_request(document: dict[str, object], output: Path, mode: str) -> Ing
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def make_docx(path: Path, text: str) -> None:
+    content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"""
+    relationships = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"""
+    document = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>{text}</w:t></w:r></w:p><w:sectPr/></w:body>
+</w:document>"""
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", content_types)
+        archive.writestr("_rels/.rels", relationships)
+        archive.writestr("word/document.xml", document)
 
 
 if __name__ == "__main__":

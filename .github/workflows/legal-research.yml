@@ -7,8 +7,13 @@ on:
     paths:
       - ".github/workflows/legal-research.yml"
       - "packages/codex-app-server/**"
+      - "packages/app/src/app.tsx"
+      - "packages/app/src/i18n/en.ts"
+      - "packages/app/src/pages/legal-research.tsx"
+      - "packages/app/src/utils/legal-workbench-url*"
       - "packages/legal-citation-spike/**"
       - "packages/legal-evaluation/**"
+      - "packages/legal-evidence-worker/**"
       - "packages/legal-research-core/**"
       - "packages/legal-workbench/**"
       - "specs/legal-research/**"
@@ -18,8 +23,13 @@ on:
     paths:
       - ".github/workflows/legal-research.yml"
       - "packages/codex-app-server/**"
+      - "packages/app/src/app.tsx"
+      - "packages/app/src/i18n/en.ts"
+      - "packages/app/src/pages/legal-research.tsx"
+      - "packages/app/src/utils/legal-workbench-url*"
       - "packages/legal-citation-spike/**"
       - "packages/legal-evaluation/**"
+      - "packages/legal-evidence-worker/**"
       - "packages/legal-research-core/**"
       - "packages/legal-workbench/**"
       - "specs/legal-research/**"
@@ -49,3 +59,29 @@ jobs:
 
       - name: Run legal unit and integration tests
         run: bun test:legal
+
+      - name: Run primary-shell legal route tests
+        working-directory: packages/app
+        run: bun test --conditions=solid --preload ./happydom.ts ./src/utils/legal-workbench-url.test.ts
+
+  evidence-worker:
+    name: evidence worker gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Install local OCR runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes tesseract-ocr
+
+      - name: Create pinned Python environment
+        working-directory: packages/legal-evidence-worker
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check docling==2.121.0
+
+      - name: Run evidence worker tests
+        working-directory: packages/legal-evidence-worker
+        run: PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -v

@@ -12,7 +12,7 @@ The TypeScript host validates the critical result fields, rehashes every canonic
 
 ## User controls
 
-The Sources screen exposes adaptive native-text-plus-OCR and strict-visual OCR modes plus language hints. Parser mode and persisted warnings are visible beside the source. Reprocessing an existing source into another immutable representation remains a required follow-on; a new upload currently creates a separate source version.
+The Sources screen exposes adaptive native-text-plus-OCR and strict-visual OCR modes plus language hints. Parser mode and persisted warnings are visible beside the source. ADR 0009 adds existing-source reprocessing into another immutable representation with a distinct worker job.
 
 ## Consequences
 

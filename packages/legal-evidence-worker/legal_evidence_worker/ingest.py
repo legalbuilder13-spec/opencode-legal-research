@@ -90,7 +90,10 @@ def ingest(
 
     _check_cancel(cancel)
     progress("rendering_pages", 80)
-    pages, warnings = materialize_pages(document, output / "pages", page_text, cancel)
+    if request.mode == "structural":
+        pages, warnings = [], []
+    else:
+        pages, warnings = materialize_pages(document, output / "pages", page_text, cancel)
     if request.mode == "strict_visual" and len(pages) != len(document.pages):
         raise IngestError("Strict visual mode could not materialize every canonical page image")
 
@@ -128,7 +131,7 @@ def ingest(
     result = CompletedResult(
         worker_version=WORKER_VERSION,
         parser_version=parser_version,
-        ocr_engine=tesseract_version(),
+        ocr_engine=tesseract_version() if request.mode != "structural" else "none",
         ocr_mode=request.mode,
         job_id=request.job_id,
         source_version_id=request.source_version_id,
@@ -162,7 +165,24 @@ def build_converter(request: IngestRequest) -> Converter:
         PdfPipelineOptions,
         TesseractCliOcrOptions,
     )
-    from docling.document_converter import DocumentConverter, PdfFormatOption
+    from docling.document_converter import (
+        DocumentConverter,
+        HTMLFormatOption,
+        ImageFormatOption,
+        PdfFormatOption,
+        WordFormatOption,
+    )
+
+    if request.mime == "text/html":
+        return DocumentConverter(
+            allowed_formats=[InputFormat.HTML],
+            format_options={InputFormat.HTML: HTMLFormatOption()},
+        )
+    if request.mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return DocumentConverter(
+            allowed_formats=[InputFormat.DOCX],
+            format_options={InputFormat.DOCX: WordFormatOption()},
+        )
 
     mode = OcrMode.FULL_PAGE if request.mode == "strict_visual" else OcrMode.DEFAULT
     options = PdfPipelineOptions(
@@ -173,8 +193,14 @@ def build_converter(request: IngestRequest) -> Converter:
         images_scale=2.0,
         ocr_options=TesseractCliOcrOptions(mode=mode, lang=request.language_hints),
     )
+    if request.mime in {"image/png", "image/jpeg"}:
+        return DocumentConverter(
+            allowed_formats=[InputFormat.IMAGE],
+            format_options={InputFormat.IMAGE: ImageFormatOption(pipeline_options=options)},
+        )
     return DocumentConverter(
-        format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=options)}
+        allowed_formats=[InputFormat.PDF],
+        format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=options)},
     )
 
 

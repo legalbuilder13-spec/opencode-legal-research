@@ -103,6 +103,43 @@ describe("matter lifecycle and isolation", () => {
     })
     expect(() => store.passagesForMatter(matter.id)).toThrow("Matter is deleted")
   })
+
+  test("SEC-05 deletion reports shared blob references without breaking the remaining matter", async () => {
+    const { store, materializer, matter } = await fixture()
+    const other = store.createMatter({
+      name: "Shared evidence matter",
+      jurisdiction: "9th Cir.",
+      researchAsOf: "2026-08-24",
+      confidentiality: "confidential",
+    })
+    const first = await materializer.captureText({
+      matterId: matter.id,
+      title: "First copy",
+      text: "Identical evidence shared by content hash.",
+      origin: "upload:test",
+    })
+    const second = await materializer.captureText({
+      matterId: other.id,
+      title: "Second copy",
+      text: "Identical evidence shared by content hash.",
+      origin: "upload:test",
+    })
+    const firstVersion = store.sourceVersion(first.sourceVersionId)
+    const secondVersion = store.sourceVersion(second.sourceVersionId)
+    expect(firstVersion.blob_sha256).toBe(secondVersion.blob_sha256)
+
+    expect(store.deleteSourceVersion(first.sourceVersionId)).toMatchObject({
+      blobRetained: true,
+      remainingReferences: 1,
+    })
+    expect(store.passageForContext(other.id, second.passageId).text).toContain("Identical evidence")
+    expect(await store.blobs.verify(secondVersion.blob_sha256)).toMatchObject({ valid: true })
+    expect(store.deleteMatter(other.id)).toMatchObject({
+      retainedBlobCount: 1,
+      sharedBlobCount: 0,
+      blobPolicy: "retained-until-compaction",
+    })
+  })
 })
 
 describe("immutable source materialization", () => {

@@ -68,6 +68,7 @@ import { createSessionLineage } from "@/pages/session/session-lineage"
 import { SessionPage, SessionRouteErrorBoundary, TargetSessionRouteContent } from "@/pages/session"
 import { NewHome } from "@/pages/home"
 import { LegacyHome } from "@/pages/home/legacy-home"
+import LegalResearchPage from "@/pages/legal-research"
 
 const NewSession = lazy(() => import("@/pages/new-session"))
 
@@ -326,9 +327,16 @@ function DesktopCommands() {
   const command = useCommand()
   const language = useLanguage()
   const platform = usePlatform()
+  const navigate = useNavigate()
 
   command.register("desktop", () => {
     const commands: CommandOption[] = []
+    commands.push({
+      id: "legal.research.open",
+      title: language.t("command.legalResearch.open"),
+      category: language.t("command.category.legal"),
+      onSelect: () => navigate("/legal-research"),
+    })
     if (platform.platform === "desktop" && platform.exportDebugLogs) {
       commands.push({
         id: "logs.export",
@@ -617,6 +625,7 @@ function Routes(props: { serverScoped?: JSX.Element }) {
 
   return (
     <>
+      <Route path="/legal-research" component={LegalResearchPage} />
       <Route
         component={(routeProps) => (
           <LegacyServerLayout serverScoped={props.serverScoped}>{routeProps.children}</LegacyServerLayout>

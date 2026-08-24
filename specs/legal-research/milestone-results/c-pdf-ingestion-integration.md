@@ -13,6 +13,7 @@ The browser run uploaded the generated two-page scanned opinion in strict-visual
 - PDF upload UI: [`workbench-assets/pdf-upload.png`](./workbench-assets/pdf-upload.png)
 - OCR-backed answer and exact region: [`workbench-assets/ocr-answer-evidence.png`](./workbench-assets/ocr-answer-evidence.png)
 - Matter editing/archive UI: [`workbench-assets/matter-edit.png`](./workbench-assets/matter-edit.png)
+- Existing-source reprocessing: [`workbench-assets/pdf-reprocess.png`](./workbench-assets/pdf-reprocess.png)
 
 ## Acceptance evidence
 
@@ -26,4 +27,4 @@ The browser run uploaded the generated two-page scanned opinion in strict-visual
 
 ## Boundary
 
-The generated PDF proves the integrated contract, not production accuracy across court scans. Existing-source reprocessing, real federal opinions, malformed documents, rotation/crop cases, multilingual OCR, and image/DOCX/HTML adapters remain corpus/release work.
+The generated PDF proves the integrated contract, not production accuracy across court scans. Existing-source reprocessing and image/DOCX/HTML adapters are covered by the follow-on C2 gate. Real federal opinions, malformed documents, rotation/crop cases, multilingual OCR, and strict visual URL capture remain corpus/release work.

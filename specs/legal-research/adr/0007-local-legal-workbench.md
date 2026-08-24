@@ -19,8 +19,8 @@ The legal evidence loop crosses model protocol, local persistence, OCR, retrieva
 - The fork now has a usable research and evidence-review application.
 - Matter/source/retrieval persistence can be tested without starting the main OpenCode server.
 - Subscription entitlement is visible without an API key.
-- Main-shell navigation, localization, live synthesis/finalization, authentication recovery UX, and production packaging remain explicit work rather than hidden behind a demo.
+- The workbench can advance independently while shell navigation and production sidecar packaging remain explicit.
 
 ## Revisit
 
-Replace the standalone entry point with a legal workspace route in the primary shell after the answer transaction unifies retrieved passages, subscription-backed synthesis, claim finalization, and export in one persistent matter database.
+ADR 0010 adds the primary-shell route after the answer transaction, subscription synthesis, recovery UX, and export were unified. Replace the alpha sidecar launch with supervised desktop packaging only after restart, installer, and localization gates pass.

@@ -50,7 +50,7 @@
                 placeholder="For example: When is a right clearly established for qualified-immunity purposes?"
               ></textarea>
               <div class="question-footer">
-                <input id="posture" placeholder="Procedural posture (optional)" />
+                <input id="posture" aria-label="Procedural posture" placeholder="Procedural posture (optional)" />
                 <button id="research-button" class="primary-button">Research and draft</button>
               </div>
               <p class="egress-note">
@@ -120,9 +120,15 @@
                 <button class="primary-button" type="submit">Capture source</button>
               </form>
               <form id="pdf-form" class="source-form">
-                <h2>Ingest PDF locally</h2>
-                <label for="pdf-file">PDF source</label>
-                <input id="pdf-file" name="file" type="file" accept="application/pdf,.pdf" required />
+                <h2>Ingest a document locally</h2>
+                <label for="pdf-file">PDF, image, HTML, or DOCX source</label>
+                <input
+                  id="pdf-file"
+                  name="file"
+                  type="file"
+                  accept="application/pdf,image/png,image/jpeg,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.png,.jpg,.jpeg,.html,.htm,.docx"
+                  required
+                />
                 <label for="pdf-mode">Evidence mode</label>
                 <select id="pdf-mode" name="mode">
                   <option value="adaptive">Adaptive native text + OCR</option>
@@ -131,9 +137,31 @@
                 <label for="pdf-languages">OCR language hints</label>
                 <input id="pdf-languages" name="languageHints" value="eng" placeholder="eng, spa" />
                 <p class="egress-note">
-                  Docling and OCR run locally. The source does not enter model context until parsing completes.
+                  Docling and OCR run locally. Images and PDFs preserve exact regions; HTML and DOCX preserve structural
+                  passages. No source enters model context until parsing completes.
                 </p>
-                <button id="pdf-button" class="primary-button" type="submit">Ingest and OCR PDF</button>
+                <button id="pdf-button" class="primary-button" type="submit">Ingest source locally</button>
+              </form>
+              <form id="courtlistener-form" class="source-form">
+                <h2>Search CourtListener</h2>
+                <label for="courtlistener-query">Case-law query</label>
+                <input id="courtlistener-query" required placeholder="qualified immunity controlling precedent" />
+                <label for="courtlistener-court">Court ID (optional)</label>
+                <input id="courtlistener-court" placeholder="ca9" />
+                <label for="courtlistener-token">CourtListener API token</label>
+                <input
+                  id="courtlistener-token"
+                  type="password"
+                  required
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Held in memory for this page only"
+                />
+                <p class="egress-note">
+                  The query and token go directly to CourtListener. Results are lead-only until you materialize the
+                  complete opinion. The token is not stored in the matter or export.
+                </p>
+                <button id="courtlistener-button" class="primary-button" type="submit">Search case law</button>
               </form>
             </div>
             <section>
@@ -142,6 +170,11 @@
                 <span id="source-count">0 sources</span>
               </div>
               <div id="source-list" class="source-list"></div>
+              <div class="section-heading courtlistener-heading">
+                <h2>CourtListener leads</h2>
+                <span id="courtlistener-count">No search</span>
+              </div>
+              <div id="courtlistener-results" class="source-list"></div>
             </section>
           </div>
         </section>
@@ -228,6 +261,7 @@
                 <div class="matter-edit-actions">
                   <button class="primary-button" type="submit">Save changes</button>
                   <button id="matter-status-button" class="secondary-button" type="button">Archive matter</button>
+                  <button id="matter-delete-button" class="danger-button" type="button">Delete matter</button>
                 </div>
               </form>
             </div>
@@ -243,6 +277,22 @@
       </main>
     </div>
     <div id="citation-popover" class="citation-popover" role="dialog" aria-label="Citation evidence" hidden></div>
+    <div id="egress-consent" class="modal-backdrop" hidden>
+      <section class="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="egress-title">
+        <p class="eyebrow">Before first research</p>
+        <h2 id="egress-title">Confirm ChatGPT matter-data egress</h2>
+        <p id="egress-description">
+          Drafting sends only selected, materialized matter passages to the signed-in ChatGPT subscription. Local OCR,
+          storage, and retrieval remain on this device. CourtListener queries are sent separately only when that source
+          is used.
+        </p>
+        <label class="consent-check" for="egress-check">
+          <input id="egress-check" type="checkbox" />
+          I understand that selected matter evidence will be sent to the displayed ChatGPT workspace/backend.
+        </label>
+        <button id="egress-confirm" class="primary-button" type="button" disabled>Enable subscription drafting</button>
+      </section>
+    </div>
     <div id="toast" class="toast" role="status" hidden></div>
     <script type="module" src="/app.js"></script>
   </body>

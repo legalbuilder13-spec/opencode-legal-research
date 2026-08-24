@@ -3,14 +3,17 @@ import { CitationStore } from "@legalbuilder/legal-citation-spike"
 import { seedDemo } from "@legalbuilder/legal-citation-spike/demo"
 import {
   AnswerFinalizer,
+  CourtListenerClient,
+  CourtListenerError,
   LegalResearchStore,
   ResearchPlanner,
   RetrievalEngine,
   SourceMaterializer,
 } from "@legalbuilder/legal-research-core"
+import type { CourtListenerFetcher } from "@legalbuilder/legal-research-core"
 import { mkdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
-import { EvidenceIngestionService, type EvidenceWorkerRunner } from "./ingestion"
+import { EvidenceIngestionService, type EvidenceMime, type EvidenceWorkerRunner } from "./ingestion"
 import { fixtureSynthesizer, parseSynthesis, subscriptionSynthesizer, type WorkbenchSynthesizer } from "./synthesis"
 
 export interface WorkbenchOptions {
@@ -18,6 +21,7 @@ export interface WorkbenchOptions {
   fixtureAccount?: boolean
   synthesizer?: WorkbenchSynthesizer
   workerRunner?: EvidenceWorkerRunner
+  courtListener?: { fetcher?: CourtListenerFetcher; baseUrl?: string }
 }
 
 export async function createWorkbench(options: WorkbenchOptions) {
@@ -49,17 +53,51 @@ export async function createWorkbench(options: WorkbenchOptions) {
       if (url.pathname === "/api/bootstrap" && request.method === "GET") return Response.json(await bootstrap())
       if (url.pathname === "/api/account" && request.method === "GET") {
         if (options.fixtureAccount)
-          return Response.json({ mode: "subscription", planType: "fixture", apiKeyRequired: false })
-        const client = await connect({ cwd: process.cwd() })
-        try {
-          const state = await client.account()
           return Response.json({
-            mode: state.account?.type ?? "signed-out",
-            planType: state.account?.type === "chatgpt" ? state.account.planType : null,
+            status: "ready",
+            mode: "subscription",
+            planType: "fixture",
             apiKeyRequired: false,
+            rateLimit: null,
+          })
+        let client: Awaited<ReturnType<typeof connect>> | undefined
+        try {
+          client = await connect({ cwd: process.cwd() })
+          const state = await client.account()
+          if (!state.account)
+            return Response.json({
+              status: "signed-out",
+              mode: "signed-out",
+              planType: null,
+              apiKeyRequired: false,
+              rateLimit: null,
+            })
+          if (state.account.type !== "chatgpt")
+            return Response.json({
+              status: "wrong-account",
+              mode: state.account.type,
+              planType: null,
+              apiKeyRequired: false,
+              rateLimit: null,
+            })
+          const limits = await client.rateLimits()
+          return Response.json({
+            status: limits.reachedType ? "limited" : "ready",
+            mode: state.account.type,
+            planType: state.account.planType,
+            apiKeyRequired: false,
+            rateLimit: limits,
+          })
+        } catch {
+          return Response.json({
+            status: "unavailable",
+            mode: "unknown",
+            planType: null,
+            apiKeyRequired: false,
+            rateLimit: null,
           })
         } finally {
-          await client.close()
+          await client?.close()
         }
       }
       if (url.pathname === "/api/matters" && request.method === "POST") {
@@ -74,6 +112,13 @@ export async function createWorkbench(options: WorkbenchOptions) {
         return Response.json(matter, { status: 201 })
       }
       const matterMatch = url.pathname.match(/^\/api\/matters\/([^/]+)$/)
+      if (matterMatch && request.method === "DELETE") {
+        const matterId = pathParameter(matterMatch)
+        const matter = core.matter(matterId)
+        const body = object(await request.json(), "matter deletion")
+        if (body.confirmation !== matter.name) throw new Error("Matter name confirmation does not match")
+        return Response.json(core.deleteMatter(matterId))
+      }
       if (matterMatch && request.method === "PATCH") {
         const matterId = pathParameter(matterMatch)
         const body = object(await request.json(), "matter update")
@@ -120,9 +165,9 @@ export async function createWorkbench(options: WorkbenchOptions) {
         const matterId = pathParameter(uploadMatch)
         const form = await request.formData()
         const file = form.get("file")
-        if (!(file instanceof File)) throw new Error("PDF file is required")
-        if (file.type !== "application/pdf") throw new Error("Only PDF ingestion is currently available")
-        if (file.size > 100 * 1024 * 1024) throw new Error("PDF exceeds the 100 MB local limit")
+        if (!(file instanceof File)) throw new Error("Source file is required")
+        const mime = uploadMime(file)
+        if (file.size > 100 * 1024 * 1024) throw new Error("Source exceeds the 100 MB local limit")
         const modeValue = form.get("mode")
         const mode = modeValue === "strict_visual" ? "strict_visual" : "adaptive"
         const languageValue = form.get("languageHints")
@@ -134,15 +179,73 @@ export async function createWorkbench(options: WorkbenchOptions) {
                 .filter(Boolean)
             : undefined
         return Response.json(
-          await ingestion.ingestPdf({
+          await ingestion.ingestDocument({
             matterId,
             title: file.name,
             bytes: new Uint8Array(await file.arrayBuffer()),
+            mime,
             mode,
             languageHints,
           }),
           { status: 201 },
         )
+      }
+      const reprocessMatch = url.pathname.match(/^\/api\/matters\/([^/]+)\/source-versions\/([^/]+)\/reprocess$/)
+      if (reprocessMatch && request.method === "POST") {
+        const matterId = pathParameter(reprocessMatch)
+        const sourceVersionId = pathParameter(reprocessMatch, 2)
+        const body = object(await request.json(), "reprocessing request")
+        return Response.json(
+          await ingestion.reprocessDocument({
+            matterId,
+            sourceVersionId,
+            mode: evidenceMode(body.mode),
+            languageHints: languageHints(body.languageHints),
+          }),
+          { status: 201 },
+        )
+      }
+      const sourceVersionMatch = url.pathname.match(/^\/api\/matters\/([^/]+)\/source-versions\/([^/]+)$/)
+      if (sourceVersionMatch && request.method === "DELETE") {
+        const matterId = pathParameter(sourceVersionMatch)
+        const sourceVersionId = pathParameter(sourceVersionMatch, 2)
+        const version = core.sourceVersion(sourceVersionId)
+        if (version.matter_id !== matterId) throw new Error("Source belongs to a different matter")
+        const body = object(await request.json(), "source deletion")
+        if (body.confirmation !== sourceVersionId) throw new Error("Source confirmation does not match")
+        return Response.json(core.deleteSourceVersion(sourceVersionId))
+      }
+      const courtListenerSearchMatch = url.pathname.match(/^\/api\/matters\/([^/]+)\/courtlistener\/search$/)
+      if (courtListenerSearchMatch && request.method === "POST") {
+        const matterId = pathParameter(courtListenerSearchMatch)
+        const matter = core.matter(matterId)
+        if (matter.status !== "active") throw new Error(`Matter is not active: ${matter.status}`)
+        const body = object(await request.json(), "CourtListener search")
+        const client = new CourtListenerClient({
+          token: string(body.token, "CourtListener token"),
+          fetcher: options.courtListener?.fetcher,
+          baseUrl: options.courtListener?.baseUrl,
+        })
+        return Response.json(
+          await client.search({
+            query: string(body.query, "CourtListener query"),
+            court: optionalString(body.court),
+          }),
+        )
+      }
+      const courtListenerMaterializeMatch = url.pathname.match(
+        /^\/api\/matters\/([^/]+)\/courtlistener\/clusters\/([^/]+)\/materialize$/,
+      )
+      if (courtListenerMaterializeMatch && request.method === "POST") {
+        const matterId = pathParameter(courtListenerMaterializeMatch)
+        const clusterId = Number(pathParameter(courtListenerMaterializeMatch, 2))
+        const body = object(await request.json(), "CourtListener materialization")
+        const client = new CourtListenerClient({
+          token: string(body.token, "CourtListener token"),
+          fetcher: options.courtListener?.fetcher,
+          baseUrl: options.courtListener?.baseUrl,
+        })
+        return Response.json(await client.materializeOpinion({ matterId, clusterId, store: core }), { status: 201 })
       }
       const planMatch = url.pathname.match(/^\/api\/matters\/([^/]+)\/plan$/)
       if (planMatch && request.method === "POST") {
@@ -260,6 +363,11 @@ export async function createWorkbench(options: WorkbenchOptions) {
       return new Response(Bun.file(join(webRoot, staticPath)))
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected workbench error"
+      if (error instanceof CourtListenerError)
+        return Response.json(
+          { error: message, code: "courtlistener", retryAfterSeconds: error.retryAfterSeconds },
+          { status: error.status },
+        )
       return jsonError(message, 400)
     }
   }
@@ -300,8 +408,38 @@ function optionalConfidentiality(value: unknown) {
   return confidentiality(value)
 }
 
-function pathParameter(match: RegExpMatchArray) {
-  const value = match[1]
+function evidenceMode(value: unknown): "adaptive" | "strict_visual" {
+  if (value === "adaptive" || value === "strict_visual") return value
+  throw new Error("Invalid evidence mode")
+}
+
+function languageHints(value: unknown) {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value) || value.some((hint) => typeof hint !== "string" || !hint.trim()))
+    throw new Error("Invalid OCR language hints")
+  return value.map((hint) => String(hint).trim())
+}
+
+function uploadMime(file: File): EvidenceMime {
+  if (
+    file.type === "application/pdf" ||
+    file.type === "image/png" ||
+    file.type === "image/jpeg" ||
+    file.type === "text/html" ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  )
+    return file.type
+  const extension = file.name.toLowerCase().split(".").at(-1)
+  if (extension === "pdf") return "application/pdf"
+  if (extension === "png") return "image/png"
+  if (extension === "jpg" || extension === "jpeg") return "image/jpeg"
+  if (extension === "html" || extension === "htm") return "text/html"
+  if (extension === "docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  throw new Error("Supported uploads are PDF, PNG, JPEG, HTML, and DOCX")
+}
+
+function pathParameter(match: RegExpMatchArray, index = 1) {
+  const value = match[index]
   if (!value) throw new Error("Invalid resource path")
   return decodeURIComponent(value)
 }

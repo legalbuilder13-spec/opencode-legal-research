@@ -2,7 +2,7 @@
 
 Status: alpha baseline
 
-Date: 2026-08-23
+Date: 2026-08-24
 
 ## Assets and security goals
 
@@ -37,11 +37,11 @@ Model prose can fabricate footnotes, URLs, quotes, cases, or verification labels
 
 ### Parser and active-content compromise
 
-PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker with limited filesystem/network access and resource budgets. Web HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or sanitized representations, not source macros or live scripts. Production packaging still needs OS sandbox hardening and malformed-file fuzzing.
+PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs OS CPU/memory/network sandboxing and malformed-file fuzzing.
 
 ### Credential and diagnostic leakage
 
-ChatGPT auth, CourtListener tokens, matter text, and raw tool payloads must not enter default logs. The adapter redacts credential-shaped fields; core tests assert that default diagnostics contain no source text. Exports omit credentials. Production telemetry must remain opt-in and structured around IDs, timing, counts, and error classes.
+ChatGPT auth, CourtListener tokens, matter text, and raw tool payloads must not enter default logs. The adapter redacts credential-shaped fields; core tests assert that default diagnostics contain no source text. CourtListener tokens remain in page memory, clear on reload, and are absent from local storage, matter records, and exports. Production telemetry must remain opt-in and structured around IDs, timing, counts, and error classes.
 
 ### Excessive or undisclosed egress
 
@@ -49,7 +49,7 @@ Personal ChatGPT workspace use may be inappropriate for privileged matters. Befo
 
 ### Availability and resource exhaustion
 
-Large or malformed documents, OCR, rate limits, or a stalled model may exhaust CPU, memory, disk, or time. The worker protocol supports progress/cancellation and quality failures; adapters surface auth/rate-limit classes. Production gates still require file/page limits, quotas, timeouts, crash recovery, and compaction policies.
+Large or malformed documents, OCR, rate limits, or a stalled model may exhaust CPU, memory, disk, or time. The upload host caps source files at 100 MB; the worker host enforces execution/output limits; the protocol supports progress/cancellation and quality failures; and adapters surface auth/rate-limit classes. Production gates still require page/decompression limits, CPU/memory/disk quotas, crash recovery, and compaction policies.
 
 ### Unsafe deletion and retention assumptions
 
@@ -62,15 +62,17 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 - Incomplete-capture exclusion.
 - Passage-hash and fabricated-anchor citation tests.
 - Inert CourtListener HTML parsing and cross-origin URL rejection.
+- Inert uploaded-HTML parsing, worker credential-environment exclusion, bounded output paths, and execution/output limits.
 - No-source-text diagnostic test.
 - Deterministic adversarial corpus with prompt injection, cross-matter, connector bypass, hash corruption, incomplete capture, and fabricated anchor cases.
+- Loopback-only default workbench binding and page-memory-only CourtListener token browser gate.
 
 ## Open production gates
 
-- Sandbox the Docling/OCR worker with explicit CPU, memory, file, and network limits.
+- Add OS-enforced CPU, memory, filesystem, and network limits around the Docling/OCR worker.
 - Fuzz malformed PDF, DOCX, HTML, image, archive, and decompression-bomb inputs.
 - Add OS keychain-backed connector credentials and rotation/revocation tests.
 - Complete organizational ChatGPT workspace policy and retention review for confidential matters.
-- Add authenticated local UI access if the service binds beyond loopback.
+- Add authenticated local UI access before any deployment intentionally binds beyond loopback.
 - Complete dependency, license, secret, and supply-chain scanning in CI.
 - Have security and legal reviewers approve the full adversarial corpus and deletion/retention policy.

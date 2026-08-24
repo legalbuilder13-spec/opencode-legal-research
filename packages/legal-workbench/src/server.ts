@@ -7,7 +7,8 @@ const workbench = await createWorkbench({
   fixtureAccount: process.env.LEGAL_WORKBENCH_FIXTURE_ACCOUNT === "1",
 })
 const port = Number(process.env.PORT ?? 3212)
-const server = Bun.serve({ port, fetch: workbench.handler })
+const hostname = process.env.LEGAL_WORKBENCH_HOST ?? "127.0.0.1"
+const server = Bun.serve({ port, hostname, fetch: workbench.handler })
 
 console.log(`Legal research workbench listening on ${server.url}`)
 

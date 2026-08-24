@@ -19,7 +19,14 @@ export const dict = {
   "command.category.permissions": "Permissions",
   "command.category.workspace": "Workspace",
   "command.category.settings": "Settings",
+  "command.category.legal": "Legal research",
   "command.logs.export": "Export logs",
+  "command.legalResearch.open": "Open legal research workbench",
+
+  "legal.research.title": "Legal research",
+  "legal.research.description": "Matter-scoped research with local OCR, retrieval, and exact evidence",
+  "legal.research.openStandalone": "Open separately",
+  "legal.research.frameTitle": "Legal research workbench",
 
   "theme.scheme.system": "System",
   "theme.scheme.light": "Light",

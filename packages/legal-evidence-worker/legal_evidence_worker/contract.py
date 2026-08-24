@@ -29,10 +29,25 @@ class IngestRequest(StrictModel):
     blob_path: str = Field(min_length=1)
     output_dir: str = Field(min_length=1)
     expected_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    mime: Literal["application/pdf"]
-    mode: Literal["adaptive", "strict_visual"]
+    mime: Literal[
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "text/html",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
+    mode: Literal["adaptive", "strict_visual", "structural"]
     language_hints: list[str] = Field(default_factory=lambda: ["eng"])
     page_range: PageRange | None = None
+
+    @model_validator(mode="after")
+    def mode_matches_format(self) -> IngestRequest:
+        visual = self.mime in {"application/pdf", "image/png", "image/jpeg"}
+        if visual and self.mode == "structural":
+            raise ValueError("visual sources require adaptive or strict_visual mode")
+        if not visual and self.mode != "structural":
+            raise ValueError("HTML and DOCX sources require structural mode")
+        return self
 
 
 class BoundingBox(StrictModel):
@@ -95,7 +110,7 @@ class CompletedResult(StrictModel):
     parser_name: Literal["docling"] = "docling"
     parser_version: str
     ocr_engine: str
-    ocr_mode: Literal["adaptive", "strict_visual"]
+    ocr_mode: Literal["adaptive", "strict_visual", "structural"]
     job_id: str
     source_version_id: str
     source_hash: str

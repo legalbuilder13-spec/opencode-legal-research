@@ -413,16 +413,44 @@ export class LegalResearchStore {
 
   deleteSourceVersion(sourceVersionId: string) {
     const version = this.sourceVersion(sourceVersionId)
-    if (version.deleted_at) return { sourceVersionId, alreadyDeleted: true, blobRetained: true }
+    const remainingReferences =
+      this.db
+        .query<
+          { count: number },
+          [string, string]
+        >("SELECT COUNT(*) AS count FROM source_version WHERE blob_sha256 = ? AND id <> ? AND deleted_at IS NULL")
+        .get(version.blob_sha256, sourceVersionId)?.count ?? 0
+    if (version.deleted_at) return { sourceVersionId, alreadyDeleted: true, blobRetained: true, remainingReferences }
     this.db
       .query("UPDATE source_version SET deleted_at = ? WHERE id = ?")
       .run(new Date().toISOString(), sourceVersionId)
-    return { sourceVersionId, alreadyDeleted: false, blobRetained: true }
+    return { sourceVersionId, alreadyDeleted: false, blobRetained: true, remainingReferences }
   }
 
   deleteMatter(matterId: string) {
     const matter = this.matter(matterId)
-    if (matter.status === "deleted") return { matterId, alreadyDeleted: true, blobPolicy: "retained-until-compaction" }
+    const blobs = this.db
+      .query<
+        { blob_sha256: string },
+        [string]
+      >("SELECT DISTINCT blob_sha256 FROM source_version WHERE matter_id = ? AND deleted_at IS NULL")
+      .all(matterId)
+    const sharedBlobCount = blobs.filter((blob) => {
+      const count = this.db
+        .query<
+          { count: number },
+          [string, string]
+        >("SELECT COUNT(*) AS count FROM source_version WHERE blob_sha256 = ? AND matter_id <> ? AND deleted_at IS NULL")
+        .get(blob.blob_sha256, matterId)?.count
+      return Boolean(count)
+    }).length
+    const result = {
+      matterId,
+      blobPolicy: "retained-until-compaction" as const,
+      retainedBlobCount: blobs.length,
+      sharedBlobCount,
+    }
+    if (matter.status === "deleted") return { ...result, alreadyDeleted: true }
     const now = new Date().toISOString()
     const write = this.db.transaction(() => {
       this.db
@@ -434,7 +462,7 @@ export class LegalResearchStore {
         .run(now, matterId)
     })
     write()
-    return { matterId, alreadyDeleted: false, blobPolicy: "retained-until-compaction" }
+    return { ...result, alreadyDeleted: false }
   }
 
   exportMatter(matterId: string) {
