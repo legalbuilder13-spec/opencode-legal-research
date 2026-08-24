@@ -25,7 +25,7 @@ Protected assets include privileged matter content, original source bytes, ChatG
 
 ### Source prompt injection
 
-An opinion, webpage, client file, or connector response may instruct the agent to ignore policy, reveal data, bypass citation checks, or call tools. Source material is always data. The materializer returns an explicit `untrustedSourceData` envelope, and only host policy may authorize tools or egress. Adversarial corpus cases exercise document and connector bypass attempts.
+An opinion, webpage, client file, or connector response may instruct the agent to ignore policy, reveal data, bypass citation checks, or call tools. Source material is always data. The materializer returns an explicit `untrustedSourceData` JSON envelope, and only host policy may authorize tools or egress. Six deterministic prompt-injection variants prove that quoting, role-switching, JSON-escape text, external links, cross-matter demands, and capture-bypass instructions remain inside that envelope. The corpus and tests are engineering evidence, not attorney or security approval.
 
 ### Cross-matter disclosure
 
@@ -37,7 +37,7 @@ Model prose can fabricate footnotes, URLs, quotes, cases, or verification labels
 
 ### Parser and active-content compromise
 
-PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. Before parser import, the supervised server applies OS CPU, output-file, core-dump, and descriptor limits plus an 8 GiB virtual-address-space and 256-process ceiling where the Unix host accepts them. Linux accepts both optional ceilings; macOS ARM64 rejects the address-space ceiling because its process map already reserves a much larger shared range, but accepts the process ceiling. The worker also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio, and malformed images. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs enforceable macOS/Windows memory containment, worker network/filesystem isolation, and broader malformed-file fuzzing.
+PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. Before parser import, the supervised server applies OS CPU, output-file, core-dump, and descriptor limits plus an 8 GiB virtual-address-space and 256-process ceiling where the Unix host accepts them. Linux accepts both optional ceilings; macOS ARM64 rejects the address-space ceiling because its process map already reserves a much larger shared range, but accepts the process ceiling. The worker also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio/XML size, and malformed images. PDF admission rejects missing bounded headers and recognizable active actions, embedded files, rich media, XFA, and encryption. DOCX admission rejects path escapes, duplicate normalized names, symlinks, encryption, macros, embeddings, ActiveX, XML entities, and non-hyperlink external relationships. HTML is parsed inertly without source-network access; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. These conservative checks may visibly reject an otherwise readable source and do not replace parser-grade sanitization. Production packaging still needs enforceable macOS/Windows memory containment, worker network/filesystem isolation, and coverage-guided malformed-file fuzzing.
 
 Strict-visual web capture runs active pages only inside a fresh sandboxed Electron session with no Node integration, permissions, popups, webviews, downloads, or persistent storage. An authenticated loopback service admits one bounded capture at a time. Request interception blocks private/reserved targets, writes, frames, XHR, WebSockets, pings, media, objects, and excessive requests/resources. A second ephemeral loopback proxy resolves and validates every HTTP(S) authority and dials an address from that same answer set, so Chromium cannot re-resolve a rebinding hostname before connection. The proxy allows no direct fallback, request bodies, upgrades, or nonstandard ports and bounds aggregate traffic. Deterministic tests reject a hostname that changes from a public to a private answer before a second dial.
 
@@ -71,14 +71,14 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 - Inert uploaded-HTML parsing, worker credential-environment exclusion, bounded output paths, and execution/output limits.
 - Pinned-proxy public-address selection, deterministic private rebinding rejection, and real Electron HTTP/HTTPS capture.
 - No-source-text diagnostic test.
-- Deterministic adversarial corpus with prompt injection, cross-matter, connector bypass, hash corruption, incomplete capture, and fabricated anchor cases.
+- Twenty-four executable deterministic adversarial cases covering prompt injection, cross-matter/connector bypass, active and malformed formats, resource exhaustion, hash corruption, incomplete capture, and fabricated anchors.
 - Loopback-only default workbench binding and page-memory-only CourtListener token browser gate.
 - Matter-local-only persistence and pre-synthesis egress rejection.
 
 ## Open production gates
 
 - Add filesystem/network isolation around the Docling/OCR worker, enforceable macOS memory containment, and equivalent Windows memory/process containment.
-- Fuzz malformed PDF, DOCX, HTML, image, archive, and decompression-bomb inputs.
+- Add coverage-guided fuzzing beyond the deterministic PDF, DOCX, HTML, image, archive, and decompression-bomb cases.
 - Add OS keychain-backed connector credentials and rotation/revocation tests.
 - Complete organizational ChatGPT workspace policy and retention review for confidential matters.
 - Add authenticated local UI access before any deployment intentionally binds beyond loopback.

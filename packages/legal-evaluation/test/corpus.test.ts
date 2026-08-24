@@ -6,7 +6,21 @@ const corpusRoot = resolve(import.meta.dir, "../../../specs/legal-research/corpu
 
 describe("versioned legal evaluation corpus", () => {
   test("EVAL-01 validates source hashes, references, review state, and adversarial IDs", async () => {
-    expect(validateCorpus(await loadCorpus(corpusRoot))).toEqual([])
+    const corpus = await loadCorpus(corpusRoot)
+    expect(validateCorpus(corpus)).toEqual([])
+    expect(corpus.adversarial).toHaveLength(24)
+  })
+
+  test("EVAL-04 requires executable references and review state for adversarial cases", async () => {
+    const corpus = await loadCorpus(corpusRoot)
+    const adversarial = structuredClone(corpus.adversarial)
+    if (!Array.isArray(adversarial) || !adversarial[0] || typeof adversarial[0] !== "object")
+      throw new Error("Invalid fixture")
+    delete adversarial[0].test_ref
+    delete adversarial[0].review
+    const errors = validateCorpus({ ...corpus, adversarial })
+    expect(errors).toContain("adversarial[0].test_ref must be a non-empty string")
+    expect(errors).toContain("adversarial[0].review must be an object")
   })
 
   test("EVAL-02 blocks an approved task without two reviewers and adjudication", async () => {

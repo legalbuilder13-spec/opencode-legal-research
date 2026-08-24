@@ -77,7 +77,10 @@ export function validateCorpus(bundle: CorpusBundle): string[] {
       caseIds.add(id)
     }
     requiredString(testCase?.category, `${path}.category`, errors)
+    requiredString(testCase?.payload, `${path}.payload`, errors)
     requiredString(testCase?.expected_control, `${path}.expected_control`, errors)
+    requiredString(testCase?.test_ref, `${path}.test_ref`, errors)
+    validateReview(testCase?.review, `${path}.review`, errors)
   }
 
   requiredString(manifest?.corpus_version, "manifest.corpus_version", errors)

@@ -4,13 +4,17 @@ import hashlib
 import importlib.metadata
 import json
 import os
+import re
+import stat
 import subprocess
 import threading
 import time
+import warnings
 import zipfile
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Protocol
+from xml.etree import ElementTree
 
 from PIL import Image, ImageStat, UnidentifiedImageError
 
@@ -35,6 +39,22 @@ MAX_IMAGE_PIXELS = 100_000_000
 MAX_ARCHIVE_ENTRIES = 10_000
 MAX_ARCHIVE_UNCOMPRESSED_BYTES = 500 * 1024 * 1024
 MAX_ARCHIVE_COMPRESSION_RATIO = 1_000
+MAX_ARCHIVE_XML_PART_BYTES = 16 * 1024 * 1024
+
+BLOCKED_PDF_FEATURES = {
+    b"/JavaScript": "JavaScript action",
+    b"/JS": "JavaScript action",
+    b"/Launch": "launch action",
+    b"/OpenAction": "open action",
+    b"/AA": "additional action",
+    b"/EmbeddedFile": "embedded file",
+    b"/RichMedia": "rich media",
+    b"/XFA": "XFA form",
+    b"/Encrypt": "encrypted content",
+}
+
+BLOCKED_DOCX_PATH_PARTS = {"activex", "embeddings"}
+BLOCKED_DOCX_FILES = {"vbaproject.bin", "vbadata.xml"}
 
 
 class IngestError(RuntimeError):
@@ -396,28 +416,105 @@ def preflight_source(source: Path, request: IngestRequest) -> None:
         raise IngestError(f"Source exceeds the {MAX_SOURCE_BYTES}-byte limit")
     if request.mime in {"image/png", "image/jpeg"}:
         try:
-            with Image.open(source) as image:
-                if image.width * image.height > MAX_IMAGE_PIXELS:
-                    raise IngestError(f"Image exceeds the {MAX_IMAGE_PIXELS}-pixel limit")
-                image.verify()
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with Image.open(source) as image:
+                    if image.width * image.height > MAX_IMAGE_PIXELS:
+                        raise IngestError(f"Image exceeds the {MAX_IMAGE_PIXELS}-pixel limit")
+                    image.verify()
+        except (Image.DecompressionBombError, Image.DecompressionBombWarning) as error:
+            raise IngestError(f"Image exceeds the {MAX_IMAGE_PIXELS}-pixel limit") from error
         except (UnidentifiedImageError, OSError) as error:
             raise IngestError("Image failed bounded format validation") from error
+    if request.mime == "application/pdf":
+        preflight_pdf(source)
     if request.mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        try:
-            with zipfile.ZipFile(source) as archive:
-                entries = archive.infolist()
-                if len(entries) > MAX_ARCHIVE_ENTRIES:
-                    raise IngestError(f"DOCX exceeds the {MAX_ARCHIVE_ENTRIES}-entry limit")
-                total = sum(entry.file_size for entry in entries)
-                compressed = sum(max(entry.compress_size, 1) for entry in entries)
-                if total > MAX_ARCHIVE_UNCOMPRESSED_BYTES:
+        preflight_docx(source)
+
+
+def preflight_pdf(source: Path) -> None:
+    with source.open("rb") as stream:
+        if b"%PDF-" not in stream.read(1_024):
+            raise IngestError("PDF failed bounded header validation")
+        stream.seek(0)
+        overlap = b""
+        while chunk := stream.read(1024 * 1024):
+            window = overlap + chunk
+            for token, label in BLOCKED_PDF_FEATURES.items():
+                if re.search(re.escape(token) + rb"(?![A-Za-z])", window):
+                    raise IngestError(f"PDF contains blocked active content: {label}")
+            overlap = window[-32:]
+
+
+def preflight_docx(source: Path) -> None:
+    try:
+        with zipfile.ZipFile(source) as archive:
+            entries = archive.infolist()
+            if len(entries) > MAX_ARCHIVE_ENTRIES:
+                raise IngestError(f"DOCX exceeds the {MAX_ARCHIVE_ENTRIES}-entry limit")
+            total = sum(entry.file_size for entry in entries)
+            compressed = sum(max(entry.compress_size, 1) for entry in entries)
+            if total > MAX_ARCHIVE_UNCOMPRESSED_BYTES:
+                raise IngestError(
+                    f"DOCX exceeds the {MAX_ARCHIVE_UNCOMPRESSED_BYTES}-byte expanded limit"
+                )
+            if total / max(compressed, 1) > MAX_ARCHIVE_COMPRESSION_RATIO:
+                raise IngestError("DOCX exceeds the bounded compression-ratio limit")
+
+            names: set[str] = set()
+            for entry in entries:
+                name = entry.filename.replace("\\", "/")
+                path = PurePosixPath(name)
+                normalized = path.as_posix().casefold()
+                if (
+                    not name
+                    or name.startswith("/")
+                    or re.match(r"^[A-Za-z]:", name)
+                    or ".." in path.parts
+                ):
+                    raise IngestError("DOCX contains an escaping archive path")
+                if normalized in names:
+                    raise IngestError("DOCX contains duplicate normalized archive paths")
+                names.add(normalized)
+                mode = (entry.external_attr >> 16) & 0o170000
+                if stat.S_ISLNK(mode):
+                    raise IngestError("DOCX contains a symbolic-link archive entry")
+                if entry.flag_bits & 0x1:
+                    raise IngestError("DOCX contains an encrypted archive entry")
+                lowered_parts = {part.casefold() for part in path.parts}
+                if (
+                    lowered_parts & BLOCKED_DOCX_PATH_PARTS
+                    or path.name.casefold() in BLOCKED_DOCX_FILES
+                ):
+                    raise IngestError("DOCX contains blocked active or embedded content")
+                if path.suffix.casefold() not in {".xml", ".rels"}:
+                    continue
+                if entry.file_size > MAX_ARCHIVE_XML_PART_BYTES:
                     raise IngestError(
-                        f"DOCX exceeds the {MAX_ARCHIVE_UNCOMPRESSED_BYTES}-byte expanded limit"
+                        f"DOCX XML part exceeds the {MAX_ARCHIVE_XML_PART_BYTES}-byte limit"
                     )
-                if total / max(compressed, 1) > MAX_ARCHIVE_COMPRESSION_RATIO:
-                    raise IngestError("DOCX exceeds the bounded compression-ratio limit")
-        except zipfile.BadZipFile as error:
-            raise IngestError("DOCX failed bounded archive validation") from error
+                xml = archive.read(entry)
+                upper = xml.upper()
+                if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
+                    raise IngestError("DOCX XML contains a blocked DTD or entity declaration")
+                if path.suffix.casefold() == ".rels":
+                    validate_docx_relationships(xml)
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, ElementTree.ParseError) as error:
+        raise IngestError("DOCX failed bounded archive validation") from error
+
+
+def validate_docx_relationships(xml: bytes) -> None:
+    root = ElementTree.fromstring(xml)
+    for relationship in root:
+        target = relationship.attrib.get("Target", "").replace("\\", "/")
+        target_mode = relationship.attrib.get("TargetMode", "").casefold()
+        relationship_type = relationship.attrib.get("Type", "").casefold()
+        if target_mode == "external" and not relationship_type.endswith("/hyperlink"):
+            raise IngestError("DOCX contains a blocked external relationship")
+        if target_mode != "external":
+            path = PurePosixPath(target)
+            if target.startswith("/") or re.match(r"^[A-Za-z]:", target) or ".." in path.parts:
+                raise IngestError("DOCX contains an escaping internal relationship")
 
 
 def _load_existing(path: Path, request: IngestRequest, source_hash: str) -> CompletedResult:

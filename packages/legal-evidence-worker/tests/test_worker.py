@@ -214,7 +214,7 @@ class IngestionSafetyTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "source.pdf"
-            source.write_bytes(b"not a real PDF")
+            source.write_bytes(b"%PDF-1.7\n%%EOF")
             request = IngestRequest.model_validate(
                 {
                     **request_values(),
@@ -274,7 +274,7 @@ class IngestionSafetyTests(unittest.TestCase):
     def test_excessive_page_count_fails_before_normalization(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "oversized.pdf"
-            source.write_bytes(b"%PDF bounded fixture")
+            source.write_bytes(b"%PDF-1.7\n%%EOF")
             request = IngestRequest(
                 job_id="oversized-pages",
                 source_version_id="fixture-oversized-pages",

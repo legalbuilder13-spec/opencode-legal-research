@@ -80,7 +80,7 @@ export function parseSynthesis(text: string, allowedPassageIds: Set<string>): Om
   return { answer, claims }
 }
 
-function synthesisPrompt(input: SynthesisInput) {
+export function synthesisPrompt(input: SynthesisInput) {
   const evidence = input.passages.map((passage) => ({
     passageId: passage.passageId,
     sourceTitle: passage.sourceTitle,
