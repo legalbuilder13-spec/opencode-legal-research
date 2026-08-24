@@ -19,4 +19,4 @@ The Sources screen now captures public URLs rather than leaving SRC-02 as a stor
 
 ## Renderer follow-on and remaining gate
 
-ADR 0017 now supervises the desktop's isolated Electron Chromium over an authenticated loopback contract. A real public-page HTML/PNG capture and the compiled renderer-to-packaged-OCR transaction pass. ING-04 remains partial until connection-level DNS pinning and a reviewed live-web corpus verify rendered snapshots, subresource exclusions, rebinding resistance, OCR, structural/visual agreement, long pages, and supported-platform behavior.
+ADR 0017 supervises the desktop's isolated Electron Chromium over an authenticated loopback contract, and ADR 0018 pins each HTTP(S) connection through a validating proxy. Real HTTP/HTTPS HTML/PNG captures, deterministic private rebinding rejection, and the compiled renderer-to-packaged-OCR transaction pass. ING-04 remains partial until a reviewed live-web corpus verifies rendered snapshots, subresource exclusions, reserved-address coverage, OCR, structural/visual agreement, long pages, and supported-platform behavior.

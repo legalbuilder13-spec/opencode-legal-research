@@ -72,7 +72,13 @@ jobs:
 
       - name: Run desktop legal sidecar tests
         working-directory: packages/desktop
-        run: LEGAL_WORKBENCH_TEST_EXECUTABLE=/tmp/legal-workbench bun test ./src/main/legal-workbench.test.ts ./electron-builder.config.test.ts
+        run: >-
+          LEGAL_WORKBENCH_TEST_EXECUTABLE=/tmp/legal-workbench bun test
+          ./src/main/legal-workbench.test.ts
+          ./src/main/legal-web-renderer-policy.test.ts
+          ./src/main/legal-web-renderer-proxy.test.ts
+          ./src/main/legal-web-renderer-server.test.ts
+          ./electron-builder.config.test.ts
 
   evidence-worker:
     name: packaged evidence worker gates

@@ -8,6 +8,10 @@ export async function resolvePublicAddresses(hostname: string) {
 }
 
 export async function publicHttpUrl(value: string, resolver: PublicAddressResolver = resolvePublicAddresses) {
+  return (await publicHttpTarget(value, resolver)).url
+}
+
+export async function publicHttpTarget(value: string, resolver: PublicAddressResolver = resolvePublicAddresses) {
   let url: URL
   try {
     url = new URL(value)
@@ -24,16 +28,24 @@ export async function publicHttpUrl(value: string, resolver: PublicAddressResolv
   if (!addresses.length || addresses.some((address) => !isPublicAddress(address)))
     throw new Error("Local, private, and reserved network addresses are not allowed")
   url.hash = ""
-  return url
+  return { url, addresses }
 }
 
 export function isPublicAddress(value: string): boolean {
   if (value.includes(":")) {
     const address = value.toLowerCase()
-    if (address === "::" || address === "::1" || address.startsWith("fc") || address.startsWith("fd")) return false
-    if (/^fe[89ab]/.test(address) || address.startsWith("ff") || address.startsWith("2001:db8:")) return false
     const mapped = mappedIpv4(address)
-    return mapped ? isPublicAddress(mapped) : true
+    if (mapped) return isPublicAddress(mapped)
+    const groups = ipv6Groups(address)
+    if (!groups) return false
+    const first = groups[0] ?? 0
+    const second = groups[1] ?? 0
+    if (first < 0x2000 || first > 0x3fff) return false
+    if (first === 0x2001 && second <= 0x01ff) return false
+    if (first === 0x2001 && second === 0x0db8) return false
+    if (first === 0x2002) return false
+    if (first === 0x3fff && second <= 0x0fff) return false
+    return true
   }
   const parts = value.split(".").map(Number)
   if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false
@@ -59,4 +71,18 @@ function mappedIpv4(address: string) {
   const high = Number.parseInt(groups[0] ?? "", 16)
   const low = Number.parseInt(groups[1] ?? "", 16)
   return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`
+}
+
+function ipv6Groups(address: string) {
+  if (address.includes(".")) return undefined
+  const halves = address.split("::")
+  if (halves.length > 2) return undefined
+  const left = halves[0] ? halves[0].split(":") : []
+  const right = halves[1] ? halves[1].split(":") : []
+  if (halves.length === 1 && left.length !== 8) return undefined
+  if (left.length + right.length > 7) return undefined
+  const missing = halves.length === 2 ? 8 - left.length - right.length : 0
+  const values = [...left, ...Array.from({ length: missing }, () => "0"), ...right]
+  if (values.length !== 8 || values.some((group) => !/^[a-f0-9]{1,4}$/.test(group))) return undefined
+  return values.map((group) => Number.parseInt(group, 16))
 }

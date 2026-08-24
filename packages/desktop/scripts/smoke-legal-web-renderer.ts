@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises"
 import { startElectronLegalWebRenderer } from "../src/main/legal-web-renderer-electron"
 
 async function main() {
+  const captureUrl = process.env.LEGAL_RENDERER_SMOKE_URL ?? "https://example.com/"
   if (process.env.LEGAL_RENDERER_SMOKE_RESULT)
     await writeFile(process.env.LEGAL_RENDERER_SMOKE_RESULT, `${JSON.stringify({ status: "starting" })}\n`)
   const keepAlive = setInterval(() => undefined, 1_000)
@@ -17,7 +18,7 @@ async function main() {
         authorization: `Bearer ${renderer.token}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify({ url: "https://example.com/" }),
+      body: JSON.stringify({ url: captureUrl }),
     })
     const result: unknown = await response.json()
     if (!isRecord(result)) throw new Error("renderer returned a non-object capture contract")

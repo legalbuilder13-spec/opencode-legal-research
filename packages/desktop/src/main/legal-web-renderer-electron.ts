@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { BrowserWindow, session } from "electron"
 
 import { rendererRequestDecision } from "./legal-web-renderer-policy"
+import { startPinnedWebProxy } from "./legal-web-renderer-proxy"
 import { startLegalWebRendererServer, type LegalWebRenderResult } from "./legal-web-renderer-server"
 
 const MAX_REQUESTS = 200
@@ -22,6 +23,12 @@ async function renderWithElectron(value: string): Promise<LegalWebRenderResult> 
   const requested = await publicHttpUrl(value)
   const partition = `legal-web-capture-${randomUUID()}`
   const isolated = session.fromPartition(partition, { cache: false })
+  const proxy = await startPinnedWebProxy()
+  await isolated.setProxy({
+    mode: "fixed_servers",
+    proxyRules: `http=${proxy.url};https=${proxy.url}`,
+  })
+  await isolated.closeAllConnections()
   isolated.setPermissionCheckHandler(() => false)
   isolated.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
 
@@ -130,6 +137,7 @@ async function renderWithElectron(value: string): Promise<LegalWebRenderResult> 
     }
   } finally {
     if (!window.isDestroyed()) window.destroy()
+    await isolated.closeAllConnections().catch(() => undefined)
     isolated.webRequest.onBeforeRequest(null)
     isolated.webRequest.onHeadersReceived(null)
     isolated.webRequest.onBeforeRedirect(null)
@@ -138,6 +146,7 @@ async function renderWithElectron(value: string): Promise<LegalWebRenderResult> 
     isolated.setPermissionRequestHandler(null)
     await isolated.clearStorageData().catch(() => undefined)
     await isolated.clearCache().catch(() => undefined)
+    await proxy.listener.stop().catch(() => undefined)
   }
 }
 

@@ -26,4 +26,4 @@ ADR 0016 adds a relocatable, manifest-validated Python/Docling/RapidOCR resource
 
 ## Remaining packaging gates
 
-Apply OS-level sandboxing to the evidence worker; add connection-level DNS pinning and complete the renderer live-web corpus; smoke-test signed installer artifacts on every supported operating system; complete the dependency/model license audit; provide reviewed localization; and test the complete Electron window-to-answer restart flow.
+Apply OS-level sandboxing to the evidence worker; complete the renderer live-web corpus; smoke-test signed installer artifacts on every supported operating system; complete the dependency/model license audit; provide reviewed localization; and test the complete Electron window-to-answer restart flow.
