@@ -1,0 +1,47 @@
+name: legal installation matrix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  unpacked-installation:
+    name: ${{ matrix.name }} unpacked legal installation
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            runner: macos-15
+          - name: Windows x64
+            runner: windows-2025
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Setup pinned uv builder
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: 0.11.13
+          enable-cache: false
+
+      - name: Build relocatable Python, Docling, and OCR resource
+        working-directory: packages/desktop
+        timeout-minutes: 45
+        env:
+          UV: uv
+        run: bun ./scripts/build-evidence-worker.ts "${{ runner.temp }}/legal-evidence-worker"
+
+      - name: Build unpacked desktop and run installed legal sidecars
+        working-directory: packages/desktop
+        timeout-minutes: 45
+        run: bun ./scripts/build-unpacked-legal-installation.ts "${{ runner.temp }}/legal-evidence-worker"

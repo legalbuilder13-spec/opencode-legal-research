@@ -15,7 +15,7 @@ Never raise a pre-existing tighter host limit. The worker clamps each requested 
 - Unit tests prove both new limits are requested before parser construction, that the supervised server invokes them before accepting work, and that platforms without or rejecting optional identifiers retain the other controls.
 - The development environment completes all 25 worker tests, including real image OCR and the supervised JSONL process boundary.
 - A rebuilt 2.0 GB relocatable Python 3.14.3/Docling 2.121.0/RapidOCR 3.9.2 resource completes all 25 tests and an offline strict-visual OCR smoke on macOS arm64 while requesting the limits. The smoke returns three evidence items and one hashed canonical page.
-- The repository's packaged-worker CI repeats the resource build, suite, and smoke on Linux x64, where `RLIMIT_AS` is enforceable. That updated remote run is required before the Linux evidence is marked passed.
+- The repository's packaged-worker CI repeats the resource build, all 25 tests, offline OCR smoke, workbench discovery, and unpacked Electron installation gate on Linux x64, where `RLIMIT_AS` is enforceable. The complete remote workflow passed.
 
 ## Consequences and remaining gates
 
