@@ -123,3 +123,12 @@ jobs:
         run: |
           bun ./scripts/build-legal-workbench.ts /tmp/legal-workbench
           bun test ./src/main/legal-workbench.test.ts
+
+      - name: Build unpacked Linux desktop and run installed legal sidecars
+        working-directory: packages/desktop
+        timeout-minutes: 30
+        run: |
+          mv /tmp/legal-evidence-worker resources/legal-evidence-worker
+          bun run build
+          npx electron-builder --linux --x64 --dir --publish never --config electron-builder.config.ts
+          bun ./scripts/verify-legal-installation.ts dist/linux-unpacked/resources ../legal-evidence-worker/fixtures/generated/scan_page_1.png

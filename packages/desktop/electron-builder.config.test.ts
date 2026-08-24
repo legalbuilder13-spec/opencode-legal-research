@@ -36,6 +36,8 @@ for (const channel of channels) {
       to: "",
       filter: ["legal-evidence-worker/**"],
     })
+    expect(config.files).toContain("!resources/legal-workbench*")
+    expect(config.files).toContain("!resources/legal-evidence-worker/**")
   })
 }
 
