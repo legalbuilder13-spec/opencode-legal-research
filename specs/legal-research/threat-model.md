@@ -49,7 +49,7 @@ ChatGPT auth, CourtListener tokens, matter text, and raw tool payloads must not 
 
 ### Excessive or undisclosed egress
 
-Personal ChatGPT workspace use may be inappropriate for privileged matters. Before first use the UI identifies subscription-backed research and warns that matter evidence is sent to the selected ChatGPT workspace. CourtListener search disclosure is separate. Organizational policy, retention, training, and data-control decisions remain deployment prerequisites.
+Personal ChatGPT workspace use may be inappropriate for privileged matters. Before first use the UI identifies subscription-backed research and warns that matter evidence is sent to the selected ChatGPT workspace. CourtListener search disclosure is separate. A persisted local-only matter setting keeps ingestion, OCR, storage, retrieval, inspection, and export local while UI and API block ChatGPT synthesis before context construction. Organizational policy, retention, training, and data-control decisions remain deployment prerequisites.
 
 ### Availability and resource exhaustion
 
@@ -70,6 +70,7 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 - No-source-text diagnostic test.
 - Deterministic adversarial corpus with prompt injection, cross-matter, connector bypass, hash corruption, incomplete capture, and fabricated anchor cases.
 - Loopback-only default workbench binding and page-memory-only CourtListener token browser gate.
+- Matter-local-only persistence and pre-synthesis egress rejection.
 
 ## Open production gates
 

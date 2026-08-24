@@ -1,4 +1,4 @@
-# P0 release gate matrix
+# Release gate matrix
 
 Date: 2026-08-24
 
@@ -32,6 +32,7 @@ Legend: **Pass** means the stated automated or documented acceptance evidence ex
 | SEC-03                        | Pass    | A persisted first-use acknowledgement identifies the ChatGPT plan, selected-passage egress, local-only stages, and separate CourtListener query egress before drafting. | Organizational workspace policy remains a deployment decision.                 |
 | SEC-04                        | Pass    | Automated core check confirms no raw source text in default diagnostics.                                                                                                | Production telemetry audit.                                                    |
 | SEC-05                        | Pass    | Source/matter deletion names scope, requires confirmation, reports retained/shared blobs, and preserves another matter's shared evidence.                               | Physical compaction remains a separate retention operation.                    |
+| SEC-06 (P1)                   | Pass    | A persisted matter-level local-only mode preserves local ingestion/retrieval/export while UI and API block ChatGPT synthesis before the model receives context.         | A local generative model remains optional future work.                         |
 
 ## Release blockers
 

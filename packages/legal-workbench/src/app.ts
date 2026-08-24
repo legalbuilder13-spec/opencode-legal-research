@@ -117,6 +117,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
           researchAsOf: string(body.researchAsOf, "researchAsOf"),
           confidentiality: confidentiality(body.confidentiality),
           clientLabel: optionalString(body.clientLabel),
+          localOnly: optionalBoolean(body.localOnly) ?? false,
         })
         return Response.json(matter, { status: 201 })
       }
@@ -141,6 +142,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
             researchAsOf: optionalString(body.researchAsOf),
             confidentiality: optionalConfidentiality(body.confidentiality),
             clientLabel: optionalString(body.clientLabel),
+            localOnly: optionalBoolean(body.localOnly),
           }),
         )
       }
@@ -300,6 +302,8 @@ export async function createWorkbench(options: WorkbenchOptions) {
       if (answersMatch && request.method === "POST") {
         const matterId = pathParameter(answersMatch)
         const matter = core.matter(matterId)
+        if (matter.localOnly)
+          throw new Error("ChatGPT drafting is disabled because this matter is local-only")
         const body = object(await request.json(), "answer request")
         const question = string(body.question, "question")
         const proceduralPosture = optionalString(body.proceduralPosture)
@@ -432,6 +436,12 @@ function confidentiality(value: unknown): "public" | "confidential" | "privilege
 function optionalConfidentiality(value: unknown) {
   if (value === undefined) return undefined
   return confidentiality(value)
+}
+
+function optionalBoolean(value: unknown) {
+  if (value === undefined) return undefined
+  if (typeof value !== "boolean") throw new Error("Invalid boolean value")
+  return value
 }
 
 function evidenceMode(value: unknown): "adaptive" | "strict_visual" {

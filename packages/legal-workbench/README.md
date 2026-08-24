@@ -17,6 +17,8 @@ The primary OpenCode app also exposes `/legal-research` and a command-palette en
 
 The workbench reads the current Codex/ChatGPT login through `codex app-server`; it does not require `OPENAI_API_KEY`. For deterministic local UI testing only, set `LEGAL_WORKBENCH_FIXTURE_ACCOUNT=1`.
 
+Each matter can be marked local-only. Local ingestion, OCR, storage, retrieval, inspection, and export continue to work, while the UI and API block ChatGPT drafting before any model context is constructed. CourtListener query egress remains a separate explicit action. The alpha does not claim a local generative fallback unless a future packaged local model is configured.
+
 Data defaults to `packages/legal-workbench/.data`. Set `LEGAL_RESEARCH_DATA_DIR` to use another local directory. Original source bytes live in a content-addressed blob directory and are not duplicated into messages or retrieval logs.
 
 The Sources screen accepts pasted text plus PDF, PNG/JPEG, HTML, and DOCX uploads. Visual ingestion runs the pinned local Docling/Tesseract worker in adaptive or strict-visual mode and preserves canonical page images and exact regions. HTML and DOCX use an inert structural Docling path with stable section paths and character offsets. A completed source can be reprocessed into another immutable representation without replacing prior evidence. Failed or partial work stays out of model context. The repository's evidence-worker `.venv` must be installed as described in `packages/legal-evidence-worker/README.md`.

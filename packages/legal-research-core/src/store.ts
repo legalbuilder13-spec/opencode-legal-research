@@ -11,6 +11,7 @@ export interface MatterInput {
   researchAsOf: string
   confidentiality: "public" | "confidential" | "privileged"
   clientLabel?: string
+  localOnly?: boolean
 }
 
 export interface MaterializeInput {
@@ -81,6 +82,7 @@ interface MatterRow {
   confidentiality: string
   client_label: string | null
   status: MatterStatus
+  local_only: number
 }
 
 interface SourceVersionRow {
@@ -117,8 +119,8 @@ export class LegalResearchStore {
     this.db
       .query(
         `INSERT INTO matter
-          (id, name, jurisdiction, research_as_of, confidentiality, client_label, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+          (id, name, jurisdiction, research_as_of, confidentiality, client_label, local_only, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
       )
       .run(
         id,
@@ -127,6 +129,7 @@ export class LegalResearchStore {
         input.researchAsOf,
         input.confidentiality,
         input.clientLabel?.trim() || null,
+        input.localOnly ? 1 : 0,
         now,
         now,
       )
@@ -136,7 +139,7 @@ export class LegalResearchStore {
   matter(id: string) {
     const row = this.db
       .query<MatterRow, [string]>(
-        `SELECT id, name, jurisdiction, research_as_of, confidentiality, client_label, status
+        `SELECT id, name, jurisdiction, research_as_of, confidentiality, client_label, status, local_only
         FROM matter WHERE id = ?`,
       )
       .get(id)
@@ -149,6 +152,7 @@ export class LegalResearchStore {
       confidentiality: row.confidentiality,
       clientLabel: row.client_label,
       status: row.status,
+      localOnly: Boolean(row.local_only),
     }
   }
 
@@ -156,7 +160,7 @@ export class LegalResearchStore {
     const secondStatus = input.includeArchived ? "archived" : "active"
     return this.db
       .query<MatterRow, [string, string]>(
-        `SELECT id, name, jurisdiction, research_as_of, confidentiality, client_label, status
+        `SELECT id, name, jurisdiction, research_as_of, confidentiality, client_label, status, local_only
         FROM matter WHERE status IN (?, ?) ORDER BY updated_at DESC`,
       )
       .all("active", secondStatus)
@@ -168,6 +172,7 @@ export class LegalResearchStore {
         confidentiality: row.confidentiality,
         clientLabel: row.client_label,
         status: row.status,
+        localOnly: Boolean(row.local_only),
       }))
   }
 
@@ -180,12 +185,13 @@ export class LegalResearchStore {
       researchAsOf: input.researchAsOf ?? current.researchAsOf,
       confidentiality: input.confidentiality ?? current.confidentiality,
       clientLabel: input.clientLabel === undefined ? current.clientLabel : input.clientLabel,
+      localOnly: input.localOnly ?? current.localOnly,
     }
     validateDate(next.researchAsOf)
     this.db
       .query(
         `UPDATE matter SET name = ?, jurisdiction = ?, research_as_of = ?, confidentiality = ?,
-          client_label = ?, updated_at = ? WHERE id = ?`,
+          client_label = ?, local_only = ?, updated_at = ? WHERE id = ?`,
       )
       .run(
         requiredText(next.name, "matter name"),
@@ -193,6 +199,7 @@ export class LegalResearchStore {
         next.researchAsOf,
         next.confidentiality,
         next.clientLabel?.trim() || null,
+        next.localOnly ? 1 : 0,
         new Date().toISOString(),
         id,
       )
@@ -690,6 +697,7 @@ export class LegalResearchStore {
         research_as_of TEXT NOT NULL,
         confidentiality TEXT NOT NULL,
         client_label TEXT,
+        local_only INTEGER NOT NULL DEFAULT 0,
         status TEXT NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -837,6 +845,12 @@ export class LegalResearchStore {
       .map((column) => column.name)
     if (!representationColumns.includes("input_blob_sha256"))
       this.db.exec("ALTER TABLE representation ADD COLUMN input_blob_sha256 TEXT")
+    const matterColumns = this.db
+      .query<{ name: string }, []>("PRAGMA table_info(matter)")
+      .all()
+      .map((column) => column.name)
+    if (!matterColumns.includes("local_only"))
+      this.db.exec("ALTER TABLE matter ADD COLUMN local_only INTEGER NOT NULL DEFAULT 0")
   }
 }
 

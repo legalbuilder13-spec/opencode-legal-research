@@ -32,7 +32,7 @@ describe("matter lifecycle and isolation", () => {
     const directory = await mkdtemp(join(tmpdir(), "legal-matter-restart-"))
     const databasePath = join(directory, "matter.sqlite")
     const first = await fixture(databasePath)
-    first.store.updateMatter(first.matter.id, { name: "Renamed matter", jurisdiction: "S.D.N.Y." })
+    first.store.updateMatter(first.matter.id, { name: "Renamed matter", jurisdiction: "S.D.N.Y.", localOnly: true })
     first.store.setMatterStatus(first.matter.id, "archived")
     first.store.close()
     stores.splice(stores.indexOf(first.store), 1)
@@ -45,6 +45,7 @@ describe("matter lifecycle and isolation", () => {
       researchAsOf: "2026-08-23",
       confidentiality: "privileged",
       status: "archived",
+      localOnly: true,
     })
   })
 

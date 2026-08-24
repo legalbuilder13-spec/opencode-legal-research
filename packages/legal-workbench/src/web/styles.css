@@ -38,6 +38,18 @@ textarea,
 select {
   font: inherit;
 }
+.matter-mode-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.matter-mode-check input {
+  margin: 2px 0 0;
+}
 button,
 a {
   -webkit-tap-highlight-color: transparent;

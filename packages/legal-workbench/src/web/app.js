@@ -46,6 +46,7 @@ $("#matter-form").addEventListener("submit", async (event) => {
       jurisdiction: $("#jurisdiction").value,
       researchAsOf: $("#research-date").value,
       confidentiality: $("#confidentiality-input").value,
+      localOnly: $("#local-only-input").checked,
     }),
   })
   state.matters.unshift(matter)
@@ -71,6 +72,7 @@ $("#matter-edit-form").addEventListener("submit", async (event) => {
       researchAsOf: $("#matter-edit-date").value,
       clientLabel: $("#matter-edit-client").value,
       confidentiality: $("#matter-edit-confidentiality").value,
+      localOnly: $("#matter-edit-local-only").checked,
     }),
   })
   replaceMatter(updated)
@@ -209,6 +211,7 @@ $("#research-button").addEventListener("click", async () => {
   const matter = currentMatter()
   const question = $("#question").value.trim()
   if (!matter) return toast("Create or select a matter first", true)
+  if (matter.localOnly) return toast("ChatGPT drafting is disabled for this local-only matter", true)
   if (!question) return toast("Enter a focused legal question", true)
   $("#research-button").disabled = true
   $("#research-button").textContent = "Researching with ChatGPT…"
@@ -266,7 +269,8 @@ async function loadAccount() {
     retry.addEventListener("click", () => void loadAccount())
     root.append(retry)
   }
-  if (account.status === "ready" && !state.egressAcknowledged) $("#egress-consent").hidden = false
+  if (account.status === "ready" && !state.egressAcknowledged && !currentMatter()?.localOnly)
+    $("#egress-consent").hidden = false
   syncResearchAvailability()
 }
 
@@ -277,9 +281,12 @@ function resetLabel(rateLimit) {
 
 function syncResearchAvailability() {
   const button = $("#research-button")
-  button.disabled = state.accountStatus !== "ready" || !state.egressAcknowledged
+  const localOnly = Boolean(currentMatter()?.localOnly)
+  button.disabled = localOnly || state.accountStatus !== "ready" || !state.egressAcknowledged
   button.title =
-    state.accountStatus !== "ready"
+    localOnly
+      ? "ChatGPT drafting is disabled for this local-only matter"
+      : state.accountStatus !== "ready"
       ? "A ready ChatGPT subscription is required"
       : state.egressAcknowledged
         ? ""
@@ -298,7 +305,12 @@ function renderCurrentMatter() {
   const matter = currentMatter()
   $("#matter-picker").textContent = matter?.name ?? "Create your first matter"
   $("#confidentiality").textContent = matter ? matter.confidentiality : "No matter selected"
-  $("#as-of").textContent = matter ? `As of ${matter.researchAsOf} · ${matter.jurisdiction}` : "Research date not set"
+  $("#as-of").textContent = matter
+    ? `As of ${matter.researchAsOf} · ${matter.jurisdiction}${matter.localOnly ? " · Local-only" : ""}`
+    : "Research date not set"
+  $("#research-egress-note").textContent = matter?.localOnly
+    ? "Local ingestion, OCR, storage, and retrieval remain available. ChatGPT drafting is disabled and matter evidence is not sent to ChatGPT. CourtListener queries still leave the device only when you use that source."
+    : "Matter evidence is sent only to the selected ChatGPT workspace after acknowledgement. CourtListener searches disclose query egress separately."
   $("#export-link").classList.toggle("disabled", !matter)
   $("#export-link").href = matter ? `/api/matters/${encodeURIComponent(matter.id)}/export` : "#"
   $("#matter-edit-form").hidden = !matter
@@ -308,8 +320,11 @@ function renderCurrentMatter() {
     $("#matter-edit-date").value = matter.researchAsOf
     $("#matter-edit-client").value = matter.clientLabel ?? ""
     $("#matter-edit-confidentiality").value = matter.confidentiality
+    $("#matter-edit-local-only").checked = Boolean(matter.localOnly)
     $("#matter-status-button").textContent = matter.status === "active" ? "Archive matter" : "Reopen matter"
   }
+  if (matter?.localOnly) $("#egress-consent").hidden = true
+  syncResearchAvailability()
 }
 
 function replaceMatter(updated) {
@@ -328,7 +343,7 @@ function renderMatters() {
       const title = document.createElement("strong")
       title.textContent = matter.name
       const meta = document.createElement("span")
-      meta.textContent = `${matter.jurisdiction} · ${matter.researchAsOf} · ${matter.status}`
+      meta.textContent = `${matter.jurisdiction} · ${matter.researchAsOf} · ${matter.status}${matter.localOnly ? " · local-only" : ""}`
       const label = document.createElement("small")
       label.textContent = matter.confidentiality
       button.append(title, meta, label)

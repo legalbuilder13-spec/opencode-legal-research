@@ -470,6 +470,48 @@ describe("legal workbench integration", () => {
     expect(receipt).toContain(hashBytes(screenshot))
     expect(receipt).not.toContain("BYPASS_POLICY")
   })
+
+  test("WB-10 local-only matters block ChatGPT synthesis without blocking matter persistence", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "legal-workbench-local-only-"))
+    let synthesisCalls = 0
+    const workbench = await createWorkbench({
+      dataRoot,
+      fixtureAccount: true,
+      workerRunner: fixtureWorker,
+      synthesizer: async () => {
+        synthesisCalls += 1
+        throw new Error("Local-only mode must block before synthesis")
+      },
+    })
+    close.push(workbench.close)
+    const created = await call(workbench.handler, "/api/matters", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Local-only privileged matter",
+        jurisdiction: "U.S.",
+        researchAsOf: "2026-08-24",
+        confidentiality: "privileged",
+        localOnly: true,
+      }),
+    })
+    const matter = record(await created.json(), "matter")
+    const matterId = string(matter.id, "matter id")
+    expect(matter.localOnly).toBe(true)
+    const blocked = await call(workbench.handler, `/api/matters/${matterId}/answers`, {
+      method: "POST",
+      body: JSON.stringify({ question: "Can this leave the device?" }),
+    })
+    expect(blocked.status).toBe(400)
+    expect(await blocked.json()).toEqual({
+      error: "ChatGPT drafting is disabled because this matter is local-only",
+    })
+    expect(synthesisCalls).toBe(0)
+    const updated = await call(workbench.handler, `/api/matters/${matterId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ localOnly: false }),
+    })
+    expect(await updated.json()).toHaveProperty("localOnly", false)
+  })
 })
 
 function record(value: unknown, name: string): Record<string, unknown> {

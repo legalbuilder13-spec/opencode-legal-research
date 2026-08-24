@@ -17,6 +17,7 @@ Last updated: 2026-08-24
 | Local legal workflow UI                           | Alpha integration passed      | [`milestone-results/workbench-integration.md`](./milestone-results/workbench-integration.md)             |
 | Unified subscription answer transaction           | Live synthetic pass           | [`milestone-results/unified-answer-transaction.md`](./milestone-results/unified-answer-transaction.md)   |
 | Recovery and destructive lifecycle controls       | Synthetic product gate passed | [`milestone-results/g-recovery-lifecycle.md`](./milestone-results/g-recovery-lifecycle.md)               |
+| Matter-scoped local-only mode                     | Synthetic product gate passed | [`adr/0012-matter-local-only-mode.md`](./adr/0012-matter-local-only-mode.md)                               |
 | Parser resource and malformed-input hardening      | Local security gate passed    | [`threat-model.md`](./threat-model.md)                                                                   |
 | Primary OpenCode shell route                      | Alpha route implemented       | [`adr/0010-primary-shell-route.md`](./adr/0010-primary-shell-route.md)                                   |
 | Desktop sidecar/install packaging                 | Pending                       | ADR 0010                                                                                                 |
