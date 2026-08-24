@@ -33,6 +33,8 @@ The model receives only support-eligible, matter-scoped passage envelopes. It mu
 
 This remains an alpha integration workbench, not a production legal opinion generator. Synthetic transaction tests do not establish legal accuracy, research completeness, or treatment validity. The remaining product work is the attorney-reviewed corpus, renderer live-web/security evaluation, production worker sandboxing and cross-platform signed-installer validation, live CourtListener token evaluation, dependency/model license review, and reviewed localization.
 
+The candidate live-web gate can be run with `bun --cwd packages/desktop evaluate:legal-web`; set `LEGAL_EVIDENCE_WORKER_DIR` to include packaged offline OCR and `LEGAL_WEB_CORPUS_OUTPUT` to preserve the HTML, PNG, OCR assets, hashes, and receipt for review.
+
 CourtListener materialization requires a user-supplied CourtListener token. The token is held in the page only, is cleared on reload, and is not stored in matter data, local storage, or exports. Search snippets remain leads only; only materialized full opinions may support verified claims.
 
 Materialized CourtListener source cards display the court, jurisdiction, decision date, citation, precedential status, metadata provider, and matter research-as-of date. Citation-graph data is labeled derived and is never presented as editorial good-law treatment.

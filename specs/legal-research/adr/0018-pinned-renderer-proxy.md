@@ -18,6 +18,7 @@ The proxy permits no request bodies, upgrades, non-GET/HEAD HTTP requests, nonst
 - A rebinding fixture returns a public answer for its first tunnel and a private answer for its next lookup; the proxy permits the first connection, rejects the second before dialing, and also rejects a subsequent plain HTTP request.
 - Existing policy tests still reject private URLs, writes, frames, and active exfiltration channels before the proxy boundary.
 - Real hidden Electron 42.3.3 Chromium captures succeed through the proxy for both `https://example.com/` and `http://example.com/`, preserving the expected HTML and a 44,232-byte PNG.
+- The candidate live-web corpus passes a control page, Cornell's U.S. Constitution index, and the Supreme Court opinions index through pinned rendering and packaged offline OCR, preserving 129 provenance-bearing OCR items and exact required text.
 - The desktop CI gate now runs the policy, pinning-proxy, authenticated-renderer-service, compiled-workbench, and packaging tests together.
 
 ## Consequences and remaining gates

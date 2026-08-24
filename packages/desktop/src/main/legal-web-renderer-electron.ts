@@ -125,6 +125,9 @@ async function renderWithElectron(value: string): Promise<LegalWebRenderResult> 
       { x: 0, y: 0, width: dimensions.width, height: dimensions.height },
       { stayHidden: true, stayAwake: true },
     )
+    const imageSize = image.getSize()
+    if (imageSize.width * imageSize.height > MAX_PIXELS)
+      throw new Error(`Rendered screenshot exceeds the ${MAX_PIXELS}-pixel capture limit`)
     const screenshot = image.toPNG()
     if (!screenshot.byteLength || screenshot.byteLength > MAX_SCREENSHOT_BYTES)
       throw new Error(`Rendered screenshot is empty or exceeds ${MAX_SCREENSHOT_BYTES} bytes`)

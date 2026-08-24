@@ -1,0 +1,38 @@
+{
+  "contractVersion": 1,
+  "corpusId": "legalbuilder-live-web-v0",
+  "reviewStatus": "candidate",
+  "reviewedBy": [],
+  "cases": [
+    {
+      "id": "control-example-domain",
+      "sourceClass": "control",
+      "url": "https://example.com/",
+      "allowedFinalHosts": ["example.com"],
+      "expectedHtmlText": ["Example Domain", "documentation examples"],
+      "expectedOcrText": ["Example Domain"],
+      "minimumScreenshotBytes": 10000,
+      "maximumRenderDurationMs": 30000
+    },
+    {
+      "id": "cornell-us-constitution-index",
+      "sourceClass": "secondary-legal-reference",
+      "url": "https://www.law.cornell.edu/constitution/index.html",
+      "allowedFinalHosts": ["www.law.cornell.edu"],
+      "expectedHtmlText": ["U.S. Constitution", "The Constitution of the United States of America", "Article III"],
+      "expectedOcrText": ["U.S. Constitution", "Article III"],
+      "minimumScreenshotBytes": 50000,
+      "maximumRenderDurationMs": 30000
+    },
+    {
+      "id": "scotus-opinions-index",
+      "sourceClass": "primary-government",
+      "url": "https://www.supremecourt.gov/opinions/opinions.aspx",
+      "allowedFinalHosts": ["www.supremecourt.gov"],
+      "expectedHtmlText": ["Opinions of the Court", "The term “opinions”", "Reporter of Decisions"],
+      "expectedOcrText": ["Opinions", "Supreme Court"],
+      "minimumScreenshotBytes": 50000,
+      "maximumRenderDurationMs": 30000
+    }
+  ]
+}
