@@ -60,6 +60,17 @@ export interface RepresentationInput {
   passages: PassageInput[]
 }
 
+export interface LegalMetadataInput {
+  sourceVersionId: string
+  jurisdiction?: string
+  court?: string
+  decisionDate?: string
+  authorityType: "case" | "statute" | "regulation" | "secondary" | "matter-document" | "web"
+  precedentialStatus?: "published" | "unpublished" | "unknown"
+  citation?: string
+  fullSource?: boolean
+}
+
 interface MatterRow {
   id: string
   name: string
@@ -285,6 +296,9 @@ export class LegalResearchStore {
             end,
             passage.sectionPath ?? null,
           )
+        this.db
+          .query("INSERT INTO passage_fts (passage_id, matter_id, text) VALUES (?, ?, ?)")
+          .run(passageId, version.matter_id, passage.text)
         for (const region of passage.regions ?? []) {
           this.db
             .query(
@@ -309,6 +323,37 @@ export class LegalResearchStore {
     })
     write()
     return representationId
+  }
+
+  setLegalMetadata(input: LegalMetadataInput) {
+    const version = this.sourceVersion(input.sourceVersionId)
+    if (input.decisionDate) validateDate(input.decisionDate)
+    this.db
+      .query(
+        `INSERT INTO legal_metadata
+          (source_version_id, matter_id, jurisdiction, court, decision_date, authority_type,
+           precedential_status, citation, full_source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source_version_id) DO UPDATE SET
+          jurisdiction = excluded.jurisdiction,
+          court = excluded.court,
+          decision_date = excluded.decision_date,
+          authority_type = excluded.authority_type,
+          precedential_status = excluded.precedential_status,
+          citation = excluded.citation,
+          full_source = excluded.full_source`,
+      )
+      .run(
+        version.id,
+        version.matter_id,
+        input.jurisdiction ?? null,
+        input.court ?? null,
+        input.decisionDate ?? null,
+        input.authorityType,
+        input.precedentialStatus ?? "unknown",
+        input.citation ?? null,
+        input.fullSource === false ? 0 : 1,
+      )
   }
 
   passagesForMatter(matterId: string) {
@@ -510,6 +555,12 @@ export class LegalResearchStore {
         section_path TEXT
       );
       CREATE INDEX IF NOT EXISTS passage_matter ON passage(matter_id);
+      CREATE VIRTUAL TABLE IF NOT EXISTS passage_fts USING fts5(
+        passage_id UNINDEXED,
+        matter_id UNINDEXED,
+        text,
+        tokenize = 'unicode61 remove_diacritics 2'
+      );
       CREATE TABLE IF NOT EXISTS passage_region (
         id TEXT PRIMARY KEY,
         passage_id TEXT NOT NULL REFERENCES passage(id),
@@ -521,6 +572,43 @@ export class LegalResearchStore {
         right REAL NOT NULL,
         bottom REAL NOT NULL,
         image_blob_sha256 TEXT
+      );
+      CREATE TABLE IF NOT EXISTS legal_metadata (
+        source_version_id TEXT PRIMARY KEY REFERENCES source_version(id),
+        matter_id TEXT NOT NULL REFERENCES matter(id),
+        jurisdiction TEXT,
+        court TEXT,
+        decision_date TEXT,
+        authority_type TEXT NOT NULL,
+        precedential_status TEXT NOT NULL,
+        citation TEXT,
+        full_source INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE TABLE IF NOT EXISTS retrieval_run (
+        id TEXT PRIMARY KEY,
+        matter_id TEXT NOT NULL REFERENCES matter(id),
+        query TEXT NOT NULL,
+        filters_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS retrieval_candidate (
+        retrieval_run_id TEXT NOT NULL REFERENCES retrieval_run(id),
+        passage_id TEXT NOT NULL REFERENCES passage(id),
+        lexical_rank INTEGER,
+        semantic_rank INTEGER,
+        fused_score REAL NOT NULL,
+        rerank_score REAL NOT NULL,
+        selected INTEGER NOT NULL,
+        sent_to_model INTEGER NOT NULL,
+        PRIMARY KEY(retrieval_run_id, passage_id)
+      );
+      CREATE TABLE IF NOT EXISTS authority_lead (
+        id TEXT PRIMARY KEY,
+        matter_id TEXT NOT NULL REFERENCES matter(id),
+        from_source_version_id TEXT NOT NULL REFERENCES source_version(id),
+        to_source_version_id TEXT NOT NULL REFERENCES source_version(id),
+        relationship TEXT NOT NULL,
+        created_at TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS excluded_content (
         id TEXT PRIMARY KEY,

@@ -9,7 +9,7 @@ Last updated: 2026-08-23
 | TS-03 citation finalization                       | Passed                       | [`spike-results/ts-03.md`](./spike-results/ts-03.md)                                       |
 | Cross-spike composed gate                         | Passed on synthetic evidence | [`spike-results/composed-gate.md`](./spike-results/composed-gate.md)                       |
 | Milestone B evidence substrate                    | Core exit passed             | [`milestone-results/b-evidence-substrate.md`](./milestone-results/b-evidence-substrate.md) |
-| Milestone D local retrieval and research planning | In progress                  | —                                                                                          |
+| Milestone D local retrieval and research planning | Synthetic exit passed        | [`milestone-results/d-local-retrieval.md`](./milestone-results/d-local-retrieval.md)       |
 | Milestone F CourtListener research alpha          | Pending                      | —                                                                                          |
 | Main OpenCode legal workflow UI                   | Pending                      | —                                                                                          |
 | Attorney-reviewed release corpus                  | Pending external review      | Evaluation plan                                                                            |
