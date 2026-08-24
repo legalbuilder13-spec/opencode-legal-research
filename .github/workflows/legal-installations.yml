@@ -2,6 +2,20 @@ name: legal installation matrix
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - legal-research
+    paths:
+      - ".github/workflows/legal-installations.yml"
+      - "packages/desktop/electron-builder.config*"
+      - "packages/desktop/scripts/build-evidence-worker.ts"
+      - "packages/desktop/scripts/build-legal-workbench.ts"
+      - "packages/desktop/scripts/build-unpacked-legal-installation.ts"
+      - "packages/desktop/scripts/verify-legal-installation.ts"
+      - "packages/legal-evidence-worker/**"
+      - "packages/legal-workbench/**"
+      - "bun.lock"
+      - "package.json"
 
 permissions:
   contents: read
