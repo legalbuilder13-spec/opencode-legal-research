@@ -31,6 +31,13 @@ async function call(handler: (request: Request) => Promise<Response>, path: stri
 describe("legal workbench integration", () => {
   test("WB-01 serves the usable shell and subscription fixture", async () => {
     const { handler } = await fixture()
+    const health = await call(handler, "/api/health")
+    expect(await health.json()).toMatchObject({
+      service: "legalbuilder-legal-workbench",
+      contractVersion: 1,
+      status: "ok",
+    })
+
     const shell = await call(handler, "/")
     expect(shell.status).toBe(200)
     expect(await shell.text()).toContain("Review exact evidence")
@@ -140,9 +147,9 @@ describe("legal workbench integration", () => {
     ).map((source) => record(source, "source after reprocessing"))
     const reprocessedPdf = sourcesAfterReprocess.find((source) => source.mime === "application/pdf")
     expect(
-        array(reprocessedPdf?.representations, "PDF representations")
-          .map((value) => record(value, "representation").mode)
-          .sort((left, right) => String(left).localeCompare(String(right))),
+      array(reprocessedPdf?.representations, "PDF representations")
+        .map((value) => record(value, "representation").mode)
+        .sort((left, right) => String(left).localeCompare(String(right))),
     ).toEqual(["adaptive", "strict_visual"])
 
     const plan = await call(handler, `/api/matters/${matterId}/plan`, {
@@ -458,7 +465,11 @@ describe("legal workbench integration", () => {
     const matterId = string(record(await createMatter.json(), "matter").id, "matter id")
     const capture = await call(workbench.handler, `/api/matters/${matterId}/web`, {
       method: "POST",
-      body: JSON.stringify({ url: "https://law.example/start#fragment", mode: "strict_visual", languageHints: ["eng"] }),
+      body: JSON.stringify({
+        url: "https://law.example/start#fragment",
+        mode: "strict_visual",
+        languageHints: ["eng"],
+      }),
     })
     expect(capture.status).toBe(201)
     expect(await capture.json()).toMatchObject({
@@ -473,7 +484,9 @@ describe("legal workbench integration", () => {
     expect(sources).toHaveLength(1)
     const source = record(sources[0], "web source")
     expect(source).toMatchObject({ kind: "web", mime: "text/html", capture_status: "complete" })
-    const representations = array(source.representations, "representations").map((value) => record(value, "representation"))
+    const representations = array(source.representations, "representations").map((value) =>
+      record(value, "representation"),
+    )
     expect(representations.map((representation) => representation.mode)).toEqual(["structural", "strict_visual"])
     expect(new Set(representations.map((representation) => representation.inputBlobSha256)).size).toBe(2)
     const receipt = await (await call(workbench.handler, `/api/matters/${matterId}/export`)).text()

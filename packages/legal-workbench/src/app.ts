@@ -16,6 +16,9 @@ import { join, resolve } from "node:path"
 import { EvidenceIngestionService, type EvidenceMime, type EvidenceWorkerRunner } from "./ingestion"
 import { renderAnswerMarkdown } from "./markdown-export"
 import { fixtureSynthesizer, parseSynthesis, subscriptionSynthesizer, type WorkbenchSynthesizer } from "./synthesis"
+import appJavascript from "./web/app.js" with { type: "text" }
+import indexHtml from "./web/index.html" with { type: "text" }
+import stylesCss from "./web/styles.css" with { type: "text" }
 import {
   WebCaptureService,
   WebCaptureUnavailableError,
@@ -27,12 +30,30 @@ import {
 export interface WorkbenchOptions {
   dataRoot: string
   fixtureAccount?: boolean
+  citationDemo?: boolean
   synthesizer?: WorkbenchSynthesizer
   workerRunner?: EvidenceWorkerRunner
   courtListener?: { fetcher?: CourtListenerFetcher; baseUrl?: string }
   webCapture?: { fetcher?: WebCaptureFetcher; resolver?: WebAddressResolver; renderer?: WebCaptureRenderer }
   accountConnect?: () => Promise<AccountClient>
+  runtimeCapabilities?: WorkbenchRuntimeCapabilities
 }
+
+export interface WorkbenchRuntimeCapabilities {
+  evidenceWorker: { status: "ready" | "unavailable"; detail: string }
+  strictVisualWebRenderer: { status: "ready" | "unavailable"; detail: string }
+}
+
+const defaultRuntimeCapabilities: WorkbenchRuntimeCapabilities = {
+  evidenceWorker: { status: "unavailable", detail: "No supervised evidence worker was configured" },
+  strictVisualWebRenderer: { status: "unavailable", detail: "No supervised browser renderer was configured" },
+}
+
+const staticAssets = {
+  "index.html": { body: indexHtml, type: "text/html; charset=utf-8" },
+  "app.js": { body: appJavascript, type: "text/javascript; charset=utf-8" },
+  "styles.css": { body: stylesCss, type: "text/css; charset=utf-8" },
+} as const
 
 type AccountClient = Pick<
   Awaited<ReturnType<typeof connect>>,
@@ -64,8 +85,8 @@ export async function createWorkbench(options: WorkbenchOptions) {
   const synthesize =
     options.synthesizer ?? (options.fixtureAccount ? fixtureSynthesizer : subscriptionSynthesizer(dataRoot))
   const citations = new CitationStore()
-  const citationDemo = await seedDemo(citations)
-  const webRoot = join(import.meta.dir, "web")
+  const citationDemo = options.citationDemo === false ? null : await seedDemo(citations)
+  const runtimeCapabilities = options.runtimeCapabilities ?? defaultRuntimeCapabilities
 
   async function bootstrap() {
     const matters = core.listMatters({ includeArchived: true })
@@ -75,6 +96,13 @@ export async function createWorkbench(options: WorkbenchOptions) {
   async function handler(request: Request): Promise<Response> {
     const url = new URL(request.url)
     try {
+      if (url.pathname === "/api/health" && request.method === "GET")
+        return Response.json({
+          service: "legalbuilder-legal-workbench",
+          contractVersion: 1,
+          status: "ok",
+          capabilities: runtimeCapabilities,
+        })
       if (url.pathname === "/api/bootstrap" && request.method === "GET") return Response.json(await bootstrap())
       if (url.pathname === "/api/account" && request.method === "GET") {
         if (options.fixtureAccount)
@@ -136,7 +164,10 @@ export async function createWorkbench(options: WorkbenchOptions) {
         try {
           client = await connectAccount()
           await client.logout()
-          return Response.json({ status: "signed-out", retainedMatterCount: core.listMatters({ includeArchived: true }).length })
+          return Response.json({
+            status: "signed-out",
+            retainedMatterCount: core.listMatters({ includeArchived: true }).length,
+          })
         } finally {
           await client?.close()
         }
@@ -381,8 +412,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
       if (answersMatch && request.method === "POST") {
         const matterId = pathParameter(answersMatch)
         const matter = core.matter(matterId)
-        if (matter.localOnly)
-          throw new Error("ChatGPT drafting is disabled because this matter is local-only")
+        if (matter.localOnly) throw new Error("ChatGPT drafting is disabled because this matter is local-only")
         const body = object(await request.json(), "answer request")
         const question = string(body.question, "question")
         const proceduralPosture = optionalString(body.proceduralPosture)
@@ -476,8 +506,9 @@ export async function createWorkbench(options: WorkbenchOptions) {
       }
       if (request.method !== "GET") return jsonError("Method not allowed", 405)
       const staticPath = url.pathname === "/" ? "index.html" : url.pathname.slice(1)
-      if (!/^(index\.html|app\.js|styles\.css)$/.test(staticPath)) return jsonError("Not found", 404)
-      return new Response(Bun.file(join(webRoot, staticPath)))
+      if (!(staticPath in staticAssets)) return jsonError("Not found", 404)
+      const asset = staticAssets[staticPath as keyof typeof staticAssets]
+      return new Response(asset.body as string, { headers: { "Content-Type": asset.type } })
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected workbench error"
       if (error instanceof CourtListenerError)

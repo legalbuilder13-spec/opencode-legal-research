@@ -49,6 +49,7 @@ import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
 import { startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
+import { spawnLegalWorkbench } from "./legal-workbench"
 
 const APP_NAMES: Record<string, string> = {
   dev: "OpenCode Dev",
@@ -66,6 +67,7 @@ const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 
 let logger: ReturnType<typeof initLogging>
 let server: SidecarListener | null = null
+let legalWorkbench: SidecarListener | null = null
 
 const pendingDeepLinks: string[] = []
 
@@ -89,6 +91,13 @@ async function killSidecar() {
   if (!server) return
   const current = server
   server = null
+  await current.stop()
+}
+
+async function killLegalWorkbench() {
+  if (!legalWorkbench) return
+  const current = legalWorkbench
+  legalWorkbench = null
   await current.stop()
 }
 
@@ -165,7 +174,7 @@ const main = Effect.gen(function* () {
     },
   )
   const stopSidecars = async () => {
-    await killSidecar()
+    await Promise.all([killSidecar(), killLegalWorkbench()])
     wslServers.stopAll()
   }
   const relaunch = () => {
@@ -253,6 +262,26 @@ const main = Effect.gen(function* () {
   const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
 
   yield* Effect.promise(() => app.whenReady())
+
+  try {
+    const result = yield* Effect.promise(() =>
+      spawnLegalWorkbench({
+        packaged: app.isPackaged,
+        resourcesPath: app.isPackaged ? process.resourcesPath : join(import.meta.dirname, "../../resources"),
+        userDataPath: app.getPath("userData"),
+        onStdout: (message) => writeLog("legal-workbench", "stdout", { message }),
+        onStderr: (message) => writeLog("legal-workbench", "stderr", { message }, "warn"),
+        onExit: (code, signal) => writeLog("legal-workbench", "sidecar exited", { code, signal }, "warn"),
+      }),
+    )
+    legalWorkbench = result.listener
+    logger.log("legal workbench ready", {
+      reused: result.reused,
+      capabilities: result.health.capabilities,
+    })
+  } catch (error) {
+    logger.error("legal workbench failed to start", error)
+  }
 
   if (!TEST_ONBOARDING) migrate()
   yield* Effect.promise(() => cleanupStoreFiles(app.getPath("userData"))).pipe(

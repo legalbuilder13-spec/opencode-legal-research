@@ -231,8 +231,7 @@ export class EvidenceIngestionService {
       const result = workerResult(await this.runner(request))
       if (result.job_id !== jobId) throw new Error("Evidence worker returned the wrong job ID")
       if (result.source_version_id !== version.id) throw new Error("Evidence worker returned the wrong source version")
-      if (result.source_hash !== artifact.blobSha256)
-        throw new Error("Evidence worker returned the wrong source hash")
+      if (result.source_hash !== artifact.blobSha256) throw new Error("Evidence worker returned the wrong source hash")
       if (result.ocr_mode !== input.mode) throw new Error("Evidence worker returned the wrong parsing mode")
       if (result.page_count !== result.pages.length) throw new Error("Evidence worker returned a page-count mismatch")
       if (hashText(result.items.map((item) => item.text).join("\n\n")) !== result.normalized_text_sha256)
@@ -335,6 +334,12 @@ export function localEvidenceWorker(
     } catch {
       throw new Error("Evidence worker returned invalid JSON")
     }
+  }
+}
+
+export function unavailableEvidenceWorker(reason: string): EvidenceWorkerRunner {
+  return async () => {
+    throw new Error(reason)
   }
 }
 

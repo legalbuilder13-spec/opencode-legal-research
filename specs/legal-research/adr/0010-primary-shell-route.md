@@ -19,4 +19,4 @@ The legal workbench owns Bun/SQLite, supervised Python parsing, and ChatGPT app-
 - Users can open the legal workspace from the main command palette or a stable route.
 - Existing legal-workbench persistence and citations remain the source of truth.
 - English UI copy is typed through the main i18n system and other locales receive the existing English fallback until reviewed translations are supplied.
-- Alpha startup still launches the workbench service separately. Desktop sidecar supervision, installer bundling, reviewed translations, and a full desktop restart test remain packaging gates.
+- Electron startup now supervises and bundles the compiled workbench companion under ADR 0015. Relocatable OCR/renderer runtimes, reviewed translations, signed installer smoke tests, and the complete Electron window-to-answer restart test remain packaging gates.

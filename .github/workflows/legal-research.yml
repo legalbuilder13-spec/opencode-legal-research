@@ -11,6 +11,7 @@ on:
       - "packages/app/src/i18n/en.ts"
       - "packages/app/src/pages/legal-research.tsx"
       - "packages/app/src/utils/legal-workbench-url*"
+      - "packages/desktop/**"
       - "packages/legal-citation-spike/**"
       - "packages/legal-evaluation/**"
       - "packages/legal-evidence-worker/**"
@@ -27,6 +28,7 @@ on:
       - "packages/app/src/i18n/en.ts"
       - "packages/app/src/pages/legal-research.tsx"
       - "packages/app/src/utils/legal-workbench-url*"
+      - "packages/desktop/**"
       - "packages/legal-citation-spike/**"
       - "packages/legal-evaluation/**"
       - "packages/legal-evidence-worker/**"
@@ -63,6 +65,14 @@ jobs:
       - name: Run primary-shell legal route tests
         working-directory: packages/app
         run: bun test --conditions=solid --preload ./happydom.ts ./src/utils/legal-workbench-url.test.ts
+
+      - name: Build packaged legal workbench executable
+        working-directory: packages/desktop
+        run: bun ./scripts/build-legal-workbench.ts /tmp/legal-workbench
+
+      - name: Run desktop legal sidecar tests
+        working-directory: packages/desktop
+        run: LEGAL_WORKBENCH_TEST_EXECUTABLE=/tmp/legal-workbench bun test ./src/main/legal-workbench.test.ts ./electron-builder.config.test.ts
 
   evidence-worker:
     name: evidence worker gates
