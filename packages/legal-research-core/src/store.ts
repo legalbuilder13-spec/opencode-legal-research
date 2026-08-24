@@ -431,13 +431,26 @@ export class LegalResearchStore {
           mime: string
           retrieved_at: string
           capture_status: CaptureStatus
+          jurisdiction: string | null
+          court: string | null
+          decision_date: string | null
+          authority_type: string | null
+          precedential_status: string | null
+          citation: string | null
+          full_source: number | null
+          metadata_source: string | null
         },
         [string]
       >(
         `SELECT source.id AS source_id, source.title, source.kind, source_version.id AS source_version_id,
           source_version.content_sha256, source_version.mime, source_version.retrieved_at,
-          source_version.capture_status
+          source_version.capture_status, legal_metadata.jurisdiction, legal_metadata.court,
+          legal_metadata.decision_date, legal_metadata.authority_type,
+          legal_metadata.precedential_status, legal_metadata.citation, legal_metadata.full_source,
+          courtlistener_record.metadata_source
         FROM source JOIN source_version ON source_version.source_id = source.id
+        LEFT JOIN legal_metadata ON legal_metadata.source_version_id = source_version.id
+        LEFT JOIN courtlistener_record ON courtlistener_record.source_version_id = source_version.id
         WHERE source.matter_id = ? AND source.deleted_at IS NULL AND source_version.deleted_at IS NULL
         ORDER BY source.created_at, source_version.retrieved_at`,
       )
@@ -609,6 +622,16 @@ export class LegalResearchStore {
         to_source_version_id TEXT NOT NULL REFERENCES source_version(id),
         relationship TEXT NOT NULL,
         created_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS courtlistener_record (
+        source_version_id TEXT PRIMARY KEY REFERENCES source_version(id),
+        cluster_id INTEGER NOT NULL,
+        opinion_ids_json TEXT NOT NULL,
+        cluster_url TEXT NOT NULL,
+        opinion_url TEXT NOT NULL,
+        court_id TEXT,
+        metadata_source TEXT NOT NULL,
+        captured_at TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS excluded_content (
         id TEXT PRIMARY KEY,
