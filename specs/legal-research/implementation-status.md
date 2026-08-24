@@ -11,11 +11,13 @@ Last updated: 2026-08-24
 | Milestone B evidence substrate                    | Core exit passed              | [`milestone-results/b-evidence-substrate.md`](./milestone-results/b-evidence-substrate.md)               |
 | Milestone C local PDF ingestion                   | Synthetic UI flow passed      | [`milestone-results/c-pdf-ingestion-integration.md`](./milestone-results/c-pdf-ingestion-integration.md) |
 | Milestone C2 multi-format ingestion/reprocessing  | Synthetic UI flow passed      | [`milestone-results/c2-multi-format-ingestion.md`](./milestone-results/c2-multi-format-ingestion.md)     |
+| Milestone C3 public-web capture                   | Structural flow and strict contract passed | [`milestone-results/c3-public-web-capture.md`](./milestone-results/c3-public-web-capture.md) |
 | Milestone D local retrieval and research planning | Synthetic exit passed         | [`milestone-results/d-local-retrieval.md`](./milestone-results/d-local-retrieval.md)                     |
 | Milestone F CourtListener research alpha          | Deterministic product flow passed | [`milestone-results/f-courtlistener-connector.md`](./milestone-results/f-courtlistener-connector.md) |
 | Local legal workflow UI                           | Alpha integration passed      | [`milestone-results/workbench-integration.md`](./milestone-results/workbench-integration.md)             |
 | Unified subscription answer transaction           | Live synthetic pass           | [`milestone-results/unified-answer-transaction.md`](./milestone-results/unified-answer-transaction.md)   |
 | Recovery and destructive lifecycle controls       | Synthetic product gate passed | [`milestone-results/g-recovery-lifecycle.md`](./milestone-results/g-recovery-lifecycle.md)               |
+| Parser resource and malformed-input hardening      | Local security gate passed    | [`threat-model.md`](./threat-model.md)                                                                   |
 | Primary OpenCode shell route                      | Alpha route implemented       | [`adr/0010-primary-shell-route.md`](./adr/0010-primary-shell-route.md)                                   |
 | Desktop sidecar/install packaging                 | Pending                       | ADR 0010                                                                                                 |
 | Evaluation corpus schema and validator            | Synthetic scaffold passed     | [`corpus/v0/README.md`](./corpus/v0/README.md)                                                           |

@@ -413,6 +413,63 @@ describe("legal workbench integration", () => {
     expect(receipt).not.toContain("fixture-token")
     expect(apiFixture.authorizations.every((authorization) => authorization === "Token fixture-token")).toBe(true)
   })
+
+  test("WB-09 keeps structural HTML and strict visual OCR under one immutable web source", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "legal-workbench-web-capture-"))
+    const html = new TextEncoder().encode(
+      '<html><head><title>Rendered legal authority</title><link rel="canonical" href="/authority"></head><body><script>BYPASS_POLICY</script><main>Controlling legal text.</main></body></html>',
+    )
+    const screenshot = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3])
+    const workbench = await createWorkbench({
+      dataRoot,
+      fixtureAccount: true,
+      workerRunner: fixtureWorker,
+      webCapture: {
+        resolver: async () => ["93.184.216.34"],
+        renderer: async () => ({
+          finalUrl: "https://law.example/authority?rendered=1",
+          status: 200,
+          html,
+          screenshot,
+          screenshotMime: "image/png",
+        }),
+      },
+    })
+    close.push(workbench.close)
+    const createMatter = await call(workbench.handler, "/api/matters", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Strict web evidence matter",
+        jurisdiction: "U.S.",
+        researchAsOf: "2026-08-24",
+        confidentiality: "public",
+      }),
+    })
+    const matterId = string(record(await createMatter.json(), "matter").id, "matter id")
+    const capture = await call(workbench.handler, `/api/matters/${matterId}/web`, {
+      method: "POST",
+      body: JSON.stringify({ url: "https://law.example/start#fragment", mode: "strict_visual", languageHints: ["eng"] }),
+    })
+    expect(capture.status).toBe(201)
+    expect(await capture.json()).toMatchObject({
+      mode: "strict_visual",
+      pageCount: 1,
+      passageCount: 2,
+      requestedUrl: "https://law.example/start",
+      finalUrl: "https://law.example/authority?rendered=1",
+      canonicalUrl: "https://law.example/authority",
+    })
+    const sources = array(await (await call(workbench.handler, `/api/matters/${matterId}/sources`)).json(), "sources")
+    expect(sources).toHaveLength(1)
+    const source = record(sources[0], "web source")
+    expect(source).toMatchObject({ kind: "web", mime: "text/html", capture_status: "complete" })
+    const representations = array(source.representations, "representations").map((value) => record(value, "representation"))
+    expect(representations.map((representation) => representation.mode)).toEqual(["structural", "strict_visual"])
+    expect(new Set(representations.map((representation) => representation.inputBlobSha256)).size).toBe(2)
+    const receipt = await (await call(workbench.handler, `/api/matters/${matterId}/export`)).text()
+    expect(receipt).toContain(hashBytes(screenshot))
+    expect(receipt).not.toContain("BYPASS_POLICY")
+  })
 })
 
 function record(value: unknown, name: string): Record<string, unknown> {

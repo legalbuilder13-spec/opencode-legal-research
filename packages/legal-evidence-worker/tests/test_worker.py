@@ -16,6 +16,7 @@ from pydantic import ValidationError
 
 from legal_evidence_worker import CancelledError, IngestError, IngestRequest, ingest
 from legal_evidence_worker.ingest import normalize_region
+from legal_evidence_worker.limits import apply_process_limits
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED = ROOT / "fixtures" / "generated"
@@ -30,6 +31,10 @@ class ContractTests(unittest.TestCase):
     def test_rejects_reversed_page_range(self) -> None:
         with self.assertRaises(ValidationError):
             IngestRequest.model_validate({**request_values(), "page_range": {"start": 2, "end": 1}})
+
+    def test_rejects_page_ranges_beyond_the_worker_limit(self) -> None:
+        with self.assertRaises(ValidationError):
+            IngestRequest.model_validate({**request_values(), "page_range": {"start": 1, "end": 2_001}})
 
     def test_requires_structural_mode_for_html_and_docx(self) -> None:
         html = {**request_values(), "mime": "text/html", "mode": "structural"}
@@ -56,6 +61,28 @@ class ContractTests(unittest.TestCase):
 
 
 class IngestionSafetyTests(unittest.TestCase):
+    def test_process_resource_limits_are_applied_before_parser_import(self) -> None:
+        class FakeResource:
+            RLIMIT_CORE = 1
+            RLIMIT_CPU = 2
+            RLIMIT_FSIZE = 3
+            RLIMIT_NOFILE = 4
+
+            def __init__(self) -> None:
+                self.applied: list[tuple[int, tuple[int, int]]] = []
+
+            def getrlimit(self, _resource: int) -> tuple[int, int]:
+                return (-1, -1)
+
+            def setrlimit(self, resource: int, limits: tuple[int, int]) -> None:
+                self.applied.append((resource, limits))
+
+        resource = FakeResource()
+        apply_process_limits(resource)
+        self.assertEqual(len(resource.applied), 4)
+        self.assertIn((resource.RLIMIT_CORE, (0, 0)), resource.applied)
+        self.assertIn((resource.RLIMIT_CPU, (300, 330)), resource.applied)
+
     def test_hash_mismatch_fails_before_converter(self) -> None:
         called = False
 
@@ -83,6 +110,62 @@ class IngestionSafetyTests(unittest.TestCase):
         cancelled.set()
         with self.assertRaises(CancelledError):
             ingest(IngestRequest.model_validate(request_values()), cancel=cancelled)
+
+    def test_malformed_image_fails_before_converter(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "malformed.png"
+            source.write_bytes(b"not an image")
+            request = IngestRequest(
+                job_id="malformed-image",
+                source_version_id="fixture-malformed-image",
+                blob_path=str(source),
+                output_dir=str(Path(directory) / "output"),
+                expected_sha256=sha256(source),
+                mime="image/png",
+                mode="strict_visual",
+                language_hints=["eng"],
+            )
+            with self.assertRaisesRegex(IngestError, "bounded format validation"):
+                ingest(request, converter_factory=lambda _request: self.fail("converter must not run"))
+
+    def test_docx_compression_bomb_fails_before_converter(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "compressed.docx"
+            with zipfile.ZipFile(source, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("word/document.xml", b"0" * (3 * 1024 * 1024))
+            request = IngestRequest(
+                job_id="compressed-docx",
+                source_version_id="fixture-compressed-docx",
+                blob_path=str(source),
+                output_dir=str(Path(directory) / "output"),
+                expected_sha256=sha256(source),
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                mode="structural",
+                language_hints=[],
+            )
+            with self.assertRaisesRegex(IngestError, "compression-ratio"):
+                ingest(request, converter_factory=lambda _request: self.fail("converter must not run"))
+
+    def test_excessive_page_count_fails_before_normalization(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "oversized.pdf"
+            source.write_bytes(b"%PDF bounded fixture")
+            request = IngestRequest(
+                job_id="oversized-pages",
+                source_version_id="fixture-oversized-pages",
+                blob_path=str(source),
+                output_dir=str(Path(directory) / "output"),
+                expected_sha256=sha256(source),
+                mime="application/pdf",
+                mode="adaptive",
+                language_hints=["eng"],
+            )
+            conversion = SimpleNamespace(
+                status="SUCCESS",
+                document=SimpleNamespace(pages={page: object() for page in range(1, 2_002)}),
+            )
+            with self.assertRaisesRegex(IngestError, "2000-page limit"):
+                ingest(request, converter_factory=lambda _request: SimpleNamespace(convert=lambda *_a, **_k: conversion))
 
     def test_existing_representation_is_immutable_and_idempotent(self) -> None:
         manifest = fixture_manifest()

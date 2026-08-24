@@ -12,7 +12,7 @@ Protected assets include privileged matter content, original source bytes, ChatG
 
 | Boundary                       | Untrusted input                                       | Required control                                                                                      |
 | ------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| User/device to local app       | Files, pasted text, URLs, matter labels               | Validate size/type; label confidentiality; never execute active content.                              |
+| User/device to local app       | Files, pasted text, URLs, matter labels               | Validate size/type; restrict URLs to public HTTP(S); label confidentiality; never execute active content. |
 | Source/tool to materializer    | Web bodies, connector blocks, CourtListener JSON/HTML | Persist before inference; hash originals; strip active HTML; mark text as untrusted source data.      |
 | Parser worker to host          | OCR text, coordinates, warnings, page assets          | Supervised protocol; version engines; validate counts/geometry/hashes; fail closed on partial output. |
 | Retrieval to model context     | Ranked and neighboring passages                       | Enforce matter ID; send only persisted passage envelopes; log every admitted passage.                 |
@@ -37,7 +37,11 @@ Model prose can fabricate footnotes, URLs, quotes, cases, or verification labels
 
 ### Parser and active-content compromise
 
-PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs OS CPU/memory/network sandboxing and malformed-file fuzzing.
+PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. The worker applies OS CPU, output-file, core-dump, and descriptor limits before parser import; it also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio, and malformed images. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs OS memory/network isolation and broader malformed-file fuzzing.
+
+### Public-web SSRF and active content
+
+URL capture accepts only credential-free HTTP(S) on standard ports, resolves every initial/redirect/final hostname, and rejects local, private, link-local, and reserved addresses. Redirect count and response/screenshot sizes are bounded. Structural HTML is archived and parsed inertly. Strict mode cannot silently downgrade when the supervised renderer is absent. Production rendering must additionally pin the validated address to the network connection, block or separately validate subresources, and test DNS rebinding before untrusted URLs are enabled outside the alpha boundary.
 
 ### Credential and diagnostic leakage
 
@@ -69,7 +73,7 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 
 ## Open production gates
 
-- Add OS-enforced CPU, memory, filesystem, and network limits around the Docling/OCR worker.
+- Add OS-enforced memory, filesystem-namespace, and network isolation around the Docling/OCR worker.
 - Fuzz malformed PDF, DOCX, HTML, image, archive, and decompression-bomb inputs.
 - Add OS keychain-backed connector credentials and rotation/revocation tests.
 - Complete organizational ChatGPT workspace policy and retention review for confidential matters.

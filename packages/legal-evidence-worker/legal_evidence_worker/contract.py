@@ -12,8 +12,8 @@ class StrictModel(BaseModel):
 
 
 class PageRange(StrictModel):
-    start: int = Field(ge=1)
-    end: int = Field(ge=1)
+    start: int = Field(ge=1, le=2_000)
+    end: int = Field(ge=1, le=2_000)
 
     @model_validator(mode="after")
     def ordered(self) -> PageRange:

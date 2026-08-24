@@ -124,6 +124,39 @@ $("#source-form").addEventListener("submit", async (event) => {
   toast("Source hashed and materialized")
 })
 
+$("#web-form").addEventListener("submit", async (event) => {
+  event.preventDefault()
+  const matter = currentMatter()
+  if (!matter) return toast("Create a matter before adding sources", true)
+  const button = $("#web-button")
+  button.disabled = true
+  button.textContent = $("#web-mode").value === "strict_visual" ? "Rendering and OCRing locally…" : "Capturing URL…"
+  try {
+    const result = await api(`/api/matters/${encodeURIComponent(matter.id)}/web`, {
+      method: "POST",
+      body: JSON.stringify({
+        url: $("#web-url").value,
+        mode: $("#web-mode").value,
+        languageHints: $("#web-languages")
+          .value.split(",")
+          .map((hint) => hint.trim())
+          .filter(Boolean),
+      }),
+    })
+    event.target.reset()
+    $("#web-languages").value = "eng"
+    await loadSources()
+    toast(
+      result.mode === "strict_visual"
+        ? `URL captured with structural HTML and ${result.pageCount} OCR page${result.pageCount === 1 ? "" : "s"}`
+        : "URL captured with an inert structural representation",
+    )
+  } finally {
+    button.disabled = false
+    button.textContent = "Capture public URL"
+  }
+})
+
 $("#pdf-form").addEventListener("submit", async (event) => {
   event.preventDefault()
   const matter = currentMatter()
@@ -358,7 +391,7 @@ async function loadSources() {
         await loadSources()
         toast(
           result.blobRetained
-            ? `Source removed · blob retained${result.remainingReferences ? ` · ${result.remainingReferences} other reference${result.remainingReferences === 1 ? "" : "s"}` : " until compaction"}`
+            ? `Source removed · ${result.retainedBlobCount ?? 1} blob${result.retainedBlobCount === 1 ? "" : "s"} retained${result.sharedBlobCount ? ` · ${result.sharedBlobCount} still shared` : " until compaction"}`
             : "Source removed",
         )
       })

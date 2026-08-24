@@ -7,11 +7,12 @@ import os
 import subprocess
 import threading
 import time
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
-from PIL import ImageStat
+from PIL import Image, ImageStat, UnidentifiedImageError
 
 from .contract import (
     BoundingBox,
@@ -26,6 +27,14 @@ from .contract import (
 
 WORKER_VERSION = "0.0.1"
 LOW_INK_CONTRAST = 75.0
+MAX_SOURCE_BYTES = 100 * 1024 * 1024
+MAX_DOCUMENT_PAGES = 2_000
+MAX_DOCUMENT_ITEMS = 100_000
+MAX_NORMALIZED_TEXT_BYTES = 2 * 1024 * 1024
+MAX_IMAGE_PIXELS = 100_000_000
+MAX_ARCHIVE_ENTRIES = 10_000
+MAX_ARCHIVE_UNCOMPRESSED_BYTES = 500 * 1024 * 1024
+MAX_ARCHIVE_COMPRESSION_RATIO = 1_000
 
 
 class IngestError(RuntimeError):
@@ -62,6 +71,7 @@ def ingest(
     progress("verifying_source", 5)
     if not source.is_file():
         raise IngestError(f"Source is not a regular file: {source}")
+    preflight_source(source, request)
     source_hash = sha256_file(source, cancel)
     if source_hash != request.expected_sha256:
         raise IngestError(
@@ -82,6 +92,8 @@ def ingest(
     status = str(getattr(conversion, "status", ""))
     if document is None or not status.endswith("SUCCESS"):
         raise IngestError(f"Docling conversion did not succeed: {status or 'unknown status'}")
+    if len(document.pages) > MAX_DOCUMENT_PAGES:
+        raise IngestError(f"Document exceeds the {MAX_DOCUMENT_PAGES}-page limit")
 
     _check_cancel(cancel)
     progress("normalizing_provenance", 65)
@@ -98,6 +110,8 @@ def ingest(
         raise IngestError("Strict visual mode could not materialize every canonical page image")
 
     normalized_text = "\n\n".join(item.text for item in items)
+    if len(normalized_text.encode()) > MAX_NORMALIZED_TEXT_BYTES:
+        raise IngestError(f"Normalized text exceeds the {MAX_NORMALIZED_TEXT_BYTES}-byte limit")
     replacement_count = normalized_text.count("\ufffd")
     pages_with_text = sum(1 for page in pages if page.character_count)
     for page in pages:
@@ -226,6 +240,8 @@ def normalize_items(
             text = f"{item.marker} {text}".strip()
         if not text:
             continue
+        if len(items) >= MAX_DOCUMENT_ITEMS:
+            raise IngestError(f"Document exceeds the {MAX_DOCUMENT_ITEMS}-item limit")
         regions = [normalize_region(entry, document.pages) for entry in item.prov]
         for page_number in {region.page_number for region in regions}:
             page_text.setdefault(page_number, []).append(text)
@@ -301,6 +317,8 @@ def materialize_pages(
                 )
             )
             continue
+        if image.width * image.height > MAX_IMAGE_PIXELS:
+            raise IngestError(f"Page {page_number} exceeds the {MAX_IMAGE_PIXELS}-pixel limit")
         path = directory / f"page-{int(page_number):04d}.png"
         temporary = path.with_suffix(".png.tmp")
         image.save(temporary, format="PNG")
@@ -329,6 +347,38 @@ def materialize_pages(
             )
         )
     return records, warnings
+
+
+def preflight_source(source: Path, request: IngestRequest) -> None:
+    size = source.stat().st_size
+    if size <= 0:
+        raise IngestError("Source is empty")
+    if size > MAX_SOURCE_BYTES:
+        raise IngestError(f"Source exceeds the {MAX_SOURCE_BYTES}-byte limit")
+    if request.mime in {"image/png", "image/jpeg"}:
+        try:
+            with Image.open(source) as image:
+                if image.width * image.height > MAX_IMAGE_PIXELS:
+                    raise IngestError(f"Image exceeds the {MAX_IMAGE_PIXELS}-pixel limit")
+                image.verify()
+        except (UnidentifiedImageError, OSError) as error:
+            raise IngestError("Image failed bounded format validation") from error
+    if request.mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        try:
+            with zipfile.ZipFile(source) as archive:
+                entries = archive.infolist()
+                if len(entries) > MAX_ARCHIVE_ENTRIES:
+                    raise IngestError(f"DOCX exceeds the {MAX_ARCHIVE_ENTRIES}-entry limit")
+                total = sum(entry.file_size for entry in entries)
+                compressed = sum(max(entry.compress_size, 1) for entry in entries)
+                if total > MAX_ARCHIVE_UNCOMPRESSED_BYTES:
+                    raise IngestError(
+                        f"DOCX exceeds the {MAX_ARCHIVE_UNCOMPRESSED_BYTES}-byte expanded limit"
+                    )
+                if total / max(compressed, 1) > MAX_ARCHIVE_COMPRESSION_RATIO:
+                    raise IngestError("DOCX exceeds the bounded compression-ratio limit")
+        except zipfile.BadZipFile as error:
+            raise IngestError("DOCX failed bounded archive validation") from error
 
 
 def _load_existing(path: Path, request: IngestRequest, source_hash: str) -> CompletedResult:

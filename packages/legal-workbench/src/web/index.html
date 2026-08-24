@@ -119,6 +119,24 @@
                 ></textarea>
                 <button class="primary-button" type="submit">Capture source</button>
               </form>
+              <form id="web-form" class="source-form">
+                <h2>Capture a public URL</h2>
+                <label for="web-url">Public webpage URL</label>
+                <input id="web-url" type="url" required placeholder="https://www.court.gov/opinion" />
+                <label for="web-mode">Evidence mode</label>
+                <select id="web-mode">
+                  <option value="structural">Structural HTML</option>
+                  <option value="strict_visual">Strict visual HTML + rendered OCR</option>
+                </select>
+                <label for="web-languages">OCR language hints</label>
+                <input id="web-languages" value="eng" placeholder="eng, spa" />
+                <p class="egress-note">
+                  The URL is fetched only from a public HTTP(S) address. Redirects and response size are bounded; scripts
+                  are stored as inert source bytes and never executed by the parser. Strict visual mode also requires the
+                  supervised browser renderer.
+                </p>
+                <button id="web-button" class="primary-button" type="submit">Capture public URL</button>
+              </form>
               <form id="pdf-form" class="source-form">
                 <h2>Ingest a document locally</h2>
                 <label for="pdf-file">PDF, image, HTML, or DOCX source</label>

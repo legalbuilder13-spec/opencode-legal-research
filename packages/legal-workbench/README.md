@@ -21,6 +21,8 @@ Data defaults to `packages/legal-workbench/.data`. Set `LEGAL_RESEARCH_DATA_DIR`
 
 The Sources screen accepts pasted text plus PDF, PNG/JPEG, HTML, and DOCX uploads. Visual ingestion runs the pinned local Docling/Tesseract worker in adaptive or strict-visual mode and preserves canonical page images and exact regions. HTML and DOCX use an inert structural Docling path with stable section paths and character offsets. A completed source can be reprocessed into another immutable representation without replacing prior evidence. Failed or partial work stays out of model context. The repository's evidence-worker `.venv` must be installed as described in `packages/legal-evidence-worker/README.md`.
 
+The Sources screen also accepts public HTTP(S) URLs. Structural mode uses bounded redirects and response size, rejects local/private/reserved targets, archives requested/final/canonical URL metadata, and parses the stored HTML inertly. Strict visual mode is fail-closed unless the installation supplies the supervised renderer; when present, the HTML and separately hashed screenshot are parsed into structural and visual OCR representations under one source version. The alpha repository deliberately does not treat the root Playwright test dependency as a packaged renderer.
+
 ## Evidence boundary
 
 The model receives only support-eligible, matter-scoped passage envelopes. It must return strict JSON with exact answer claim text and allowed passage IDs. The host recomputes offsets, checks context admission, matter ownership, capture status, and text hashes, then mints citations and ledger entries in the matter database. Model-written footnotes never create anchors.

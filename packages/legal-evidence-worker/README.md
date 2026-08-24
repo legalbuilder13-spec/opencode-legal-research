@@ -15,6 +15,8 @@ This isolated Python package provides the supervised Docling and portable Tesser
 
 The host remains responsible for minting final source, representation, passage, and region IDs. Worker IDs are deterministic processing references, not database authority. The host allowlists the worker environment, enforces time/output limits, and independently validates hashes, counts, geometry, and output paths.
 
+Before importing Docling, the CLI applies OS limits for CPU time, output-file size, core dumps, and open descriptors. Admission also bounds source size, requested and actual page count, image/page pixels, item count, normalized text, and DOCX archive entries, expanded size, and compression ratio. Malformed images and DOCX archives fail before converter construction. A packaged release still needs a memory/network/filesystem namespace sandbox appropriate to each operating system.
+
 ## Setup and checks
 
 Docling is pinned in `pyproject.toml` and the transitive environment is pinned by `uv.lock`.
@@ -63,4 +65,4 @@ Write one JSON object per line using `{"command":"ingest","request":{...}}` or `
 
 On the synthetic corpus, both modes achieved 100% exact text recovery, correct-page association, and region hits. The deliberately faint/skewed page was the only page that produced a low-ink-contrast warning. See `fixtures/results/evaluation.json` and `fixtures/results/overlay-gallery.png`.
 
-This is conditional evidence, not a corpus-wide accuracy claim. Real Docling tests also cover scanned-image OCR, inert HTML, and structural DOCX. The remaining real-opinion, rotation/crop, multilingual, malformed-input, and alternative-OCR matrix remains a release gate.
+This is conditional evidence, not a corpus-wide accuracy claim. Real Docling tests also cover scanned-image OCR, inert HTML, structural DOCX, malformed images, compressed-DOCX rejection, and excessive-page blocking. The remaining real-opinion, rotation/crop, multilingual, broader malformed-input, and alternative-OCR matrix remains a release gate.

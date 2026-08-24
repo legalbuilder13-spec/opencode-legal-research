@@ -15,6 +15,13 @@ import { mkdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { EvidenceIngestionService, type EvidenceMime, type EvidenceWorkerRunner } from "./ingestion"
 import { fixtureSynthesizer, parseSynthesis, subscriptionSynthesizer, type WorkbenchSynthesizer } from "./synthesis"
+import {
+  WebCaptureService,
+  WebCaptureUnavailableError,
+  type WebAddressResolver,
+  type WebCaptureFetcher,
+  type WebCaptureRenderer,
+} from "./web-capture"
 
 export interface WorkbenchOptions {
   dataRoot: string
@@ -22,6 +29,7 @@ export interface WorkbenchOptions {
   synthesizer?: WorkbenchSynthesizer
   workerRunner?: EvidenceWorkerRunner
   courtListener?: { fetcher?: CourtListenerFetcher; baseUrl?: string }
+  webCapture?: { fetcher?: WebCaptureFetcher; resolver?: WebAddressResolver; renderer?: WebCaptureRenderer }
 }
 
 export async function createWorkbench(options: WorkbenchOptions) {
@@ -36,6 +44,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
   const planner = new ResearchPlanner(core)
   const answers = new AnswerFinalizer(core)
   const ingestion = new EvidenceIngestionService(core, dataRoot, options.workerRunner)
+  const webCapture = new WebCaptureService(options.webCapture)
   const synthesize =
     options.synthesizer ?? (options.fixtureAccount ? fixtureSynthesizer : subscriptionSynthesizer(dataRoot))
   const citations = new CitationStore()
@@ -186,6 +195,21 @@ export async function createWorkbench(options: WorkbenchOptions) {
             mime,
             mode,
             languageHints,
+          }),
+          { status: 201 },
+        )
+      }
+      const webCaptureMatch = url.pathname.match(/^\/api\/matters\/([^/]+)\/web$/)
+      if (webCaptureMatch && request.method === "POST") {
+        const matterId = pathParameter(webCaptureMatch)
+        const body = object(await request.json(), "web capture request")
+        const mode = body.mode === "strict_visual" ? "strict_visual" : "structural"
+        const captured = await webCapture.capture({ url: string(body.url, "URL"), mode })
+        return Response.json(
+          await ingestion.ingestWebCapture({
+            matterId,
+            ...captured,
+            languageHints: languageHints(body.languageHints),
           }),
           { status: 201 },
         )
@@ -368,6 +392,8 @@ export async function createWorkbench(options: WorkbenchOptions) {
           { error: message, code: "courtlistener", retryAfterSeconds: error.retryAfterSeconds },
           { status: error.status },
         )
+      if (error instanceof WebCaptureUnavailableError)
+        return Response.json({ error: message, code: "web-renderer-unavailable" }, { status: error.status })
       return jsonError(message, 400)
     }
   }

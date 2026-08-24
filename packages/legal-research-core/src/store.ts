@@ -49,6 +49,7 @@ export interface PassageInput {
 
 export interface RepresentationInput {
   sourceVersionId: string
+  inputBlobSha256?: string
   parserName: string
   parserVersion: string
   ocrEngine?: string
@@ -58,6 +59,7 @@ export interface RepresentationInput {
   qualityMetrics?: unknown
   warnings?: unknown
   passages: PassageInput[]
+  allowIncomplete?: boolean
 }
 
 export interface LegalMetadataInput {
@@ -265,21 +267,24 @@ export class LegalResearchStore {
   addRepresentation(input: RepresentationInput) {
     const version = this.sourceVersion(input.sourceVersionId)
     if (version.deleted_at) throw new Error("Cannot represent a deleted source version")
-    if (version.capture_status !== "complete")
+    if (version.capture_status !== "complete" && !input.allowIncomplete)
       throw new Error(`Source capture is not complete: ${version.capture_status}`)
+    const inputBlobSha256 = input.inputBlobSha256 ?? version.blob_sha256
+    if (!/^[a-f0-9]{64}$/.test(inputBlobSha256)) throw new Error("Invalid representation input blob hash")
     const representationId = `rep_${randomUUID()}`
     const write = this.db.transaction(() => {
       this.db
         .query(
           `INSERT INTO representation
-            (id, source_version_id, matter_id, parser_name, parser_version, ocr_engine, ocr_version,
+            (id, source_version_id, matter_id, input_blob_sha256, parser_name, parser_version, ocr_engine, ocr_version,
              mode, normalized_text_sha256, quality_metrics_json, warnings_json, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           representationId,
           version.id,
           version.matter_id,
+          inputBlobSha256,
           input.parserName,
           input.parserVersion,
           input.ocrEngine ?? null,
@@ -413,6 +418,15 @@ export class LegalResearchStore {
 
   deleteSourceVersion(sourceVersionId: string) {
     const version = this.sourceVersion(sourceVersionId)
+    const blobs = this.db
+      .query<{ blob_sha256: string }, [string, string, string]>(
+        `SELECT blob_sha256 FROM source_version WHERE id = ?
+        UNION SELECT input_blob_sha256 FROM representation WHERE source_version_id = ? AND input_blob_sha256 IS NOT NULL
+        UNION SELECT passage_region.image_blob_sha256 FROM passage_region
+          JOIN passage ON passage.id = passage_region.passage_id
+          WHERE passage.source_version_id = ? AND passage_region.image_blob_sha256 IS NOT NULL`,
+      )
+      .all(sourceVersionId, sourceVersionId, sourceVersionId)
     const remainingReferences =
       this.db
         .query<
@@ -420,28 +434,45 @@ export class LegalResearchStore {
           [string, string]
         >("SELECT COUNT(*) AS count FROM source_version WHERE blob_sha256 = ? AND id <> ? AND deleted_at IS NULL")
         .get(version.blob_sha256, sourceVersionId)?.count ?? 0
-    if (version.deleted_at) return { sourceVersionId, alreadyDeleted: true, blobRetained: true, remainingReferences }
+    const sharedBlobCount = blobs.filter((blob) => this.blobReferencedOutsideSource(blob.blob_sha256, sourceVersionId)).length
+    const retention = { blobRetained: true, retainedBlobCount: blobs.length, sharedBlobCount, remainingReferences }
+    if (version.deleted_at) return { sourceVersionId, alreadyDeleted: true, ...retention }
     this.db
       .query("UPDATE source_version SET deleted_at = ? WHERE id = ?")
       .run(new Date().toISOString(), sourceVersionId)
-    return { sourceVersionId, alreadyDeleted: false, blobRetained: true, remainingReferences }
+    return { sourceVersionId, alreadyDeleted: false, ...retention }
   }
 
   deleteMatter(matterId: string) {
     const matter = this.matter(matterId)
     const blobs = this.db
-      .query<
-        { blob_sha256: string },
-        [string]
-      >("SELECT DISTINCT blob_sha256 FROM source_version WHERE matter_id = ? AND deleted_at IS NULL")
-      .all(matterId)
+      .query<{ blob_sha256: string }, [string, string, string]>(
+        `SELECT blob_sha256 FROM source_version WHERE matter_id = ? AND deleted_at IS NULL
+        UNION SELECT representation.input_blob_sha256 FROM representation
+          JOIN source_version ON source_version.id = representation.source_version_id
+          WHERE representation.matter_id = ? AND source_version.deleted_at IS NULL AND representation.input_blob_sha256 IS NOT NULL
+        UNION SELECT passage_region.image_blob_sha256 FROM passage_region
+          JOIN passage ON passage.id = passage_region.passage_id
+          JOIN source_version ON source_version.id = passage.source_version_id
+          WHERE passage.matter_id = ? AND source_version.deleted_at IS NULL AND passage_region.image_blob_sha256 IS NOT NULL`,
+      )
+      .all(matterId, matterId, matterId)
     const sharedBlobCount = blobs.filter((blob) => {
       const count = this.db
-        .query<
-          { count: number },
-          [string, string]
-        >("SELECT COUNT(*) AS count FROM source_version WHERE blob_sha256 = ? AND matter_id <> ? AND deleted_at IS NULL")
-        .get(blob.blob_sha256, matterId)?.count
+        .query<{ count: number }, [string, string, string, string, string, string]>(
+          `SELECT COUNT(*) AS count FROM (
+            SELECT source_version.id FROM source_version
+              WHERE blob_sha256 = ? AND matter_id <> ? AND deleted_at IS NULL
+            UNION SELECT representation.id FROM representation
+              JOIN source_version ON source_version.id = representation.source_version_id
+              WHERE representation.input_blob_sha256 = ? AND representation.matter_id <> ? AND source_version.deleted_at IS NULL
+            UNION SELECT passage_region.id FROM passage_region
+              JOIN passage ON passage.id = passage_region.passage_id
+              JOIN source_version ON source_version.id = passage.source_version_id
+              WHERE passage_region.image_blob_sha256 = ? AND passage.matter_id <> ? AND source_version.deleted_at IS NULL
+          )`,
+        )
+        .get(blob.blob_sha256, matterId, blob.blob_sha256, matterId, blob.blob_sha256, matterId)?.count
       return Boolean(count)
     }).length
     const result = {
@@ -540,6 +571,7 @@ export class LegalResearchStore {
         {
           id: string
           source_version_id: string
+          input_blob_sha256: string | null
           parser_name: string
           parser_version: string
           ocr_engine: string | null
@@ -552,7 +584,7 @@ export class LegalResearchStore {
         },
         [string]
       >(
-        `SELECT id, source_version_id, parser_name, parser_version, ocr_engine, ocr_version,
+        `SELECT id, source_version_id, input_blob_sha256, parser_name, parser_version, ocr_engine, ocr_version,
           mode, normalized_text_sha256, quality_metrics_json, warnings_json, created_at
         FROM representation WHERE matter_id = ? ORDER BY created_at, id`,
       )
@@ -560,6 +592,7 @@ export class LegalResearchStore {
       .map((representation) => ({
         id: representation.id,
         sourceVersionId: representation.source_version_id,
+        inputBlobSha256: representation.input_blob_sha256,
         parserName: representation.parser_name,
         parserVersion: representation.parser_version,
         ocrEngine: representation.ocr_engine,
@@ -622,6 +655,26 @@ export class LegalResearchStore {
     return matter
   }
 
+  private blobReferencedOutsideSource(blobSha256: string, sourceVersionId: string) {
+    return Boolean(
+      this.db
+        .query<{ count: number }, [string, string, string, string, string, string]>(
+          `SELECT COUNT(*) AS count FROM (
+            SELECT source_version.id FROM source_version
+              WHERE blob_sha256 = ? AND id <> ? AND deleted_at IS NULL
+            UNION SELECT representation.id FROM representation
+              JOIN source_version ON source_version.id = representation.source_version_id
+              WHERE representation.input_blob_sha256 = ? AND representation.source_version_id <> ? AND source_version.deleted_at IS NULL
+            UNION SELECT passage_region.id FROM passage_region
+              JOIN passage ON passage.id = passage_region.passage_id
+              JOIN source_version ON source_version.id = passage.source_version_id
+              WHERE passage_region.image_blob_sha256 = ? AND passage.source_version_id <> ? AND source_version.deleted_at IS NULL
+          )`,
+        )
+        .get(blobSha256, sourceVersionId, blobSha256, sourceVersionId, blobSha256, sourceVersionId)?.count,
+    )
+  }
+
   private requireReadableMatter(id: string) {
     const matter = this.matter(id)
     if (matter.status === "deleted") throw new Error("Matter is deleted")
@@ -679,6 +732,7 @@ export class LegalResearchStore {
         id TEXT PRIMARY KEY,
         source_version_id TEXT NOT NULL REFERENCES source_version(id),
         matter_id TEXT NOT NULL REFERENCES matter(id),
+        input_blob_sha256 TEXT,
         parser_name TEXT NOT NULL,
         parser_version TEXT NOT NULL,
         ocr_engine TEXT,
@@ -777,6 +831,12 @@ export class LegalResearchStore {
         created_at TEXT NOT NULL
       );
     `)
+    const representationColumns = this.db
+      .query<{ name: string }, []>("PRAGMA table_info(representation)")
+      .all()
+      .map((column) => column.name)
+    if (!representationColumns.includes("input_blob_sha256"))
+      this.db.exec("ALTER TABLE representation ADD COLUMN input_blob_sha256 TEXT")
   }
 }
 

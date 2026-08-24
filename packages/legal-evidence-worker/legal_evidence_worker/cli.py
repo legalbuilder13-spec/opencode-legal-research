@@ -6,9 +6,11 @@ from pathlib import Path
 
 from .contract import IngestRequest
 from .ingest import ingest
+from .limits import apply_process_limits
 
 
 def main() -> None:
+    apply_process_limits()
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python -m legal_evidence_worker.cli REQUEST.json")
     request = IngestRequest.model_validate_json(Path(sys.argv[1]).read_text())

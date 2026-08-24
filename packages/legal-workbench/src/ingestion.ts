@@ -57,6 +57,17 @@ interface WorkerResult {
 
 export type EvidenceWorkerRunner = (request: WorkerRequest) => Promise<unknown>
 
+export interface CapturedWebDocument {
+  matterId: string
+  title: string
+  requestedUrl: string
+  finalUrl: string
+  canonicalUrl?: string
+  html: Uint8Array
+  screenshot?: { bytes: Uint8Array; mime: "image/png" | "image/jpeg" }
+  languageHints?: string[]
+}
+
 export class EvidenceIngestionService {
   private readonly runner: EvidenceWorkerRunner
 
@@ -129,14 +140,79 @@ export class EvidenceIngestionService {
     })
   }
 
+  async ingestWebCapture(input: CapturedWebDocument) {
+    const materialized = await this.store.materialize({
+      matterId: input.matterId,
+      title: input.title,
+      kind: "web",
+      mime: "text/html",
+      bytes: input.html,
+      origin: input.requestedUrl,
+      finalUrl: input.finalUrl,
+      canonicalUrl: input.canonicalUrl,
+      status: "partial",
+      accessNotes: "Local web evidence processing pending",
+    })
+    const version = this.store.sourceVersion(materialized.sourceVersionId)
+    try {
+      const structural = await this.processDocument({
+        sourceId: materialized.sourceId,
+        sourceVersionId: version.id,
+        mode: "structural",
+        languageHints: input.languageHints,
+        initialCapture: false,
+        allowIncomplete: true,
+      })
+      let visual: { representationId: string; pageCount: number; passageCount: number } | undefined
+      if (input.screenshot) {
+        const artifact = await this.store.blobs.put(input.screenshot.bytes)
+        visual = await this.processDocument({
+          sourceId: materialized.sourceId,
+          sourceVersionId: version.id,
+          mode: "strict_visual",
+          languageHints: input.languageHints,
+          initialCapture: false,
+          allowIncomplete: true,
+          artifact: { blobSha256: artifact.sha256, mime: input.screenshot.mime },
+        })
+      }
+      this.store.setCaptureStatus(
+        version.id,
+        "complete",
+        input.screenshot
+          ? "Structural HTML and rendered visual evidence processed locally"
+          : "Structural HTML processed locally",
+      )
+      return {
+        sourceId: materialized.sourceId,
+        sourceVersionId: version.id,
+        mode: input.screenshot ? "strict_visual" : "structural",
+        structuralRepresentationId: structural.representationId,
+        visualRepresentationId: visual?.representationId ?? null,
+        pageCount: visual?.pageCount ?? 0,
+        passageCount: structural.passageCount + (visual?.passageCount ?? 0),
+        requestedUrl: input.requestedUrl,
+        finalUrl: input.finalUrl,
+        canonicalUrl: input.canonicalUrl ?? null,
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Web evidence processing failed"
+      this.store.setCaptureStatus(version.id, "partial", `Web evidence processing failure: ${message}`)
+      throw error
+    }
+  }
+
   private async processDocument(input: {
     sourceId: string
     sourceVersionId: string
     mode: EvidenceMode
     languageHints?: string[]
     initialCapture: boolean
+    allowIncomplete?: boolean
+    artifact?: { blobSha256: string; mime: EvidenceMime }
   }) {
     const version = this.store.sourceVersion(input.sourceVersionId)
+    const artifact = input.artifact ?? { blobSha256: version.blob_sha256, mime: evidenceMime(version.mime) }
     const jobId = `job_${randomUUID()}`
     const outputDir = join(this.dataRoot, "worker-output", version.id, jobId)
     await mkdir(outputDir, { recursive: true })
@@ -144,10 +220,10 @@ export class EvidenceIngestionService {
       contract_version: 1,
       job_id: jobId,
       source_version_id: version.id,
-      blob_path: this.store.blobs.path(version.blob_sha256),
+      blob_path: this.store.blobs.path(artifact.blobSha256),
       output_dir: outputDir,
-      expected_sha256: version.content_sha256,
-      mime: evidenceMime(version.mime),
+      expected_sha256: artifact.blobSha256,
+      mime: artifact.mime,
       mode: input.mode,
       language_hints: input.languageHints?.length ? input.languageHints : ["eng"],
     }
@@ -155,7 +231,7 @@ export class EvidenceIngestionService {
       const result = workerResult(await this.runner(request))
       if (result.job_id !== jobId) throw new Error("Evidence worker returned the wrong job ID")
       if (result.source_version_id !== version.id) throw new Error("Evidence worker returned the wrong source version")
-      if (result.source_hash !== version.content_sha256)
+      if (result.source_hash !== artifact.blobSha256)
         throw new Error("Evidence worker returned the wrong source hash")
       if (result.ocr_mode !== input.mode) throw new Error("Evidence worker returned the wrong parsing mode")
       if (result.page_count !== result.pages.length) throw new Error("Evidence worker returned a page-count mismatch")
@@ -175,6 +251,7 @@ export class EvidenceIngestionService {
         this.store.setCaptureStatus(version.id, "complete", "Parsed locally by the supervised evidence worker")
       const representationId = this.store.addRepresentation({
         sourceVersionId: version.id,
+        inputBlobSha256: artifact.blobSha256,
         parserName: result.parser_name,
         parserVersion: result.parser_version,
         ocrEngine: result.ocr_engine,
@@ -184,6 +261,7 @@ export class EvidenceIngestionService {
         qualityMetrics: result.quality_metrics,
         warnings: result.warnings,
         passages: passages(result, pageImages),
+        allowIncomplete: input.allowIncomplete,
       })
       return {
         sourceId: input.sourceId,
