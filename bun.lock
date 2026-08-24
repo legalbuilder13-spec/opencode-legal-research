@@ -559,6 +559,15 @@
         "@typescript/native-preview": "catalog:",
       },
     },
+    "packages/legal-research-core": {
+      "name": "@legalbuilder/legal-research-core",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
     "packages/llm": {
       "name": "@opencode-ai/llm",
       "version": "1.18.21",
@@ -1825,6 +1834,8 @@
     "@legalbuilder/codex-app-server-spike": ["@legalbuilder/codex-app-server-spike@workspace:packages/codex-app-server"],
 
     "@legalbuilder/legal-citation-spike": ["@legalbuilder/legal-citation-spike@workspace:packages/legal-citation-spike"],
+
+    "@legalbuilder/legal-research-core": ["@legalbuilder/legal-research-core@workspace:packages/legal-research-core"],
 
     "@leichtgewicht/ip-codec": ["@leichtgewicht/ip-codec@2.0.5", "", {}, "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="],
 
