@@ -1,6 +1,6 @@
 # Legal Research MVP Technical Spikes
 
-Status: proposed v0.1
+Status: TS-01 conditionally selected; TS-02 and TS-03 proposed
 
 Product requirements: [`prd.md`](./prd.md)
 
@@ -47,6 +47,8 @@ TS-01 and the fixture preparation for TS-02 can begin independently. TS-03 shoul
 ### Decision question
 
 Can the fork use Codex app-server as its default local model-execution boundary for authentication, streamed conversation, restart recovery, cancellation, and plan-limit display without requiring an OpenAI API key?
+
+Implementation and result: [`../../packages/codex-app-server`](../../packages/codex-app-server), [`spike-results/ts-01.md`](./spike-results/ts-01.md), and [`ADR 0001`](./adr/0001-chatgpt-subscription-backend.md).
 
 ### Why this is risky
 
