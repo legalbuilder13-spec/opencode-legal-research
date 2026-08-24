@@ -92,6 +92,8 @@ export async function spawnLegalWorkbench(options: SpawnLegalWorkbenchOptions): 
     environment: options.environment,
     userDataPath: options.userDataPath,
     port,
+    packaged: options.packaged,
+    resourcesPath: options.resourcesPath,
   })
   const child = spawn(executable, [], {
     cwd: dirname(executable),
@@ -155,6 +157,8 @@ export function legalWorkbenchEnvironment(input: {
   environment?: NodeJS.ProcessEnv
   userDataPath: string
   port?: number
+  packaged?: boolean
+  resourcesPath?: string
 }) {
   const source = input.environment ?? process.env
   const environment = Object.fromEntries(
@@ -163,6 +167,8 @@ export function legalWorkbenchEnvironment(input: {
   environment.LEGAL_RESEARCH_DATA_DIR = join(input.userDataPath, "legal-research")
   environment.LEGAL_WORKBENCH_HOST = LEGAL_WORKBENCH_HOST
   environment.PORT = String(input.port ?? LEGAL_WORKBENCH_PORT)
+  if (input.packaged && input.resourcesPath && !environment.LEGAL_EVIDENCE_WORKER_DIR)
+    environment.LEGAL_EVIDENCE_WORKER_DIR = join(input.resourcesPath, "legal-evidence-worker")
   if (!environment.CODEX_APP_SERVER_BIN) {
     const codex = installedChatGptCodexPath()
     if (codex) environment.CODEX_APP_SERVER_BIN = codex

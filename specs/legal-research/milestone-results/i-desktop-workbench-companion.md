@@ -18,6 +18,6 @@ The compiled artifact embeds its interface and no longer depends on repository-o
 - The build script produced and ad-hoc signed the local macOS native artifact.
 - Browser verification covers ready and unavailable worker states, visible capability labels, disabled unsupported controls, and continued structural capture without console errors.
 
-## Boundary
+## Follow-on packaging
 
-This result packages the Bun workbench service only. OCR/Docling, the strict-visual browser renderer, signed installer artifacts for each supported OS, and the complete Electron UI restart transaction remain release gates. Health, bootstrap, and the Sources screen say those absent capabilities are unavailable.
+ADR 0016 now packages the OCR/Docling resource and proves a relocated offline macOS arm64 runtime, with a complete Linux x64 build/smoke in CI. The strict-visual browser renderer, OS-level worker sandboxing, signed installer artifacts for every supported OS, license review, and the complete Electron UI restart transaction remain release gates. Health, bootstrap, and the Sources screen continue to fail closed for any absent or invalid installed capability.

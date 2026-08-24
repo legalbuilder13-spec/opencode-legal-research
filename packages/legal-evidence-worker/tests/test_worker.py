@@ -15,7 +15,13 @@ from types import SimpleNamespace
 from pydantic import ValidationError
 
 from legal_evidence_worker import CancelledError, IngestError, IngestRequest, ingest
-from legal_evidence_worker.ingest import normalize_region
+from legal_evidence_worker.ingest import (
+    configured_ocr_engine,
+    normalize_region,
+    ocr_engine_version,
+    packaged_ocr_languages,
+    rapidocr_language,
+)
 from legal_evidence_worker.limits import apply_process_limits
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +30,43 @@ RESULTS = ROOT / "fixtures" / "results"
 
 
 class ContractTests(unittest.TestCase):
+    def test_packaged_rapidocr_language_is_explicit_and_deterministic(self) -> None:
+        self.assertEqual(rapidocr_language(["eng"]), "latin")
+        self.assertEqual(rapidocr_language(["fra"]), "latin")
+        self.assertEqual(rapidocr_language([]), "latin")
+        with self.assertRaisesRegex(IngestError, "one recognition language"):
+            rapidocr_language(["eng", "ara"])
+
+    def test_packaged_ocr_configuration_rejects_unknown_engines(self) -> None:
+        previous = os.environ.get("LEGAL_EVIDENCE_OCR_ENGINE")
+        try:
+            os.environ["LEGAL_EVIDENCE_OCR_ENGINE"] = "remote-service"
+            with self.assertRaisesRegex(IngestError, "Unsupported local OCR engine"):
+                configured_ocr_engine()
+        finally:
+            if previous is None:
+                os.environ.pop("LEGAL_EVIDENCE_OCR_ENGINE", None)
+            else:
+                os.environ["LEGAL_EVIDENCE_OCR_ENGINE"] = previous
+
+    def test_packaged_rapidocr_identity_and_language_inventory(self) -> None:
+        previous_engine = os.environ.get("LEGAL_EVIDENCE_OCR_ENGINE")
+        previous_languages = os.environ.get("LEGAL_EVIDENCE_OCR_LANGUAGES")
+        try:
+            os.environ["LEGAL_EVIDENCE_OCR_ENGINE"] = "rapidocr"
+            os.environ["LEGAL_EVIDENCE_OCR_LANGUAGES"] = "latin"
+            self.assertRegex(ocr_engine_version(), r"^rapidocr-\d")
+            self.assertEqual(packaged_ocr_languages(), {"latin"})
+        finally:
+            if previous_engine is None:
+                os.environ.pop("LEGAL_EVIDENCE_OCR_ENGINE", None)
+            else:
+                os.environ["LEGAL_EVIDENCE_OCR_ENGINE"] = previous_engine
+            if previous_languages is None:
+                os.environ.pop("LEGAL_EVIDENCE_OCR_LANGUAGES", None)
+            else:
+                os.environ["LEGAL_EVIDENCE_OCR_LANGUAGES"] = previous_languages
+
     def test_rejects_unknown_protocol_fields(self) -> None:
         with self.assertRaises(ValidationError):
             IngestRequest.model_validate({**request_values(), "unexpected": True})
@@ -34,7 +77,9 @@ class ContractTests(unittest.TestCase):
 
     def test_rejects_page_ranges_beyond_the_worker_limit(self) -> None:
         with self.assertRaises(ValidationError):
-            IngestRequest.model_validate({**request_values(), "page_range": {"start": 1, "end": 2_001}})
+            IngestRequest.model_validate(
+                {**request_values(), "page_range": {"start": 1, "end": 2_001}}
+            )
 
     def test_requires_structural_mode_for_html_and_docx(self) -> None:
         html = {**request_values(), "mime": "text/html", "mode": "structural"}
@@ -126,7 +171,9 @@ class IngestionSafetyTests(unittest.TestCase):
                 language_hints=["eng"],
             )
             with self.assertRaisesRegex(IngestError, "bounded format validation"):
-                ingest(request, converter_factory=lambda _request: self.fail("converter must not run"))
+                ingest(
+                    request, converter_factory=lambda _request: self.fail("converter must not run")
+                )
 
     def test_docx_compression_bomb_fails_before_converter(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -144,7 +191,9 @@ class IngestionSafetyTests(unittest.TestCase):
                 language_hints=[],
             )
             with self.assertRaisesRegex(IngestError, "compression-ratio"):
-                ingest(request, converter_factory=lambda _request: self.fail("converter must not run"))
+                ingest(
+                    request, converter_factory=lambda _request: self.fail("converter must not run")
+                )
 
     def test_excessive_page_count_fails_before_normalization(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -165,7 +214,12 @@ class IngestionSafetyTests(unittest.TestCase):
                 document=SimpleNamespace(pages={page: object() for page in range(1, 2_002)}),
             )
             with self.assertRaisesRegex(IngestError, "2000-page limit"):
-                ingest(request, converter_factory=lambda _request: SimpleNamespace(convert=lambda *_a, **_k: conversion))
+                ingest(
+                    request,
+                    converter_factory=lambda _request: SimpleNamespace(
+                        convert=lambda *_a, **_k: conversion
+                    ),
+                )
 
     def test_existing_representation_is_immutable_and_idempotent(self) -> None:
         manifest = fixture_manifest()
@@ -333,11 +387,14 @@ def make_docx(path: Path, text: str) -> None:
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/document.xml"
+    ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 </Types>"""
     relationships = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+  <Relationship Id="rId1"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+    Target="word/document.xml"/>
 </Relationships>"""
     document = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">

@@ -1,6 +1,6 @@
 # Legal evidence worker spike
 
-This isolated Python package provides the supervised Docling and portable Tesseract boundary used by the legal workbench for immutable legal-source ingestion. It remains an alpha local worker and is not a production parser sandbox.
+This isolated Python package provides the supervised Docling boundary used by the legal workbench for immutable legal-source ingestion. Development uses portable Tesseract. Desktop packaging builds a self-contained managed Python resource with offline Docling models and RapidOCR/PyTorch Latin-script OCR. It remains an alpha local worker and is not a production parser sandbox.
 
 ## Proven boundary
 
@@ -14,6 +14,8 @@ This isolated Python package provides the supervised Docling and portable Tesser
 - Exposes a versioned JSONL protocol with `accepted`, `progress`, `completed`, `failed`, and `cancelled` states.
 
 The host remains responsible for minting final source, representation, passage, and region IDs. Worker IDs are deterministic processing references, not database authority. The host allowlists the worker environment, enforces time/output limits, and independently validates hashes, counts, geometry, and output paths.
+
+The packaged resource is built from `packages/desktop` with `bun ./scripts/build-evidence-worker.ts`. Its manifest contains only relative, root-contained runtime paths plus the Python, lock, model, platform, and OCR identities. Packaged inference sets `LEGAL_EVIDENCE_OCR_ENGINE=rapidocr`, uses the bundled Latin-script PyTorch model, and forces model libraries offline. The repository `.venv` remains the Tesseract development fallback. Missing or unsupported packaged models are blocking errors, not download requests.
 
 Before importing Docling, the CLI applies OS limits for CPU time, output-file size, core dumps, and open descriptors. Admission also bounds source size, requested and actual page count, image/page pixels, item count, normalized text, and DOCX archive entries, expanded size, and compression ratio. Malformed images and DOCX archives fail before converter construction. A packaged release still needs a memory/network/filesystem namespace sandbox appropriate to each operating system.
 
@@ -65,4 +67,4 @@ Write one JSON object per line using `{"command":"ingest","request":{...}}` or `
 
 On the synthetic corpus, both modes achieved 100% exact text recovery, correct-page association, and region hits. The deliberately faint/skewed page was the only page that produced a low-ink-contrast warning. See `fixtures/results/evaluation.json` and `fixtures/results/overlay-gallery.png`.
 
-This is conditional evidence, not a corpus-wide accuracy claim. Real Docling tests also cover scanned-image OCR, inert HTML, structural DOCX, malformed images, compressed-DOCX rejection, and excessive-page blocking. The remaining real-opinion, rotation/crop, multilingual, broader malformed-input, and alternative-OCR matrix remains a release gate.
+This is conditional evidence, not a corpus-wide accuracy claim. Real Docling tests also cover scanned-image OCR, inert HTML, structural DOCX, malformed images, compressed-DOCX rejection, and excessive-page blocking. A relocated macOS arm64 packaged worker also passed real offline RapidOCR ingestion; CI repeats the packaged build and smoke on Linux x64. The remaining real-opinion, rotation/crop, multilingual, broader malformed-input, Windows/other-architecture, licensing, and alternative-OCR matrix remains a release gate.

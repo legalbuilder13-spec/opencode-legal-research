@@ -10,6 +10,8 @@ Use a separately supervised Python evidence worker with Docling as the primary d
 - `adaptive`: retain native PDF text and apply OCR where Docling determines it is needed;
 - `strict_visual`: run full-page OCR and require a canonical image for every page.
 
+ADR 0016 refines the distribution decision: repository development retains Tesseract, while packaged desktop builds use the bundled RapidOCR/PyTorch Latin-script model because it is relocatable and removes a system-Tesseract dependency. Both backends emit the same versioned worker contract and persist their engine identity.
+
 Normalize all regions to a top-left coordinate system for the viewer, but retain Docling's source coordinate origin and box. Do not let the worker mint final database identities or write directly to OpenCode's session tables.
 
 ## Evidence

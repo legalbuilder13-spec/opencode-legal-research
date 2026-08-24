@@ -75,23 +75,45 @@ jobs:
         run: LEGAL_WORKBENCH_TEST_EXECUTABLE=/tmp/legal-workbench bun test ./src/main/legal-workbench.test.ts ./electron-builder.config.test.ts
 
   evidence-worker:
-    name: evidence worker gates
+    name: packaged evidence worker gates
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Install local OCR runtime
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes tesseract-ocr
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
 
-      - name: Create pinned Python environment
-        working-directory: packages/legal-evidence-worker
-        run: |
-          python3 -m venv .venv
-          .venv/bin/pip install --disable-pip-version-check docling==2.121.0
+      - name: Install pinned uv builder
+        run: python3 -m pip install --user --break-system-packages uv==0.11.13
 
-      - name: Run evidence worker tests
+      - name: Build relocatable Python, Docling, and OCR resource
+        working-directory: packages/desktop
+        timeout-minutes: 45
+        env:
+          UV: /home/runner/.local/bin/uv
+        run: bun ./scripts/build-evidence-worker.ts /tmp/legal-evidence-worker
+
+      - name: Run evidence worker tests from packaged Python
         working-directory: packages/legal-evidence-worker
-        run: PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -v
+        env:
+          PYTHONPATH: /tmp/legal-evidence-worker
+          LEGAL_EVIDENCE_OCR_ENGINE: rapidocr
+          LEGAL_EVIDENCE_OCR_LANGUAGES: latin
+          DOCLING_ARTIFACTS_PATH: /tmp/legal-evidence-worker/models
+          HF_HUB_OFFLINE: 1
+          HF_HUB_DISABLE_TELEMETRY: 1
+          TRANSFORMERS_OFFLINE: 1
+        run: |
+          runtime_python=$(python3 -c 'import json; manifest=json.load(open("/tmp/legal-evidence-worker/runtime-manifest.json")); print("/tmp/legal-evidence-worker/" + manifest["python"]["executable"])')
+          "$runtime_python" -m unittest discover -s tests -v
+          "$runtime_python" scripts/smoke_packaged.py fixtures/generated/scan_page_1.png /tmp/legal-evidence-worker-smoke
+
+      - name: Prove compiled workbench discovers the packaged worker
+        working-directory: packages/desktop
+        env:
+          LEGAL_WORKBENCH_TEST_EXECUTABLE: /tmp/legal-workbench
+          LEGAL_EVIDENCE_WORKER_TEST_DIR: /tmp/legal-evidence-worker
+        run: |
+          bun ./scripts/build-legal-workbench.ts /tmp/legal-workbench
+          bun test ./src/main/legal-workbench.test.ts

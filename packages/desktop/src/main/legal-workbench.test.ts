@@ -35,6 +35,14 @@ test("resolves the packaged executable and isolates legal data", () => {
   expect(environment.LEGAL_WORKBENCH_HOST).toBe("127.0.0.1")
   expect(environment.PORT).toBe("43210")
   expect(environment.CODEX_APP_SERVER_BIN).toBe("/opt/codex")
+
+  const packaged = legalWorkbenchEnvironment({
+    environment: { PATH: "/usr/bin" },
+    userDataPath: "/tmp/legalbuilder-profile",
+    packaged: true,
+    resourcesPath: "/opt/legalbuilder/resources",
+  })
+  expect(packaged.LEGAL_EVIDENCE_WORKER_DIR).toBe("/opt/legalbuilder/resources/legal-evidence-worker")
 })
 
 test("supervises stop, reuse, and restart without killing a reused service", async () => {
@@ -112,6 +120,7 @@ test("supervises stop, reuse, and restart without killing a reused service", asy
 })
 
 const compiledExecutable = process.env.LEGAL_WORKBENCH_TEST_EXECUTABLE
+const compiledWorker = process.env.LEGAL_EVIDENCE_WORKER_TEST_DIR
 const compiledTest = compiledExecutable ? test : test.skip
 
 compiledTest("starts the compiled workbench with embedded UI and truthful capabilities", async () => {
@@ -126,14 +135,18 @@ compiledTest("starts the compiled workbench with embedded UI and truthful capabi
     executablePath: compiledExecutable,
     userDataPath: join(root, "profile"),
     port,
-    environment: { PATH: process.env.PATH, CODEX_APP_SERVER_BIN: process.env.CODEX_APP_SERVER_BIN },
+    environment: {
+      PATH: process.env.PATH,
+      CODEX_APP_SERVER_BIN: process.env.CODEX_APP_SERVER_BIN,
+      LEGAL_EVIDENCE_WORKER_DIR: compiledWorker,
+    },
     startTimeoutMs: 10_000,
     stopTimeoutMs: 2_000,
   })
   cleanups.push(running.listener.stop)
   expect(running.reused).toBe(false)
   expect(running.health.capabilities).toMatchObject({
-    evidenceWorker: { status: "unavailable" },
+    evidenceWorker: { status: compiledWorker ? "ready" : "unavailable" },
     strictVisualWebRenderer: { status: "unavailable" },
   })
 

@@ -62,6 +62,11 @@ const getBase = (appId: string): Configuration => ({
       to: "",
       filter: ["legal-workbench*"],
     },
+    {
+      from: "resources/",
+      to: "",
+      filter: ["legal-evidence-worker/**"],
+    },
     ...(channel === "dev"
       ? [
           {

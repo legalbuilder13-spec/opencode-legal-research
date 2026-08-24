@@ -26,5 +26,6 @@ out/
 
 resources/opencode-cli*
 resources/legal-workbench*
+resources/legal-evidence-worker/
 resources/icons
 resources/*.metainfo.xml

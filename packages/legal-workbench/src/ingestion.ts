@@ -2,6 +2,7 @@ import { hashText, LegalResearchStore } from "@legalbuilder/legal-research-core"
 import { randomUUID } from "node:crypto"
 import { mkdir, realpath } from "node:fs/promises"
 import { join, resolve, sep } from "node:path"
+import { discoverEvidenceWorkerRuntime, type EvidenceWorkerRuntime } from "./worker-runtime"
 
 export type EvidenceMime =
   | "application/pdf"
@@ -283,18 +284,18 @@ export class EvidenceIngestionService {
 export function localEvidenceWorker(
   workerRoot = resolve(import.meta.dir, "../../legal-evidence-worker"),
 ): EvidenceWorkerRunner {
+  const discovery = discoverEvidenceWorkerRuntime(workerRoot)
+  if (discovery.status !== "ready") return unavailableEvidenceWorker(discovery.detail)
+  const runtime = discovery.runtime
   return async (request) => {
     const requestPath = join(request.output_dir, "request.json")
     await Bun.write(requestPath, `${JSON.stringify(request, null, 2)}\n`)
-    const processHandle = Bun.spawn(
-      [join(workerRoot, ".venv/bin/python"), "-m", "legal_evidence_worker.cli", requestPath],
-      {
-        cwd: workerRoot,
-        env: workerEnvironment(),
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    )
+    const processHandle = Bun.spawn([runtime.python, "-m", "legal_evidence_worker.cli", requestPath], {
+      cwd: runtime.packageRoot,
+      env: workerEnvironment(process.env, runtime),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
     const kill = () => processHandle.kill()
     const timedExit = new Promise<number>((resolveExit, rejectExit) => {
       const timer = setTimeout(
@@ -343,12 +344,23 @@ export function unavailableEvidenceWorker(reason: string): EvidenceWorkerRunner 
   }
 }
 
-export function workerEnvironment(environment: NodeJS.ProcessEnv = process.env) {
+export function workerEnvironment(environment: NodeJS.ProcessEnv = process.env, runtime?: EvidenceWorkerRuntime) {
   const allowed = ["PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "XDG_CACHE_HOME", "DOCLING_ARTIFACTS_PATH"] as const
-  const result: Record<string, string> = { PYTHONPATH: ".", PYTHONNOUSERSITE: "1" }
+  const result: Record<string, string> = {
+    PYTHONPATH: runtime?.packageRoot ?? ".",
+    PYTHONNOUSERSITE: "1",
+  }
   for (const name of allowed) {
     const value = environment[name]
     if (value) result[name] = value
+  }
+  if (runtime?.kind === "packaged") {
+    result.LEGAL_EVIDENCE_OCR_ENGINE = runtime.ocrEngine
+    result.LEGAL_EVIDENCE_OCR_LANGUAGES = runtime.ocrLanguages.join(",")
+    if (runtime.artifactsPath) result.DOCLING_ARTIFACTS_PATH = runtime.artifactsPath
+    result.HF_HUB_OFFLINE = "1"
+    result.HF_HUB_DISABLE_TELEMETRY = "1"
+    result.TRANSFORMERS_OFFLINE = "1"
   }
   return result
 }

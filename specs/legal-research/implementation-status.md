@@ -22,9 +22,10 @@ Last updated: 2026-08-24
 | Private-beta P1 controls                          | Synthetic product gates passed             | [`milestone-results/h-private-beta-controls.md`](./milestone-results/h-private-beta-controls.md)             |
 | ChatGPT account switching                         | Synthetic product gate passed              | [`adr/0014-account-switching-boundary.md`](./adr/0014-account-switching-boundary.md)                         |
 | Native desktop workbench companion                | Companion lifecycle gate passed            | [`milestone-results/i-desktop-workbench-companion.md`](./milestone-results/i-desktop-workbench-companion.md) |
+| Relocatable offline OCR worker                    | macOS arm64 passed; Linux x64 CI-gated      | [`adr/0016-relocatable-evidence-worker.md`](./adr/0016-relocatable-evidence-worker.md)                       |
 | Parser resource and malformed-input hardening     | Local security gate passed                 | [`threat-model.md`](./threat-model.md)                                                                       |
 | Primary OpenCode shell route                      | Alpha route implemented                    | [`adr/0010-primary-shell-route.md`](./adr/0010-primary-shell-route.md)                                       |
-| Full desktop/worker/renderer installer packaging  | Partial                                    | [`adr/0015-desktop-workbench-companion.md`](./adr/0015-desktop-workbench-companion.md)                       |
+| Full desktop/worker/renderer installer packaging  | Partial                                    | [`adr/0016-relocatable-evidence-worker.md`](./adr/0016-relocatable-evidence-worker.md)                       |
 | Evaluation corpus schema and validator            | Synthetic scaffold passed                  | [`corpus/v0/README.md`](./corpus/v0/README.md)                                                               |
 | Attorney-reviewed release corpus                  | Pending external review                    | Evaluation plan                                                                                              |
 | P0 release gate audit                             | Published                                  | [`release-gates.md`](./release-gates.md)                                                                     |

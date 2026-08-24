@@ -52,6 +52,30 @@ class Converter(Protocol):
 Progress = Callable[[str, int], None]
 ConverterFactory = Callable[[IngestRequest], Converter]
 
+RAPIDOCR_LANGUAGE_ALIASES = {
+    "eng": "latin",
+    "english": "latin",
+    "deu": "latin",
+    "ger": "latin",
+    "fra": "latin",
+    "fre": "latin",
+    "spa": "latin",
+    "ita": "latin",
+    "por": "latin",
+    "nld": "latin",
+    "dut": "latin",
+    "ara": "arabic",
+    "rus": "cyrillic",
+    "ukr": "cyrillic",
+    "ell": "el",
+    "gre": "el",
+    "kor": "korean",
+    "jpn": "japan",
+    "chi_sim": "ch",
+    "chi_tra": "ch",
+    "zho": "ch",
+}
+
 
 def ingest(
     request: IngestRequest,
@@ -145,7 +169,7 @@ def ingest(
     result = CompletedResult(
         worker_version=WORKER_VERSION,
         parser_version=parser_version,
-        ocr_engine=tesseract_version() if request.mode != "structural" else "none",
+        ocr_engine=ocr_engine_version() if request.mode != "structural" else "none",
         ocr_mode=request.mode,
         job_id=request.job_id,
         source_version_id=request.source_version_id,
@@ -177,6 +201,7 @@ def build_converter(request: IngestRequest) -> Converter:
     from docling.datamodel.pipeline_options import (
         OcrMode,
         PdfPipelineOptions,
+        RapidOcrOptions,
         TesseractCliOcrOptions,
     )
     from docling.document_converter import (
@@ -199,13 +224,27 @@ def build_converter(request: IngestRequest) -> Converter:
         )
 
     mode = OcrMode.FULL_PAGE if request.mode == "strict_visual" else OcrMode.DEFAULT
+    engine = configured_ocr_engine()
+    if engine == "rapidocr":
+        language = rapidocr_language(request.language_hints)
+        allowed = packaged_ocr_languages()
+        if allowed and language not in allowed:
+            raise IngestError(
+                f"Packaged RapidOCR does not include language {language!r}; "
+                f"installed languages: {', '.join(sorted(allowed))}"
+            )
+        ocr_options = RapidOcrOptions(mode=mode, lang=[language], backend="torch")
+    else:
+        ocr_options = TesseractCliOcrOptions(mode=mode, lang=request.language_hints)
+    artifacts = os.environ.get("DOCLING_ARTIFACTS_PATH")
     options = PdfPipelineOptions(
         do_ocr=True,
         do_table_structure=True,
         enable_remote_services=False,
         generate_page_images=True,
         images_scale=2.0,
-        ocr_options=TesseractCliOcrOptions(mode=mode, lang=request.language_hints),
+        artifacts_path=Path(artifacts).resolve() if artifacts else None,
+        ocr_options=ocr_options,
     )
     if request.mime in {"image/png", "image/jpeg"}:
         return DocumentConverter(
@@ -422,6 +461,38 @@ def tesseract_version() -> str:
     except (OSError, subprocess.SubprocessError) as error:
         raise IngestError("Tesseract CLI is unavailable") from error
     return result.stdout.splitlines()[0].strip()
+
+
+def configured_ocr_engine() -> str:
+    engine = os.environ.get("LEGAL_EVIDENCE_OCR_ENGINE", "tesseract").strip().lower()
+    if engine not in {"rapidocr", "tesseract"}:
+        raise IngestError(f"Unsupported local OCR engine: {engine or 'empty'}")
+    return engine
+
+
+def ocr_engine_version() -> str:
+    engine = configured_ocr_engine()
+    if engine == "tesseract":
+        return tesseract_version()
+    try:
+        return f"rapidocr-{importlib.metadata.version('rapidocr')}"
+    except importlib.metadata.PackageNotFoundError as error:
+        raise IngestError("RapidOCR runtime is unavailable") from error
+
+
+def rapidocr_language(language_hints: list[str]) -> str:
+    normalized = [hint.strip().lower() for hint in language_hints if hint.strip()]
+    if not normalized:
+        return "latin"
+    languages = [RAPIDOCR_LANGUAGE_ALIASES.get(hint, hint) for hint in normalized]
+    if len(set(languages)) > 1:
+        raise IngestError("RapidOCR accepts one recognition language per immutable representation")
+    return languages[0]
+
+
+def packaged_ocr_languages() -> set[str]:
+    value = os.environ.get("LEGAL_EVIDENCE_OCR_LANGUAGES", "")
+    return {entry.strip().lower() for entry in value.split(",") if entry.strip()}
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:

@@ -31,6 +31,11 @@ for (const channel of channels) {
       to: "",
       filter: ["legal-workbench*"],
     })
+    expect(config.extraResources).toContainEqual({
+      from: "resources/",
+      to: "",
+      filter: ["legal-evidence-worker/**"],
+    })
   })
 }
 

@@ -18,5 +18,5 @@ The Sources screen exposes adaptive native-text-plus-OCR and strict-visual OCR m
 
 - The primary UI can now upload a scanned or native PDF and research it without a remote OCR service.
 - An OCR-backed answer citation resolves through the same matter-owned transaction to a stored page image and exact region.
-- The local `.venv` remains an alpha packaging dependency. Desktop distribution must bundle and sandbox the worker runtime and models.
+- ADR 0016 replaces the local `.venv` packaging dependency with a relocatable managed Python/Docling/RapidOCR resource. OS-level sandboxing and cross-platform signed-installer validation remain required.
 - Image, DOCX, HTML, and strict visual web ingestion remain separate adapters and cannot be presented as completed by this PDF decision.

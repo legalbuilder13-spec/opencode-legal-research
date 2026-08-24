@@ -12,9 +12,9 @@ If an already-running service on that port returns the exact Legal Builder healt
 
 The process inherits the user's environment. On macOS it may use the Codex executable inside an installed ChatGPT application when `CODEX_APP_SERVER_BIN` is not already configured. The fork does not redistribute the Codex executable or ChatGPT credentials.
 
-## Fail-closed capability boundary
+## Capability boundary
 
-The native workbench executable is packaged, but the current 1.1 GB repository Python virtual environment is not relocatable and is not bundled. `/api/health` and `/api/bootstrap` therefore report the evidence worker unavailable unless `LEGAL_EVIDENCE_WORKER_DIR` points to a valid pinned runtime. The Sources screen shows the capability state and disables upload/reprocessing controls when the worker is absent. Strict visual browser rendering also remains unavailable; its mode is disabled while structural URL capture remains usable. Missing capabilities fail visibly instead of searching an invalid compiled path.
+ADR 0016 adds a relocatable, manifest-validated Python/Docling/RapidOCR resource to Electron release builds instead of bundling the repository virtual environment. `/api/health` and `/api/bootstrap` report the evidence worker ready only when its interpreter, package, offline models, and manifest pass discovery. The Sources screen shows the capability state and disables upload/reprocessing controls when the worker is absent. Strict visual browser rendering remains unavailable; its mode is disabled while structural URL capture remains usable. Missing capabilities fail visibly instead of searching an invalid compiled path or downloading models.
 
 ## Evidence
 
@@ -26,4 +26,4 @@ The native workbench executable is packaged, but the current 1.1 GB repository P
 
 ## Remaining packaging gates
 
-Build and sandbox a relocatable evidence-worker distribution; select and sandbox a strict-visual renderer; smoke-test signed installer artifacts on supported operating systems; provide reviewed localization; and test the complete Electron window-to-answer restart flow.
+Apply OS-level sandboxing to the evidence worker; select and sandbox a strict-visual renderer; smoke-test signed installer artifacts on every supported operating system; complete the dependency/model license audit; provide reviewed localization; and test the complete Electron window-to-answer restart flow.
