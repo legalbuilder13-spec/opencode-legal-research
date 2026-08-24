@@ -598,11 +598,14 @@ function renderGeneratedAnswer(answer) {
   const text = $("#generated-answer-text")
   const status = $("#generated-answer-status")
   const exportLink = $("#answer-export-link")
+  const readableExportLink = $("#answer-readable-export-link")
   if (!answer) {
     root.classList.add("empty-answer")
     status.textContent = "No answer yet"
     exportLink.classList.add("disabled")
     exportLink.href = "#"
+    readableExportLink.classList.add("disabled")
+    readableExportLink.href = "#"
     text.textContent =
       "Research will retrieve matter evidence, ask the signed-in ChatGPT subscription for structured synthesis, then mint citations only after passage and hash checks pass."
     renderCitationDemo()
@@ -613,6 +616,8 @@ function renderGeneratedAnswer(answer) {
   status.classList.toggle("warning", !answer.sourceComplete)
   exportLink.classList.remove("disabled")
   exportLink.href = `/api/answers/${encodeURIComponent(answer.id)}/export`
+  readableExportLink.classList.remove("disabled")
+  readableExportLink.href = `/api/answers/${encodeURIComponent(answer.id)}/export.md`
   text.replaceChildren()
   let cursor = 0
   for (const citation of [...answer.citations].sort((left, right) => left.claimEnd - right.claimEnd)) {

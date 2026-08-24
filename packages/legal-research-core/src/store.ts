@@ -593,7 +593,7 @@ export class LegalResearchStore {
       >(
         `SELECT id, source_version_id, input_blob_sha256, parser_name, parser_version, ocr_engine, ocr_version,
           mode, normalized_text_sha256, quality_metrics_json, warnings_json, created_at
-        FROM representation WHERE matter_id = ? ORDER BY created_at, id`,
+        FROM representation WHERE matter_id = ? ORDER BY created_at, representation.rowid`,
       )
       .all(matterId)
       .map((representation) => ({

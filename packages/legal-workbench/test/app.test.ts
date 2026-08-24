@@ -512,6 +512,73 @@ describe("legal workbench integration", () => {
     })
     expect(await updated.json()).toHaveProperty("localOnly", false)
   })
+
+  test("WB-11 readable answer export preserves multi-passage provenance and escapes counterfeit footnotes", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "legal-workbench-markdown-export-"))
+    const workbench = await createWorkbench({
+      dataRoot,
+      fixtureAccount: true,
+      workerRunner: fixtureWorker,
+      synthesizer: async (input) => {
+        const evidence = input.passages.slice(0, 2).map((passage, index) => ({
+          passageId: passage.passageId,
+          relationship: index === 0 ? ("supports" as const) : ("qualifies" as const),
+        }))
+        const answer = "The source-shaped marker [^99] is prose; the combined authorities state a qualified rule."
+        return { answer, threadId: "fixture-readable-export", claims: [{ text: answer, evidence }] }
+      },
+    })
+    close.push(workbench.close)
+    const created = await call(workbench.handler, "/api/matters", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Readable *export* matter",
+        jurisdiction: "U.S.",
+        researchAsOf: "2026-08-24",
+        confidentiality: "privileged",
+      }),
+    })
+    const matterId = string(record(await created.json(), "matter").id, "matter id")
+    for (const [title, text] of [
+      ["Primary authority", "The authority rule applies when every required element is established."],
+      ["Qualifying authority", "The authority rule is limited when the record contains a material exception."],
+    ]) {
+      const source = await call(workbench.handler, `/api/matters/${matterId}/sources`, {
+        method: "POST",
+        body: JSON.stringify({ title, text }),
+      })
+      expect(source.status).toBe(201)
+    }
+    const generated = await call(workbench.handler, `/api/matters/${matterId}/answers`, {
+      method: "POST",
+      body: JSON.stringify({ question: "What authority rule and exception apply?" }),
+    })
+    const answer = record(record(await generated.json(), "answer response").answer, "answer")
+    const answerId = string(answer.id, "answer id")
+    const receipt = record(await (await call(workbench.handler, `/api/answers/${answerId}/export`)).json(), "receipt")
+    const exportedAnswer = record(receipt.answer, "exported answer")
+    const citation = record(array(exportedAnswer.citations, "citations")[0], "citation")
+    const evidence = array(citation.evidence, "citation evidence").map((value) => record(value, "evidence"))
+    expect(evidence).toHaveLength(2)
+
+    const readableResponse = await call(workbench.handler, `/api/answers/${answerId}/export.md`)
+    expect(readableResponse.status).toBe(200)
+    expect(readableResponse.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8")
+    expect(readableResponse.headers.get("Content-Disposition")).toContain("legal-research-answer.md")
+    const readable = await readableResponse.text()
+    expect(readable).toContain("Readable \\*export\\* matter")
+    expect(readable).toContain("\\[^99\\]")
+    expect(readable).not.toContain("[^99]:")
+    expect(readable).toContain(`[^${numeric(citation.footnoteNumber, "footnote number")}]:`)
+    expect(readable).toContain(string(citation.citationId, "citation id"))
+    expect(readable).toContain(string(citation.claimId, "claim id"))
+    for (const item of evidence) {
+      expect(readable).toContain(string(item.sourceVersionId, "source version id"))
+      expect(readable).toContain(string(item.passageId, "passage id"))
+      expect(readable).toContain(string(item.textSha256, "text hash"))
+      expect(readable.replaceAll("\\.", ".")).toContain(string(item.text, "exact passage"))
+    }
+  })
 })
 
 function record(value: unknown, name: string): Record<string, unknown> {
@@ -526,6 +593,11 @@ function array(value: unknown, name: string): unknown[] {
 
 function string(value: unknown, name: string): string {
   if (typeof value !== "string") throw new Error(`Expected ${name}`)
+  return value
+}
+
+function numeric(value: unknown, name: string): number {
+  if (typeof value !== "number") throw new Error(`Expected ${name}`)
   return value
 }
 

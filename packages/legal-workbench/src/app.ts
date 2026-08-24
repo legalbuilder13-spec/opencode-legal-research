@@ -14,6 +14,7 @@ import type { CourtListenerFetcher } from "@legalbuilder/legal-research-core"
 import { mkdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { EvidenceIngestionService, type EvidenceMime, type EvidenceWorkerRunner } from "./ingestion"
+import { renderAnswerMarkdown } from "./markdown-export"
 import { fixtureSynthesizer, parseSynthesis, subscriptionSynthesizer, type WorkbenchSynthesizer } from "./synthesis"
 import {
   WebCaptureService,
@@ -360,6 +361,16 @@ export async function createWorkbench(options: WorkbenchOptions) {
           headers: {
             "Content-Type": "application/json",
             "Content-Disposition": `attachment; filename="${answerId}-answer-receipt.json"`,
+          },
+        })
+      }
+      const answerMarkdownExportMatch = url.pathname.match(/^\/api\/answers\/([^/]+)\/export\.md$/)
+      if (answerMarkdownExportMatch && request.method === "GET") {
+        const answerId = pathParameter(answerMarkdownExportMatch)
+        return new Response(renderAnswerMarkdown(answers.receipt(answerId)), {
+          headers: {
+            "Content-Type": "text/markdown; charset=utf-8",
+            "Content-Disposition": `attachment; filename="${answerId}-legal-research-answer.md"`,
           },
         })
       }

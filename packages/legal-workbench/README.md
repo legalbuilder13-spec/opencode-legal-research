@@ -1,6 +1,6 @@
 # Legal Builder Research workbench
 
-This package is the first usable legal-research surface assembled from the fork's proven components. It runs locally, uses the signed-in ChatGPT subscription for structured synthesis, stores matters and sources in a matter-scoped SQLite database, persists source bytes by SHA-256, plans issues, searches primary and adverse lanes, finalizes exact citations, and exports a combined answer/provenance receipt.
+This package is the first usable legal-research surface assembled from the fork's proven components. It runs locally, uses the signed-in ChatGPT subscription for structured synthesis, stores matters and sources in a matter-scoped SQLite database, persists source bytes by SHA-256, plans issues, searches primary and adverse lanes, finalizes exact citations, and exports both a readable Markdown answer and a combined JSON provenance receipt.
 
 ## Run locally
 
@@ -27,7 +27,7 @@ The Sources screen also accepts public HTTP(S) URLs. Structural mode uses bounde
 
 ## Evidence boundary
 
-The model receives only support-eligible, matter-scoped passage envelopes. It must return strict JSON with exact answer claim text and allowed passage IDs. The host recomputes offsets, checks context admission, matter ownership, capture status, and text hashes, then mints citations and ledger entries in the matter database. Model-written footnotes never create anchors.
+The model receives only support-eligible, matter-scoped passage envelopes. It must return strict JSON with exact answer claim text and allowed passage IDs. The host recomputes offsets, checks context admission, matter ownership, capture status, and text hashes, then mints citations and ledger entries in the matter database. Model-written footnotes never create anchors. The readable export is generated from the same persisted receipt, and each footnote carries the exact passage plus its immutable IDs and hash; untrusted footnote syntax is escaped.
 
 This remains an alpha integration workbench, not a production legal opinion generator. Synthetic transaction tests do not establish legal accuracy, research completeness, or treatment validity. The remaining product work is the attorney-reviewed corpus, strict visual URL capture, production worker sandboxing, live CourtListener token evaluation, and primary OpenCode shell packaging/localization.
 
