@@ -1,0 +1,77 @@
+[
+  {
+    "task_id": "synthetic_relief_001",
+    "version": 1,
+    "class": "multi-authority-synthesis",
+    "question": "What must a movant establish, and what qualification applies to reviewing the record?",
+    "jurisdiction": { "country": "US", "system": "federal", "courts": ["Synthetic Cir."] },
+    "as_of": "2026-08-23",
+    "posture": "synthetic motion",
+    "allowed_source_versions": ["srcv_synthetic_native_v1", "srcv_synthetic_scanned_v1"],
+    "issues": [
+      { "issue_id": "issue_elements", "label": "Required elements", "materiality": "material" },
+      { "issue_id": "issue_record", "label": "Whole-record qualification", "materiality": "material" }
+    ],
+    "expected_authorities": [
+      {
+        "source_version_id": "srcv_synthetic_native_v1",
+        "authority_role": "synthetic-primary",
+        "issues": ["issue_elements"]
+      },
+      {
+        "source_version_id": "srcv_synthetic_scanned_v1",
+        "authority_role": "synthetic-qualifying",
+        "issues": ["issue_record"]
+      }
+    ],
+    "gold_passages": [
+      {
+        "passage_id": "gold_native_rule",
+        "source_version_id": "srcv_synthetic_native_v1",
+        "page": 1,
+        "text": "A court may grant relief only when the movant establishes each required element.",
+        "text_sha256": "18607f2b98be85e5c099f0258308f1d9f31237b7256c3d059d81794934b3d017",
+        "relationship": "supports",
+        "issues": ["issue_elements"]
+      },
+      {
+        "passage_id": "gold_scanned_qualification",
+        "source_version_id": "srcv_synthetic_scanned_v1",
+        "page": 1,
+        "text": "The record must be reviewed as a whole, including contrary authority.",
+        "text_sha256": "54e6f3228784560507c426f660ad62c97fbe8931392d010fa5bb3867f3bb80dd",
+        "relationship": "qualifies",
+        "issues": ["issue_record"]
+      }
+    ],
+    "material_claims": [
+      {
+        "claim_id": "claim_relief",
+        "proposition": "Relief requires every required element.",
+        "required_relationships": ["supports", "qualifies"]
+      }
+    ],
+    "contrary_authority": [],
+    "expected_limitations": ["This is generated protocol evidence, not substantive legal authority."],
+    "unanswerable_without": [],
+    "review": { "status": "draft", "annotators": [], "attorney_note": "Attorney labels intentionally pending." }
+  },
+  {
+    "task_id": "synthetic_insufficient_001",
+    "version": 1,
+    "class": "insufficient-evidence",
+    "question": "What is the governing limitations period?",
+    "jurisdiction": { "country": "US", "system": "federal", "courts": ["Synthetic Cir."] },
+    "as_of": "2026-08-23",
+    "posture": "unknown",
+    "allowed_source_versions": ["srcv_synthetic_mixed_v1"],
+    "issues": [{ "issue_id": "issue_limitations", "label": "Limitations period", "materiality": "material" }],
+    "expected_authorities": [],
+    "gold_passages": [],
+    "material_claims": [],
+    "contrary_authority": [],
+    "expected_limitations": ["The permitted source does not establish a limitations period."],
+    "unanswerable_without": ["An applicable statute and jurisdiction-specific authority"],
+    "review": { "status": "draft", "annotators": [], "attorney_note": "Attorney labels intentionally pending." }
+  }
+]

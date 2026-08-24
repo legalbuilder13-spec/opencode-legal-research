@@ -145,19 +145,19 @@ The UI must expose ingestion warnings and let a user reprocess with full-page OC
 
 Use immutable source versions. Mutable labels and matter membership can point at them.
 
-| Entity | Important fields |
-|---|---|
-| `legal_matter` | id, name, client/matter labels, jurisdiction defaults, privilege flag, retention policy |
-| `source` | stable logical identity, source kind, title, authority type, jurisdiction, court/agency, citation metadata |
-| `source_version` | source id, content hash, retrieval time, canonical URL, connector/tool identity, MIME, original blob ref, license/access notes |
-| `source_representation` | source version, parser and OCR engine/version, mode, normalized-text hash, status, quality metrics |
-| `passage` | representation id, stable passage id, exact text, text hash, char start/end, page start/end, section path, order |
-| `passage_region` | passage id, page, bounding box, coordinate origin, polygon/line data when available |
-| `retrieval_event` | turn id, query, filters, candidate passage ids, ranks/scores, passages actually sent to the model |
-| `claim` | assistant message id, start/end in rendered answer, claim text, status |
-| `claim_evidence` | claim id, passage id, relationship, verification method, confidence, verifier version |
-| `authority_status` | source id, court/date/precedential fields, citation resolution, treatment result, as-of date, supporting authorities |
-| `citation_ledger_entry` | turn, source/passages read, cited or uncited, retrieval event, timestamps; IDs and offsets rather than duplicated payloads |
+| Entity                  | Important fields                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `legal_matter`          | id, name, client/matter labels, jurisdiction defaults, privilege flag, retention policy                                        |
+| `source`                | stable logical identity, source kind, title, authority type, jurisdiction, court/agency, citation metadata                     |
+| `source_version`        | source id, content hash, retrieval time, canonical URL, connector/tool identity, MIME, original blob ref, license/access notes |
+| `source_representation` | source version, parser and OCR engine/version, mode, normalized-text hash, status, quality metrics                             |
+| `passage`               | representation id, stable passage id, exact text, text hash, char start/end, page start/end, section path, order               |
+| `passage_region`        | passage id, page, bounding box, coordinate origin, polygon/line data when available                                            |
+| `retrieval_event`       | turn id, query, filters, candidate passage ids, ranks/scores, passages actually sent to the model                              |
+| `claim`                 | assistant message id, start/end in rendered answer, claim text, status                                                         |
+| `claim_evidence`        | claim id, passage id, relationship, verification method, confidence, verifier version                                          |
+| `authority_status`      | source id, court/date/precedential fields, citation resolution, treatment result, as-of date, supporting authorities           |
+| `citation_ledger_entry` | turn, source/passages read, cited or uncited, retrieval event, timestamps; IDs and offsets rather than duplicated payloads     |
 
 Store original blobs and canonical page images outside message rows. Store their content-addressed paths and hashes in SQLite. The ledger should reference content rather than duplicate it, so deletion and retention rules stay enforceable.
 
@@ -284,16 +284,16 @@ The OpenCode markdown renderer currently has no legal citation model. Add first-
 
 ## Repository changes by area
 
-| Area | Planned changes |
-|---|---|
-| `packages/schema` | Legal source, passage, claim, citation-anchor, retrieval-event, and ledger schemas; protocol events |
-| `packages/core` | SQLite tables/migrations, content-addressed blob store, source materialization, retrieval, evidence ledger, retention/deletion |
-| `packages/opencode` | Codex app-server adapter; evidence-worker client; source-capturing tool wrapper; legal agents/tools; CourtListener adapter |
-| `packages/session-ui` | Citation anchors, multi-passage hover cards, trust states, source-panel hooks, provisional streaming state |
-| `packages/app` | Matters/research IA, ingestion queue and warnings, source viewer, filters, research plan, receipts/ledger |
-| `packages/desktop` | Bundle/supervise compatible Codex and evidence-worker runtimes; health/version checks; local data location controls |
-| `packages/plugin` | Structured source-envelope capability so plugins can return citable resources rather than opaque strings |
-| `specs/legal-research` | Data contracts, threat model, evaluation protocol, source-adapter requirements, ADRs |
+| Area                   | Planned changes                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/schema`      | Legal source, passage, claim, citation-anchor, retrieval-event, and ledger schemas; protocol events                            |
+| `packages/core`        | SQLite tables/migrations, content-addressed blob store, source materialization, retrieval, evidence ledger, retention/deletion |
+| `packages/opencode`    | Codex app-server adapter; evidence-worker client; source-capturing tool wrapper; legal agents/tools; CourtListener adapter     |
+| `packages/session-ui`  | Citation anchors, multi-passage hover cards, trust states, source-panel hooks, provisional streaming state                     |
+| `packages/app`         | Matters/research IA, ingestion queue and warnings, source viewer, filters, research plan, receipts/ledger                      |
+| `packages/desktop`     | Bundle/supervise compatible Codex and evidence-worker runtimes; health/version checks; local data location controls            |
+| `packages/plugin`      | Structured source-envelope capability so plugins can return citable resources rather than opaque strings                       |
+| `specs/legal-research` | Data contracts, threat model, evaluation protocol, source-adapter requirements, ADRs                                           |
 
 Public schema changes must follow the repository rule: regenerate the client after changing Protocol or Server `HttpApi`; never edit generated clients directly.
 

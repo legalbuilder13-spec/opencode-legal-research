@@ -1,0 +1,35 @@
+{
+  "corpus_version": "0.1.0-synthetic",
+  "status": "draft-not-attorney-reviewed",
+  "created_at": "2026-08-23",
+  "license_policy": "Only generated synthetic fixtures are included. Restricted and client sources are prohibited.",
+  "sources": [
+    {
+      "source_version_id": "srcv_synthetic_native_v1",
+      "title": "Synthetic Court of Appeals Opinion",
+      "class": "native-text-federal-opinion",
+      "path": "packages/legal-evidence-worker/fixtures/generated/native_legal_opinion.pdf",
+      "sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "license_basis": "project-generated synthetic fixture",
+      "redistributable": true
+    },
+    {
+      "source_version_id": "srcv_synthetic_scanned_v1",
+      "title": "Scanned Synthetic Opinion",
+      "class": "scanned-federal-opinion",
+      "path": "packages/legal-evidence-worker/fixtures/generated/scanned_legal_opinion.pdf",
+      "sha256": "3f75f051d94f79638885eb7ca569c74e11d764bb27093598493a5ea46bef6b46",
+      "license_basis": "project-generated synthetic fixture",
+      "redistributable": true
+    },
+    {
+      "source_version_id": "srcv_synthetic_mixed_v1",
+      "title": "Mixed Synthetic Legal Record",
+      "class": "mixed-native-scanned-pdf",
+      "path": "packages/legal-evidence-worker/fixtures/generated/mixed_legal_record.pdf",
+      "sha256": "502ec5deac07b25e9a3e28decb1ab0996a38949706dc6c2910952a9d7a383630",
+      "license_basis": "project-generated synthetic fixture",
+      "redistributable": true
+    }
+  ]
+}

@@ -166,109 +166,109 @@ Priority meanings:
 
 ### 10.1 Authentication and model execution
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| AUTH-01 | P0 | The user can authenticate with an eligible ChatGPT subscription. | A clean profile completes browser or device authentication and a streamed model turn without an OpenAI API key. |
-| AUTH-02 | P0 | The product distinguishes subscription and API-key modes. | Settings label the active entitlement and never describe ChatGPT access as general API credit. |
-| AUTH-03 | P0 | Subscription limits and authentication failures are visible. | Expired login, plan limit, cancellation, and unavailable backend produce distinct recoverable states. |
-| AUTH-04 | P0 | The backend decision is documented. | A versioned ADR selects Codex app-server or the compatibility OAuth path based on login, resume, cancellation, streaming, and rate-limit tests. |
-| AUTH-05 | P1 | The user can change supported ChatGPT workspaces/accounts without deleting matter data. | Logout and login replace credentials without corrupting local matters or evidence. |
+| ID      | Priority | Requirement                                                                             | Acceptance criteria                                                                                                                             |
+| ------- | -------: | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| AUTH-01 |       P0 | The user can authenticate with an eligible ChatGPT subscription.                        | A clean profile completes browser or device authentication and a streamed model turn without an OpenAI API key.                                 |
+| AUTH-02 |       P0 | The product distinguishes subscription and API-key modes.                               | Settings label the active entitlement and never describe ChatGPT access as general API credit.                                                  |
+| AUTH-03 |       P0 | Subscription limits and authentication failures are visible.                            | Expired login, plan limit, cancellation, and unavailable backend produce distinct recoverable states.                                           |
+| AUTH-04 |       P0 | The backend decision is documented.                                                     | A versioned ADR selects Codex app-server or the compatibility OAuth path based on login, resume, cancellation, streaming, and rate-limit tests. |
+| AUTH-05 |       P1 | The user can change supported ChatGPT workspaces/accounts without deleting matter data. | Logout and login replace credentials without corrupting local matters or evidence.                                                              |
 
 ### 10.2 Matters and source collections
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| MAT-01 | P0 | The user can create, rename, open, and archive a matter. | Each operation persists across application restart. |
-| MAT-02 | P0 | A matter stores research defaults. | Jurisdiction, as-of date, confidentiality label, and optional client/matter label are visible and editable. |
-| MAT-03 | P0 | Retrieval is matter-scoped. | Automated isolation tests show that a matter cannot retrieve another matter's passages without explicit import. |
-| MAT-04 | P1 | The user can export and delete a matter. | Export produces matter data plus evidence receipts; deletion removes searchable content and follows documented blob-retention behavior. |
+| ID     | Priority | Requirement                                              | Acceptance criteria                                                                                                                     |
+| ------ | -------: | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| MAT-01 |       P0 | The user can create, rename, open, and archive a matter. | Each operation persists across application restart.                                                                                     |
+| MAT-02 |       P0 | A matter stores research defaults.                       | Jurisdiction, as-of date, confidentiality label, and optional client/matter label are visible and editable.                             |
+| MAT-03 |       P0 | Retrieval is matter-scoped.                              | Automated isolation tests show that a matter cannot retrieve another matter's passages without explicit import.                         |
+| MAT-04 |       P1 | The user can export and delete a matter.                 | Export produces matter data plus evidence receipts; deletion removes searchable content and follows documented blob-retention behavior. |
 
 ### 10.3 Source acquisition and materialization
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| SRC-01 | P0 | The product accepts PDF, image, HTML, text, and DOCX uploads. | Gold fixtures ingest without entering model context before materialization completes. |
-| SRC-02 | P0 | The product captures public URLs. | The stored source version includes response body or archived bytes, final and canonical URLs, retrieval time, MIME type, and content hash. |
-| SRC-03 | P0 | The product retrieves CourtListener opinions and metadata. | A search result can be materialized into a full opinion source with CourtListener identity, URL, court, date, and available citation fields. |
-| SRC-04 | P0 | Every tool or connector result is intercepted before inference. | A test tool returning content cannot place raw content in model context until a source version and passage IDs exist. |
-| SRC-05 | P0 | Source versions are immutable. | Re-fetching changed content creates a new version and does not alter an existing citation target. |
-| SRC-06 | P0 | Originals are content-addressed and integrity checked. | Stored bytes can be rehashed to the recorded digest; mismatch blocks verified citation rendering. |
-| SRC-07 | P0 | Acquisition failures and licensing/access notes are visible. | Partial, blocked, paywalled, or license-limited sources cannot appear as fully captured. |
-| SRC-08 | P1 | A generic MCP source-envelope wrapper captures text, embedded resources, and linked documents. | Each content block admitted to context resolves to a captured source version or an explicit excluded-content record. |
-| SRC-09 | P2 | Licensed providers such as Midpage use the same envelope. | No licensed adapter can bypass source versioning, passage creation, or evidence logging. |
+| ID     | Priority | Requirement                                                                                    | Acceptance criteria                                                                                                                          |
+| ------ | -------: | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| SRC-01 |       P0 | The product accepts PDF, image, HTML, text, and DOCX uploads.                                  | Gold fixtures ingest without entering model context before materialization completes.                                                        |
+| SRC-02 |       P0 | The product captures public URLs.                                                              | The stored source version includes response body or archived bytes, final and canonical URLs, retrieval time, MIME type, and content hash.   |
+| SRC-03 |       P0 | The product retrieves CourtListener opinions and metadata.                                     | A search result can be materialized into a full opinion source with CourtListener identity, URL, court, date, and available citation fields. |
+| SRC-04 |       P0 | Every tool or connector result is intercepted before inference.                                | A test tool returning content cannot place raw content in model context until a source version and passage IDs exist.                        |
+| SRC-05 |       P0 | Source versions are immutable.                                                                 | Re-fetching changed content creates a new version and does not alter an existing citation target.                                            |
+| SRC-06 |       P0 | Originals are content-addressed and integrity checked.                                         | Stored bytes can be rehashed to the recorded digest; mismatch blocks verified citation rendering.                                            |
+| SRC-07 |       P0 | Acquisition failures and licensing/access notes are visible.                                   | Partial, blocked, paywalled, or license-limited sources cannot appear as fully captured.                                                     |
+| SRC-08 |       P1 | A generic MCP source-envelope wrapper captures text, embedded resources, and linked documents. | Each content block admitted to context resolves to a captured source version or an explicit excluded-content record.                         |
+| SRC-09 |       P2 | Licensed providers such as Midpage use the same envelope.                                      | No licensed adapter can bypass source versioning, passage creation, or evidence logging.                                                     |
 
 ### 10.4 OCR, parsing, and provenance
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| ING-01 | P0 | Every source is parsed into a normalized, addressable representation. | Each model-visible text span belongs to a persisted passage with a stable ID and text hash. |
-| ING-02 | P0 | Visual documents support native text plus OCR. | PDF/image fixtures retain native extraction where superior and OCR output for scanned or low-confidence regions. |
-| ING-03 | P0 | Strict visual mode renders and OCRs every page. | Enabling strict mode creates canonical page images and OCR representations without discarding native text. |
-| ING-04 | P0 | Renderable web sources support visual preservation. | Strict-mode URL capture stores a rendered snapshot, page images, OCR text, and the structural HTML representation. |
-| ING-05 | P0 | Passages retain source location. | Paginated passages retain page and bounding-box data; structural sources retain section path and character offsets. |
-| ING-06 | P0 | Ingestion quality is measured and visible. | Empty pages, low OCR confidence, reading-order anomalies, page-count mismatch, and parse failures create warnings or block completion. |
-| ING-07 | P0 | The user can reprocess a source. | The user can select strict OCR or language hints; reprocessing creates a new representation without overwriting prior evidence. |
-| ING-08 | P0 | Worker protocol and parser versions are persisted. | Every representation records parser, OCR engine, model/version, mode, normalized-text hash, and quality metrics. |
+| ID     | Priority | Requirement                                                           | Acceptance criteria                                                                                                                    |
+| ------ | -------: | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| ING-01 |       P0 | Every source is parsed into a normalized, addressable representation. | Each model-visible text span belongs to a persisted passage with a stable ID and text hash.                                            |
+| ING-02 |       P0 | Visual documents support native text plus OCR.                        | PDF/image fixtures retain native extraction where superior and OCR output for scanned or low-confidence regions.                       |
+| ING-03 |       P0 | Strict visual mode renders and OCRs every page.                       | Enabling strict mode creates canonical page images and OCR representations without discarding native text.                             |
+| ING-04 |       P0 | Renderable web sources support visual preservation.                   | Strict-mode URL capture stores a rendered snapshot, page images, OCR text, and the structural HTML representation.                     |
+| ING-05 |       P0 | Passages retain source location.                                      | Paginated passages retain page and bounding-box data; structural sources retain section path and character offsets.                    |
+| ING-06 |       P0 | Ingestion quality is measured and visible.                            | Empty pages, low OCR confidence, reading-order anomalies, page-count mismatch, and parse failures create warnings or block completion. |
+| ING-07 |       P0 | The user can reprocess a source.                                      | The user can select strict OCR or language hints; reprocessing creates a new representation without overwriting prior evidence.        |
+| ING-08 |       P0 | Worker protocol and parser versions are persisted.                    | Every representation records parser, OCR engine, model/version, mode, normalized-text hash, and quality metrics.                       |
 
 ### 10.5 Retrieval and research workflow
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| RET-01 | P0 | Retrieval works without a paid embedding API. | FTS5 plus local semantic retrieval and reranking return passages with no embedding API credential configured. |
-| RET-02 | P0 | Retrieval supports legal filters. | Matter, source collection, jurisdiction, court, date, authority type, and precedential-status filters affect results deterministically. |
-| RET-03 | P0 | Context construction is logged. | Each turn records candidates, ranks, selected passage IDs, neighboring context, and the passages actually sent to the model. |
-| RET-04 | P0 | Retrieval preserves source diversity. | Configurable limits prevent one long authority from occupying the entire evidence packet. |
-| RES-01 | P0 | The agent creates an inspectable issue plan. | The user sees issues, assumed jurisdiction/date/posture, and source priorities before or during research. |
-| RES-02 | P0 | Primary sources are preferred for final legal propositions. | When a secondary source leads to an available primary source, the chain is recorded and the final proposition cites the primary source. |
-| RES-03 | P0 | The workflow seeks qualifications and adverse material. | The final result contains a contrary/qualifying authority section or an explicit statement of what was searched and not found. |
-| RES-04 | P0 | Search snippets alone cannot support a verified claim. | A verified citation requires a materialized full source and passage, not a result snippet. |
+| ID     | Priority | Requirement                                                 | Acceptance criteria                                                                                                                     |
+| ------ | -------: | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| RET-01 |       P0 | Retrieval works without a paid embedding API.               | FTS5 plus local semantic retrieval and reranking return passages with no embedding API credential configured.                           |
+| RET-02 |       P0 | Retrieval supports legal filters.                           | Matter, source collection, jurisdiction, court, date, authority type, and precedential-status filters affect results deterministically. |
+| RET-03 |       P0 | Context construction is logged.                             | Each turn records candidates, ranks, selected passage IDs, neighboring context, and the passages actually sent to the model.            |
+| RET-04 |       P0 | Retrieval preserves source diversity.                       | Configurable limits prevent one long authority from occupying the entire evidence packet.                                               |
+| RES-01 |       P0 | The agent creates an inspectable issue plan.                | The user sees issues, assumed jurisdiction/date/posture, and source priorities before or during research.                               |
+| RES-02 |       P0 | Primary sources are preferred for final legal propositions. | When a secondary source leads to an available primary source, the chain is recorded and the final proposition cites the primary source. |
+| RES-03 |       P0 | The workflow seeks qualifications and adverse material.     | The final result contains a contrary/qualifying authority section or an explicit statement of what was searched and not found.          |
+| RES-04 |       P0 | Search snippets alone cannot support a verified claim.      | A verified citation requires a materialized full source and passage, not a result snippet.                                              |
 
 ### 10.6 Claims, citations, and evidence display
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| CIT-01 | P0 | Final answers persist structured claims and evidence selections. | Each material claim has answer offsets, claim text, and zero or more passage relationships. |
-| CIT-02 | P0 | One claim can cite multiple passages and sources. | The UI and persistence layer support at least supporting, qualifying, and contradictory relationships without flattening them into one quote. |
-| CIT-03 | P0 | Citation anchors are application-generated. | Model-written footnote syntax cannot create a clickable or verified citation. |
-| CIT-04 | P0 | Hover cards show exact persisted passages. | Hover text is read from passage rows and includes source title, location, relationship, verification state, and all linked passages. |
-| CIT-05 | P0 | Citation clicks navigate to stored source coordinates. | Gold PDF fixtures open at the correct page and bounding box; text search is used only as a visibly labeled fallback. |
-| CIT-06 | P0 | Citation anchors survive restart. | Every clickable citation resolves to the same source version and passages after application restart. |
-| CIT-07 | P0 | Streaming citations remain provisional until finalized. | Provisional prose cannot display an ordinary verified citation before validation completes. |
-| CIT-08 | P1 | Exported footnotes retain provenance. | Readable footnotes and the sidecar resolve to the same immutable source versions and passages. |
+| ID     | Priority | Requirement                                                      | Acceptance criteria                                                                                                                           |
+| ------ | -------: | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| CIT-01 |       P0 | Final answers persist structured claims and evidence selections. | Each material claim has answer offsets, claim text, and zero or more passage relationships.                                                   |
+| CIT-02 |       P0 | One claim can cite multiple passages and sources.                | The UI and persistence layer support at least supporting, qualifying, and contradictory relationships without flattening them into one quote. |
+| CIT-03 |       P0 | Citation anchors are application-generated.                      | Model-written footnote syntax cannot create a clickable or verified citation.                                                                 |
+| CIT-04 |       P0 | Hover cards show exact persisted passages.                       | Hover text is read from passage rows and includes source title, location, relationship, verification state, and all linked passages.          |
+| CIT-05 |       P0 | Citation clicks navigate to stored source coordinates.           | Gold PDF fixtures open at the correct page and bounding box; text search is used only as a visibly labeled fallback.                          |
+| CIT-06 |       P0 | Citation anchors survive restart.                                | Every clickable citation resolves to the same source version and passages after application restart.                                          |
+| CIT-07 |       P0 | Streaming citations remain provisional until finalized.          | Provisional prose cannot display an ordinary verified citation before validation completes.                                                   |
+| CIT-08 |       P1 | Exported footnotes retain provenance.                            | Readable footnotes and the sidecar resolve to the same immutable source versions and passages.                                                |
 
 ### 10.7 Verification and trust states
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| VER-01 | P0 | Passage identity and hash are checked before citation rendering. | Missing or changed passage data blocks verified citation status. |
-| VER-02 | P0 | Displayed quotations are checked for fidelity. | Exact quotations match normalized source text; OCR-tolerant matches are separately labeled. |
-| VER-03 | P0 | Claim support is evaluated separately from quote fidelity. | The stored result distinguishes supports, qualifies, contradicts, irrelevant, and unverified. |
-| VER-04 | P0 | Material uncited claims are detected. | The final response cannot receive `source-complete` status when a material externally verifiable claim lacks evidence. |
-| VER-05 | P0 | Citation resolution is distinct from legal treatment. | A real, correctly resolved case is not labeled good law solely because it exists. |
-| VER-06 | P0 | Verification failure is visible. | A failed or unavailable check displays unverified/qualified/contradicted state and never silently appears green. |
-| VER-07 | P1 | Court and precedential metadata are evaluated as of a recorded date. | The source card shows jurisdiction, court, publication/precedential fields, metadata source, and as-of date. |
-| VER-08 | P1 | Derived treatment is labeled as derived. | Citation-graph results name their data source and do not use editorial-citator branding or equivalence claims. |
+| ID     | Priority | Requirement                                                          | Acceptance criteria                                                                                                    |
+| ------ | -------: | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| VER-01 |       P0 | Passage identity and hash are checked before citation rendering.     | Missing or changed passage data blocks verified citation status.                                                       |
+| VER-02 |       P0 | Displayed quotations are checked for fidelity.                       | Exact quotations match normalized source text; OCR-tolerant matches are separately labeled.                            |
+| VER-03 |       P0 | Claim support is evaluated separately from quote fidelity.           | The stored result distinguishes supports, qualifies, contradicts, irrelevant, and unverified.                          |
+| VER-04 |       P0 | Material uncited claims are detected.                                | The final response cannot receive `source-complete` status when a material externally verifiable claim lacks evidence. |
+| VER-05 |       P0 | Citation resolution is distinct from legal treatment.                | A real, correctly resolved case is not labeled good law solely because it exists.                                      |
+| VER-06 |       P0 | Verification failure is visible.                                     | A failed or unavailable check displays unverified/qualified/contradicted state and never silently appears green.       |
+| VER-07 |       P1 | Court and precedential metadata are evaluated as of a recorded date. | The source card shows jurisdiction, court, publication/precedential fields, metadata source, and as-of date.           |
+| VER-08 |       P1 | Derived treatment is labeled as derived.                             | Citation-graph results name their data source and do not use editorial-citator branding or equivalence claims.         |
 
 ### 10.8 Evidence ledger, persistence, and export
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| LED-01 | P0 | Every model-visible source passage is recorded. | A per-turn drawer lists cited and uncited passages admitted to context. |
-| LED-02 | P0 | Retrieval and evidence events are reproducible. | The ledger connects query, candidate ranks, context packet, claims, citations, and verifier outputs by immutable IDs. |
-| PER-01 | P0 | Matter research survives restart. | Sources, representations, passages, messages, claim offsets, citations, coordinates, and ledger entries reopen correctly. |
-| PER-02 | P0 | Persistence avoids duplicating source payloads in messages. | Messages and ledger rows reference content-addressed source data rather than embedding copies. |
-| EXP-01 | P0 | The user can export an answer and provenance receipt. | Export includes answer text, readable source references, as-of date, source hashes, passage IDs, retrieval times, and verification states. |
+| ID     | Priority | Requirement                                                 | Acceptance criteria                                                                                                                        |
+| ------ | -------: | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| LED-01 |       P0 | Every model-visible source passage is recorded.             | A per-turn drawer lists cited and uncited passages admitted to context.                                                                    |
+| LED-02 |       P0 | Retrieval and evidence events are reproducible.             | The ledger connects query, candidate ranks, context packet, claims, citations, and verifier outputs by immutable IDs.                      |
+| PER-01 |       P0 | Matter research survives restart.                           | Sources, representations, passages, messages, claim offsets, citations, coordinates, and ledger entries reopen correctly.                  |
+| PER-02 |       P0 | Persistence avoids duplicating source payloads in messages. | Messages and ledger rows reference content-addressed source data rather than embedding copies.                                             |
+| EXP-01 |       P0 | The user can export an answer and provenance receipt.       | Export includes answer text, readable source references, as-of date, source hashes, passage IDs, retrieval times, and verification states. |
 
 ### 10.9 Safety, confidentiality, and product integrity
 
-| ID | Priority | Requirement | Acceptance criteria |
-|---|---:|---|---|
-| SEC-01 | P0 | Source content is treated as untrusted data. | Prompt-injection fixtures inside documents cannot alter system policy or bypass source capture. |
-| SEC-02 | P0 | Active document/web content is isolated. | Parsers and viewers do not execute macros, scripts, or embedded active content from sources. |
-| SEC-03 | P0 | Model egress is disclosed. | Before first use, the product identifies the selected ChatGPT workspace/backend and warns that matter content will be sent there. |
-| SEC-04 | P0 | Logs and telemetry exclude source text by default. | Automated checks find no raw matter text, tokens, or full tool payloads in default diagnostic output. |
-| SEC-05 | P0 | Destructive actions are explicit. | Source or matter deletion names its scope and reports whether underlying blobs remain referenced elsewhere. |
-| SEC-06 | P1 | A local-only mode prevents model egress. | When enabled, no matter content is sent to ChatGPT; unsupported generative actions are clearly disabled unless a local model is configured. |
+| ID     | Priority | Requirement                                        | Acceptance criteria                                                                                                                         |
+| ------ | -------: | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-01 |       P0 | Source content is treated as untrusted data.       | Prompt-injection fixtures inside documents cannot alter system policy or bypass source capture.                                             |
+| SEC-02 |       P0 | Active document/web content is isolated.           | Parsers and viewers do not execute macros, scripts, or embedded active content from sources.                                                |
+| SEC-03 |       P0 | Model egress is disclosed.                         | Before first use, the product identifies the selected ChatGPT workspace/backend and warns that matter content will be sent there.           |
+| SEC-04 |       P0 | Logs and telemetry exclude source text by default. | Automated checks find no raw matter text, tokens, or full tool payloads in default diagnostic output.                                       |
+| SEC-05 |       P0 | Destructive actions are explicit.                  | Source or matter deletion names its scope and reports whether underlying blobs remain referenced elsewhere.                                 |
+| SEC-06 |       P1 | A local-only mode prevents model egress.           | When enabled, no matter content is sent to ChatGPT; unsupported generative actions are clearly disabled unless a local model is configured. |
 
 ## 11. User experience requirements
 
@@ -411,15 +411,15 @@ Exit: the primary workflow passes evidence, research, product, and safety gates.
 
 ## 16. Risks and mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| ChatGPT authentication integration changes | The default no-key experience breaks. | Prefer documented Codex app-server, pin protocol versions, retain a clearly labeled compatibility path, and test clean-profile login. |
-| OCR or reading order is wrong | Citations point to misleading text. | Preserve native and OCR representations, store coordinates, show quality warnings, support reprocessing, and evaluate gold fixtures. |
-| The model selects irrelevant passages | A real citation appears to support a false claim. | Separate identity, quotation, entailment, coverage, and authority checks; never equate citation existence with support. |
-| Search misses adverse authority | The answer is materially incomplete. | Use issue decomposition, primary-source priority, adverse lanes, diversity controls, and a reviewed evaluation set. |
-| Source or plugin bypasses capture | The answer relies on unreviewable content. | Enforce one source-envelope/materialization boundary at tool execution and test attempted bypasses. |
-| Local data exposes confidential material | Privilege or confidentiality is harmed. | Matter isolation, safe logs, clear egress disclosure, lifecycle controls, local-only roadmap, and threat modeling. |
-| MVP scope expands into a full legal platform | Delivery stalls before the evidence loop is proven. | Hold the release to one user, federal case law, user materials, CourtListener, and one research-answer workflow. |
+| Risk                                         | Impact                                              | Mitigation                                                                                                                            |
+| -------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| ChatGPT authentication integration changes   | The default no-key experience breaks.               | Prefer documented Codex app-server, pin protocol versions, retain a clearly labeled compatibility path, and test clean-profile login. |
+| OCR or reading order is wrong                | Citations point to misleading text.                 | Preserve native and OCR representations, store coordinates, show quality warnings, support reprocessing, and evaluate gold fixtures.  |
+| The model selects irrelevant passages        | A real citation appears to support a false claim.   | Separate identity, quotation, entailment, coverage, and authority checks; never equate citation existence with support.               |
+| Search misses adverse authority              | The answer is materially incomplete.                | Use issue decomposition, primary-source priority, adverse lanes, diversity controls, and a reviewed evaluation set.                   |
+| Source or plugin bypasses capture            | The answer relies on unreviewable content.          | Enforce one source-envelope/materialization boundary at tool execution and test attempted bypasses.                                   |
+| Local data exposes confidential material     | Privilege or confidentiality is harmed.             | Matter isolation, safe logs, clear egress disclosure, lifecycle controls, local-only roadmap, and threat modeling.                    |
+| MVP scope expands into a full legal platform | Delivery stalls before the evidence loop is proven. | Hold the release to one user, federal case law, user materials, CourtListener, and one research-answer workflow.                      |
 
 ## 17. Open product decisions
 

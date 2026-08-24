@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@legalbuilder/legal-research-core",
+  "name": "@legalbuilder/legal-evaluation",
   "version": "0.0.1",
   "private": true,
   "type": "module",

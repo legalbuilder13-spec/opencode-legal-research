@@ -559,9 +559,32 @@
         "@typescript/native-preview": "catalog:",
       },
     },
+    "packages/legal-evaluation": {
+      "name": "@legalbuilder/legal-evaluation",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
     "packages/legal-research-core": {
       "name": "@legalbuilder/legal-research-core",
       "version": "0.0.1",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
+    "packages/legal-workbench": {
+      "name": "@legalbuilder/legal-workbench",
+      "version": "0.0.1",
+      "dependencies": {
+        "@legalbuilder/codex-app-server-spike": "workspace:*",
+        "@legalbuilder/legal-citation-spike": "workspace:*",
+        "@legalbuilder/legal-research-core": "workspace:*",
+      },
       "devDependencies": {
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
@@ -1835,7 +1858,11 @@
 
     "@legalbuilder/legal-citation-spike": ["@legalbuilder/legal-citation-spike@workspace:packages/legal-citation-spike"],
 
+    "@legalbuilder/legal-evaluation": ["@legalbuilder/legal-evaluation@workspace:packages/legal-evaluation"],
+
     "@legalbuilder/legal-research-core": ["@legalbuilder/legal-research-core@workspace:packages/legal-research-core"],
+
+    "@legalbuilder/legal-workbench": ["@legalbuilder/legal-workbench@workspace:packages/legal-workbench"],
 
     "@leichtgewicht/ip-codec": ["@leichtgewicht/ip-codec@2.0.5", "", {}, "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="],
 

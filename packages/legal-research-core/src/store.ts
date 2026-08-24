@@ -150,6 +150,25 @@ export class LegalResearchStore {
     }
   }
 
+  listMatters(input: { includeArchived?: boolean } = {}) {
+    const secondStatus = input.includeArchived ? "archived" : "active"
+    return this.db
+      .query<MatterRow, [string, string]>(
+        `SELECT id, name, jurisdiction, research_as_of, confidentiality, client_label, status
+        FROM matter WHERE status IN (?, ?) ORDER BY updated_at DESC`,
+      )
+      .all("active", secondStatus)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        jurisdiction: row.jurisdiction,
+        researchAsOf: row.research_as_of,
+        confidentiality: row.confidentiality,
+        clientLabel: row.client_label,
+        status: row.status,
+      }))
+  }
+
   updateMatter(id: string, input: Partial<MatterInput>) {
     const current = this.matter(id)
     if (current.status === "deleted") throw new Error("Deleted matter cannot be edited")
@@ -455,6 +474,39 @@ export class LegalResearchStore {
         ORDER BY source.created_at, source_version.retrieved_at`,
       )
       .all(matterId)
+    const retrievalRuns = this.db
+      .query<{ id: string; query: string; filters_json: string; created_at: string }, [string]>(
+        "SELECT id, query, filters_json, created_at FROM retrieval_run WHERE matter_id = ? ORDER BY created_at, id",
+      )
+      .all(matterId)
+      .map((run) => ({
+        id: run.id,
+        query: run.query,
+        filters: JSON.parse(run.filters_json) as unknown,
+        createdAt: run.created_at,
+        candidates: this.db
+          .query<
+            {
+              passage_id: string
+              lexical_rank: number | null
+              semantic_rank: number | null
+              fused_score: number
+              rerank_score: number
+              selected: number
+              sent_to_model: number
+            },
+            [string]
+          >(
+            `SELECT passage_id, lexical_rank, semantic_rank, fused_score, rerank_score, selected, sent_to_model
+            FROM retrieval_candidate WHERE retrieval_run_id = ? ORDER BY rerank_score DESC, passage_id`,
+          )
+          .all(run.id)
+          .map((candidate) => ({
+            ...candidate,
+            selected: Boolean(candidate.selected),
+            sent_to_model: Boolean(candidate.sent_to_model),
+          })),
+      }))
     return {
       contractVersion: 1,
       exportedAt: new Date().toISOString(),
@@ -466,6 +518,7 @@ export class LegalResearchStore {
         textSha256: passage.text_sha256,
         sectionPath: passage.section_path,
       })),
+      retrievalRuns,
       blobPolicy: "content-addressed blobs are retained until explicit compaction",
     }
   }

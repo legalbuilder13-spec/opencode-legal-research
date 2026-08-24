@@ -636,7 +636,8 @@ function validateClaims(text: string, claims: ClaimSelection[]) {
     if (!Number.isInteger(claim.start) || !Number.isInteger(claim.end))
       throw new Error("Claim offsets must be integers")
     if (claim.start < 0 || claim.end <= claim.start || claim.end > text.length) throw new Error("Invalid claim offsets")
-    if (index > 0 && ordered[index - 1].end > claim.start) throw new Error("Claim offsets overlap")
+    const previous = ordered[index - 1]
+    if (previous && previous.end > claim.start) throw new Error("Claim offsets overlap")
   }
 }
 

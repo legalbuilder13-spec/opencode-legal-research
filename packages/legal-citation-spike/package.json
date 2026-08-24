@@ -5,6 +5,10 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "exports": {
+    ".": "./src/store.ts",
+    "./demo": "./src/demo.ts"
+  },
   "scripts": {
     "composed": "bun src/composed-gate.ts",
     "dev": "bun --hot src/server.ts",

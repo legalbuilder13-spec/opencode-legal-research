@@ -33,16 +33,16 @@ The evaluation is designed around the product's core promise: every material res
 
 ## 3. Evaluation layers
 
-| Layer | Unit under test | Core question |
-|---|---|---|
-| E0 — Subscription | Authenticated model turn | Can an eligible ChatGPT workspace power the workflow without an OpenAI API key? |
-| E1 — Materialization | Source version | Was the exact source captured, hashed, versioned, and prevented from bypassing ingestion? |
-| E2 — Ingestion | Representation/page/item | Did parsing/OCR preserve text, order, structure, and visual provenance? |
-| E3 — Retrieval | Query and ranked passage list | Did the system find the right supporting, qualifying, and adverse passages? |
-| E4 — Claims and citations | Claim/evidence link | Does each citation resolve, quote accurately, and support the proposition? |
-| E5 — Legal research | Completed research task | Did the answer cover the issues, use appropriate authority, expose limitations, and include contrary material? |
-| E6 — Product | User task/session | Can a lawyer efficiently review, resume, and export the evidence? |
-| E7 — Safety | Matter, source, and attack case | Are matters isolated, sources treated as untrusted, and sensitive content controlled? |
+| Layer                     | Unit under test                 | Core question                                                                                                  |
+| ------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| E0 — Subscription         | Authenticated model turn        | Can an eligible ChatGPT workspace power the workflow without an OpenAI API key?                                |
+| E1 — Materialization      | Source version                  | Was the exact source captured, hashed, versioned, and prevented from bypassing ingestion?                      |
+| E2 — Ingestion            | Representation/page/item        | Did parsing/OCR preserve text, order, structure, and visual provenance?                                        |
+| E3 — Retrieval            | Query and ranked passage list   | Did the system find the right supporting, qualifying, and adverse passages?                                    |
+| E4 — Claims and citations | Claim/evidence link             | Does each citation resolve, quote accurately, and support the proposition?                                     |
+| E5 — Legal research       | Completed research task         | Did the answer cover the issues, use appropriate authority, expose limitations, and include contrary material? |
+| E6 — Product              | User task/session               | Can a lawyer efficiently review, resume, and export the evidence?                                              |
+| E7 — Safety               | Matter, source, and attack case | Are matters isolated, sources treated as untrusted, and sensitive content controlled?                          |
 
 No aggregate score can compensate for a failed invariant in E0, E1, E4, or E7.
 
@@ -73,17 +73,17 @@ Use three connected corpora: documents, research questions, and adversarial/safe
 
 Target at least 32 source versions for the first full alpha evaluation:
 
-| Class | Minimum | Required variation |
-|---|---:|---|
-| Native-text federal opinions | 6 | Different courts, lengths, footnotes, citations, and page formats |
-| Scanned federal opinions/filings | 6 | Skew, stamps, low contrast, compression, handwriting or marginal marks |
-| Mixed native/scanned PDFs | 3 | Missing text layers and page transitions |
-| Multi-column or footnote-dense documents | 3 | Reading-order and footnote-link challenges |
-| Table-heavy legal/regulatory documents | 2 | Merged cells, repeated headers, multi-page tables |
-| User DOCX/text/HTML materials | 4 | Headings, footnotes, tables, quotations, conflicting statements |
-| Public-web captures | 3 | Canonical URL, redirect, and at least one later changed version |
-| CourtListener materializations | 3 | Search metadata, full opinion, citation and court metadata |
-| Structured MCP/API records | 2 | Multiple content blocks, embedded resource, linked full document |
+| Class                                    | Minimum | Required variation                                                     |
+| ---------------------------------------- | ------: | ---------------------------------------------------------------------- |
+| Native-text federal opinions             |       6 | Different courts, lengths, footnotes, citations, and page formats      |
+| Scanned federal opinions/filings         |       6 | Skew, stamps, low contrast, compression, handwriting or marginal marks |
+| Mixed native/scanned PDFs                |       3 | Missing text layers and page transitions                               |
+| Multi-column or footnote-dense documents |       3 | Reading-order and footnote-link challenges                             |
+| Table-heavy legal/regulatory documents   |       2 | Merged cells, repeated headers, multi-page tables                      |
+| User DOCX/text/HTML materials            |       4 | Headings, footnotes, tables, quotations, conflicting statements        |
+| Public-web captures                      |       3 | Canonical URL, redirect, and at least one later changed version        |
+| CourtListener materializations           |       3 | Search metadata, full opinion, citation and court metadata             |
+| Structured MCP/API records               |       2 | Multiple content blocks, embedded resource, linked full document       |
 
 The same file may satisfy a structural variation but counts only once toward the source-version total. At least one source in each renderable class must be processed in both adaptive and strict visual modes.
 
@@ -91,14 +91,14 @@ The same file may satisfy a structural variation but counts only once toward the
 
 Target 30 attorney-reviewed U.S. federal research tasks:
 
-| Task class | Minimum | Description |
-|---|---:|---|
-| Direct rule lookup | 6 | A focused question answered primarily by one controlling authority or rule text |
-| Multi-authority synthesis | 8 | A rule requires multiple opinions, exceptions, or procedural context |
-| Fact-sensitive application | 5 | The answer must compare user-provided facts to authority passages |
-| Split, qualification, or adverse authority | 5 | Material tension or limiting authority must be surfaced |
-| Time-sensitive/treatment | 3 | The as-of date and later authority materially matter |
-| Insufficient-evidence questions | 3 | The correct behavior is to identify missing facts, sources, or unresolved law |
+| Task class                                 | Minimum | Description                                                                     |
+| ------------------------------------------ | ------: | ------------------------------------------------------------------------------- |
+| Direct rule lookup                         |       6 | A focused question answered primarily by one controlling authority or rule text |
+| Multi-authority synthesis                  |       8 | A rule requires multiple opinions, exceptions, or procedural context            |
+| Fact-sensitive application                 |       5 | The answer must compare user-provided facts to authority passages               |
+| Split, qualification, or adverse authority |       5 | Material tension or limiting authority must be surfaced                         |
+| Time-sensitive/treatment                   |       3 | The as-of date and later authority materially matter                            |
+| Insufficient-evidence questions            |       3 | The correct behavior is to identify missing facts, sources, or unresolved law   |
 
 Each task specifies jurisdiction, court scope, as-of date, posture, allowed source collection, and intended work product. At least one-third of tasks must require more than one passage for a material claim.
 
@@ -214,14 +214,14 @@ Reviewers do not mark a claim supported merely because the cited case is real or
 
 ### Metrics and gates
 
-| Metric | Alpha gate |
-|---|---:|
-| Successful no-key login and turn | 100% of required supported profiles |
-| Stream delta loss/duplication/reordering | 0 |
-| Restart conversation recovery | 100% |
-| Cancellation reaches correct terminal state | 100% |
-| Credential/token occurrences in committed logs | 0 |
-| API-key prompt in subscription path | 0 |
+| Metric                                         |                          Alpha gate |
+| ---------------------------------------------- | ----------------------------------: |
+| Successful no-key login and turn               | 100% of required supported profiles |
+| Stream delta loss/duplication/reordering       |                                   0 |
+| Restart conversation recovery                  |                                100% |
+| Cancellation reaches correct terminal state    |                                100% |
+| Credential/token occurrences in committed logs |                                   0 |
+| API-key prompt in subscription path            |                                   0 |
 
 Any E0 invariant failure blocks the alpha build claiming subscription operation.
 
@@ -391,16 +391,16 @@ Every candidate and every passage actually sent to the model must be reconstruct
 
 ### Integrity invariants
 
-| Invariant | Gate |
-|---|---:|
+| Invariant                                                                                    | Gate |
+| -------------------------------------------------------------------------------------------- | ---: |
 | Clickable citations resolving to existing immutable source version and passage after restart | 100% |
-| Model-invented Markdown citations becoming verified/clickable | 0 |
-| Unknown passage IDs becoming verified/clickable | 0 |
-| Verbatim-labeled quotes matching persisted normalized text exactly | 100% |
-| Model-visible passages represented in sources-read ledger | 100% |
-| Source changes mutating an existing citation target | 0 |
-| Multi-passage relationships surviving restart | 100% |
-| Interrupted provisional citations becoming finalized automatically | 0 |
+| Model-invented Markdown citations becoming verified/clickable                                |    0 |
+| Unknown passage IDs becoming verified/clickable                                              |    0 |
+| Verbatim-labeled quotes matching persisted normalized text exactly                           | 100% |
+| Model-visible passages represented in sources-read ledger                                    | 100% |
+| Source changes mutating an existing citation target                                          |    0 |
+| Multi-passage relationships surviving restart                                                | 100% |
+| Interrupted provisional citations becoming finalized automatically                           |    0 |
 
 ### Citation-resolution precision
 
@@ -464,12 +464,12 @@ Two qualified legal reviewers independently score blinded outputs without seeing
 
 Score each dimension from 0 to 3:
 
-| Score | Meaning |
-|---:|---|
-| 0 | Missing, materially wrong, or dangerously misleading |
-| 1 | Major omissions/errors; not usable without substantial re-research |
-| 2 | Generally useful but needs identifiable corrections or supplementation |
-| 3 | Accurate and appropriately qualified within the stated source scope |
+| Score | Meaning                                                                |
+| ----: | ---------------------------------------------------------------------- |
+|     0 | Missing, materially wrong, or dangerously misleading                   |
+|     1 | Major omissions/errors; not usable without substantial re-research     |
+|     2 | Generally useful but needs identifiable corrections or supplementation |
+|     3 | Accurate and appropriately qualified within the stated source scope    |
 
 Dimensions:
 
@@ -716,16 +716,16 @@ No single reviewer can waive an invariant blocker.
 
 ## 23. PRD traceability
 
-| Evaluation layer | Primary PRD coverage |
-|---|---|
-| E0 | AUTH-01 through AUTH-05 |
-| E1 | SRC-01 through SRC-09; LED-01; LED-02 |
-| E2 | ING-01 through ING-08; CIT-05 |
-| E3 | RET-01 through RET-04; RES-01 through RES-04 |
-| E4 | CIT-01 through CIT-08; VER-01 through VER-08; EXP-01 |
-| E5 | Product goals, legal research workflow, research-quality gates |
-| E6 | MVP release definition, UX requirements, PER-01 |
-| E7 | MAT-03; SEC-01 through SEC-06; MAT-04 |
+| Evaluation layer | Primary PRD coverage                                           |
+| ---------------- | -------------------------------------------------------------- |
+| E0               | AUTH-01 through AUTH-05                                        |
+| E1               | SRC-01 through SRC-09; LED-01; LED-02                          |
+| E2               | ING-01 through ING-08; CIT-05                                  |
+| E3               | RET-01 through RET-04; RES-01 through RES-04                   |
+| E4               | CIT-01 through CIT-08; VER-01 through VER-08; EXP-01           |
+| E5               | Product goals, legal research workflow, research-quality gates |
+| E6               | MVP release definition, UX requirements, PER-01                |
+| E7               | MAT-03; SEC-01 through SEC-06; MAT-04                          |
 
 ## 24. Initial work to operationalize this plan
 

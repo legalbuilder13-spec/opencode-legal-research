@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Legal Builder Research</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">LB</span><span>Legal Builder</span></div>
+        <nav aria-label="Legal research sections">
+          <button class="nav-item active" data-panel="research">Research</button>
+          <button class="nav-item" data-panel="sources">Sources</button>
+          <button class="nav-item" data-panel="evidence">Evidence</button>
+          <button class="nav-item" data-panel="matters">Matters</button>
+        </nav>
+        <div class="sidebar-spacer"></div>
+        <div id="account" class="account-card"><span class="pulse"></span><span>Checking ChatGPT…</span></div>
+        <p class="sidebar-note">Local OCR and retrieval · Matter-scoped evidence</p>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Current matter</p>
+            <button id="matter-picker" class="matter-picker">Create your first matter</button>
+          </div>
+          <div class="top-actions">
+            <span id="confidentiality" class="confidentiality">No matter selected</span>
+            <a id="export-link" class="secondary-button disabled" href="#">Export receipt</a>
+          </div>
+        </header>
+
+        <section id="research-panel" class="panel active">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Subscription-backed research</p>
+              <h1>Ask a focused legal question</h1>
+            </div>
+            <span class="as-of" id="as-of">Research date not set</span>
+          </div>
+          <div class="research-layout">
+            <section class="question-card">
+              <label for="question">Question</label>
+              <textarea
+                id="question"
+                rows="4"
+                placeholder="For example: When is a right clearly established for qualified-immunity purposes?"
+              ></textarea>
+              <div class="question-footer">
+                <input id="posture" placeholder="Procedural posture (optional)" />
+                <button id="research-button" class="primary-button">Plan and search</button>
+              </div>
+              <p class="egress-note">
+                Matter evidence is sent only to the selected ChatGPT workspace. CourtListener searches disclose query
+                egress separately.
+              </p>
+            </section>
+            <aside id="plan-card" class="plan-card empty">
+              <p class="eyebrow">Issue plan</p>
+              <h2>Ready when you are</h2>
+              <p>Create or select a matter, add sources, then ask a focused question.</p>
+            </aside>
+          </div>
+          <section class="results-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Evidence candidates</p>
+                <h2>Primary and adverse lanes</h2>
+              </div>
+              <span id="result-count">No search run</span>
+            </div>
+            <div id="results" class="result-grid empty-results">
+              <p>
+                Search results will appear here with source identity, exact persisted text, and support eligibility.
+              </p>
+            </div>
+          </section>
+        </section>
+
+        <section id="sources-panel" class="panel">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Immutable collection</p>
+              <h1>Sources</h1>
+            </div>
+            <span class="as-of">Captured before inference</span>
+          </div>
+          <div class="sources-layout">
+            <form id="source-form" class="source-form">
+              <h2>Add text source</h2>
+              <label for="source-title">Title</label>
+              <input id="source-title" required placeholder="Client memorandum or authority" />
+              <label for="source-text">Source text</label>
+              <textarea
+                id="source-text"
+                required
+                rows="9"
+                placeholder="Paste source text. It will be hashed, persisted, and marked as untrusted source data."
+              ></textarea>
+              <button class="primary-button" type="submit">Capture source</button>
+            </form>
+            <section>
+              <div class="section-heading">
+                <h2>Materialized sources</h2>
+                <span id="source-count">0 sources</span>
+              </div>
+              <div id="source-list" class="source-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="evidence-panel" class="panel">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Citation workbench</p>
+              <h1>Review exact evidence</h1>
+            </div>
+            <span id="source-complete" class="trust-pill">Loading…</span>
+          </div>
+          <div class="evidence-layout">
+            <article class="answer-card">
+              <p class="eyebrow">Synthetic protocol demonstration</p>
+              <div id="answer" class="answer"></div>
+              <div class="status-legend">
+                <span>● Supported</span><span>● Qualified</span><span>● Contradicted</span><span>● Unverified</span>
+              </div>
+              <details>
+                <summary>Sources-read ledger</summary>
+                <ul id="ledger"></ul>
+              </details>
+            </article>
+            <aside class="viewer-card">
+              <div class="viewer-heading">
+                <div>
+                  <p class="eyebrow">Original source</p>
+                  <h2 id="viewer-title">Select a passage</h2>
+                </div>
+                <span id="page-label">No page</span>
+              </div>
+              <div id="viewer-empty" class="viewer-empty">
+                Choose a passage from a citation to open its persisted page and exact region.
+              </div>
+              <div id="page-viewer" class="page-viewer" hidden>
+                <div class="page-canvas">
+                  <img id="page-image" alt="Persisted source page" />
+                  <div id="page-highlight" class="page-highlight"></div>
+                </div>
+              </div>
+              <div id="passage-detail" class="passage-detail" hidden></div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="matters-panel" class="panel">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Matter isolation</p>
+              <h1>Matters</h1>
+            </div>
+            <span class="as-of">Local-first workspace</span>
+          </div>
+          <div class="matters-layout">
+            <form id="matter-form" class="matter-form">
+              <h2>Create matter</h2>
+              <label for="matter-name">Matter name</label><input id="matter-name" required />
+              <label for="jurisdiction">Default jurisdiction</label
+              ><input id="jurisdiction" required placeholder="9th Cir." />
+              <label for="research-date">Research as of</label><input id="research-date" required type="date" />
+              <label for="confidentiality-input">Confidentiality</label
+              ><select id="confidentiality-input">
+                <option value="privileged">Privileged</option>
+                <option value="confidential">Confidential</option>
+                <option value="public">Public</option>
+              </select>
+              <button class="primary-button" type="submit">Create matter</button>
+            </form>
+            <section>
+              <div class="section-heading">
+                <h2>Local matters</h2>
+                <span id="matter-count">0 matters</span>
+              </div>
+              <div id="matter-list" class="matter-list"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="citation-popover" class="citation-popover" role="dialog" aria-label="Citation evidence" hidden></div>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
