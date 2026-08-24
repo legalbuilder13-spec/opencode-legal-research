@@ -10,6 +10,7 @@
     "email": "hello@opencode.ai"
   },
   "scripts": {
+    "audit:security": "bun audit --prod --audit-level=high",
     "typecheck": "tsgo -b",
     "predev": "bun ./scripts/predev.ts",
     "dev": "electron-vite dev",
@@ -52,6 +53,7 @@
     "@valibot/to-json-schema": "1.6.0",
     "electron": "42.3.3",
     "electron-builder": "26.15.2",
+    "electron-builder-squirrel-windows": "26.15.2",
     "electron-vite": "^5",
     "solid-js": "catalog:",
     "sury": "11.0.0-alpha.4",

@@ -143,7 +143,9 @@
     "@opentui/keymap": "catalog:",
     "@opentui/solid": "catalog:",
     "@types/bun": "catalog:",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "fast-uri": "3.1.5",
+    "js-yaml": "4.3.1"
   },
   "patchedDependencies": {
     "@dnd-kit/dom@0.5.0": "patches/@dnd-kit%2Fdom@0.5.0.patch",
