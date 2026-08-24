@@ -1,0 +1,397 @@
+{
+  "contract_version": 1,
+  "elapsed_seconds": 7.907475500134751,
+  "items": [
+    {
+      "kind": "section_header",
+      "order": 0,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 74.89800000000002,
+            "left": 192.824,
+            "origin": "top-left",
+            "right": 419.176,
+            "top": 61.94799999999998
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            192.824,
+            730.052,
+            419.176,
+            717.102
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/0",
+      "text": "SYNTHETIC COURT OF APPEALS",
+      "text_sha256": "486310ecb93f75c265e25e7e331d8e97709f1da65716928156447696369ec71b",
+      "worker_item_id": "wrk_c7e052484791dabe6dc725fe"
+    },
+    {
+      "kind": "text",
+      "order": 1,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 100.27700000000004,
+            "left": 275.7335,
+            "origin": "top-left",
+            "right": 336.2664999999999,
+            "top": 90.10199999999998
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            275.7335,
+            701.898,
+            336.2664999999999,
+            691.723
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/1",
+      "text": "No. 26-1000",
+      "text_sha256": "b29409d3106759fd5069611e559627322ccd60ef816aeed257448f6c3d1e9d07",
+      "worker_item_id": "wrk_e36ab49ac963eb0b952d92b0"
+    },
+    {
+      "kind": "text",
+      "order": 2,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 174.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 432.17300000000023,
+            "top": 164.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            627.282,
+            432.17300000000023,
+            617.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/2",
+      "text": "A court may grant relief only when the movant establishes each required element.",
+      "text_sha256": "18607f2b98be85e5c099f0258308f1d9f31237b7256c3d059d81794934b3d017",
+      "worker_item_id": "wrk_b8383c37811ee3bd26693706"
+    },
+    {
+      "kind": "text",
+      "order": 3,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 198.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 356.7350000000001,
+            "top": 188.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            603.282,
+            356.7350000000001,
+            593.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/3",
+      "text": "The inquiry is objective and must account for contrary authority.",
+      "text_sha256": "f6c2200ee6434ada372aaf3d1db4d6875fe5254c5c4b134ed874ffa7f8e99f9b",
+      "worker_item_id": "wrk_5c3793c898d03cd41017f4fb"
+    },
+    {
+      "kind": "text",
+      "order": 4,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 222.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 427.0250000000001,
+            "top": 212.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            579.282,
+            427.0250000000001,
+            569.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/4",
+      "text": "42 U.S.C. \u00a7 1983 supplies a cause of action; it does not create substantive rights.",
+      "text_sha256": "11514902726f10723c581cfe90ad8b5819b269e14fc7d9578a8287535247762a",
+      "worker_item_id": "wrk_81081fd9ed4861795cdd6958"
+    },
+    {
+      "kind": "text",
+      "order": 5,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 246.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 295.37700000000007,
+            "top": 236.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            555.282,
+            295.37700000000007,
+            545.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/5",
+      "text": "Citation: 999 F.4th 101, 107 (Synthetic Cir. 2026).",
+      "text_sha256": "a44c1813d6e98a3b48540ae460ce86ae76f9917c5b862b86ceeca79c567d6d4e",
+      "worker_item_id": "wrk_aeadfe25318cfe044ea9f702"
+    },
+    {
+      "kind": "table",
+      "order": 6,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 394.40362548828125,
+            "left": 71.14104461669922,
+            "origin": "top-left",
+            "right": 540.5984497070312,
+            "top": 320.72955322265625
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            71.14104461669922,
+            471.27044677734375,
+            540.5984497070312,
+            397.59637451171875
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/tables/0",
+      "text": "| Authority           | Treatment   |\n|---------------------|-------------|\n| Synthetic v. Record | Followed    |\n| Example Act \u00a7 7     | Applied     |",
+      "text_sha256": "f7c9259678d031fdbbc294281546e4ccc724bd2faa7b10a00a87065863353fed",
+      "worker_item_id": "wrk_5c44f83d491dd8a1a765b349"
+    },
+    {
+      "kind": "section_header",
+      "order": 7,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 74.89800000000002,
+            "left": 192.824,
+            "origin": "top-left",
+            "right": 419.176,
+            "top": 61.94799999999998
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            192.824,
+            730.052,
+            419.176,
+            717.102
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/7",
+      "text": "SYNTHETIC COURT OF APPEALS",
+      "text_sha256": "486310ecb93f75c265e25e7e331d8e97709f1da65716928156447696369ec71b",
+      "worker_item_id": "wrk_30b9e56e8c090000f40ab526"
+    },
+    {
+      "kind": "text",
+      "order": 8,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 100.27700000000004,
+            "left": 250.6755,
+            "origin": "top-left",
+            "right": 361.3244999999999,
+            "top": 90.10199999999998
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            250.6755,
+            701.898,
+            361.3244999999999,
+            691.723
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/8",
+      "text": "Discussion - continued",
+      "text_sha256": "e06c371df5f3167963680c4e5c2846cd35bf13cc31eb599fdd72c2425255ae8a",
+      "worker_item_id": "wrk_bb9c647b8c9e933a59ec28f9"
+    },
+    {
+      "kind": "text",
+      "order": 9,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 174.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 403.73800000000017,
+            "top": 164.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            627.282,
+            403.73800000000017,
+            617.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/9",
+      "text": "We therefore affirm the judgment while preserving the narrower exception.",
+      "text_sha256": "0ca38ccc290c78524433f4f760738ce859f61c3a22901bd60ce4449c22f6faa1",
+      "worker_item_id": "wrk_8bfb9b7238a6f80ca0975422"
+    },
+    {
+      "kind": "text",
+      "order": 10,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 198.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 423.62600000000015,
+            "top": 188.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            603.282,
+            423.62600000000015,
+            593.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/10",
+      "text": "The exception applies only when the record contains verified primary authority.",
+      "text_sha256": "a5af6c24d573c36d762a45cb0274aa7b4cd7cd22ff2d83b1f97425a758fc9989",
+      "worker_item_id": "wrk_f65703bdbcd3a660f1cfcb5a"
+    },
+    {
+      "kind": "list_item",
+      "order": 11,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 713.863,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 328.1310000000002,
+            "top": 705.538
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            86.46199999999999,
+            328.1310000000002,
+            78.13699999999994
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/11",
+      "text": "1. Pinpoint citations must identify the exact passage relied upon.",
+      "text_sha256": "a369d9d35a9726564435a8122d68d0614857e4562711f6602907d5f98c4aedf0",
+      "worker_item_id": "wrk_24972945709c1b572cba9aea"
+    }
+  ],
+  "job_id": "evaluation-native_legal_opinion-adaptive",
+  "normalized_text": "SYNTHETIC COURT OF APPEALS\n\nNo. 26-1000\n\nA court may grant relief only when the movant establishes each required element.\n\nThe inquiry is objective and must account for contrary authority.\n\n42 U.S.C. \u00a7 1983 supplies a cause of action; it does not create substantive rights.\n\nCitation: 999 F.4th 101, 107 (Synthetic Cir. 2026).\n\n| Authority           | Treatment   |\n|---------------------|-------------|\n| Synthetic v. Record | Followed    |\n| Example Act \u00a7 7     | Applied     |\n\nSYNTHETIC COURT OF APPEALS\n\nDiscussion - continued\n\nWe therefore affirm the judgment while preserving the narrower exception.\n\nThe exception applies only when the record contains verified primary authority.\n\n1. Pinpoint citations must identify the exact passage relied upon.",
+  "normalized_text_sha256": "30d8de68476094db6c30b1e4b5b632e94cba74c790997ea0a6e5df8030861c06",
+  "ocr_engine": "tesseract 5.5.2",
+  "ocr_mode": "adaptive",
+  "page_count": 2,
+  "pages": [
+    {
+      "character_count": 473,
+      "grayscale_stddev": 25.015242541585703,
+      "height": 792.0,
+      "image_path": "pages/page-0001.png",
+      "image_sha256": "67d234432c3e874847d08da15f60c134dc66049ba6122a621cc4ca05ec308204",
+      "ink_contrast": 137.46852553219276,
+      "page_number": 1,
+      "text_sha256": "b5b2331ba42dff10c67493a690ac880d44a935fcaeb474d975d2de5a7f9fe190",
+      "width": 612.0
+    },
+    {
+      "character_count": 270,
+      "grayscale_stddev": 18.09192025658682,
+      "height": 792.0,
+      "image_path": "pages/page-0002.png",
+      "image_sha256": "54475e178a50d0d74c27b8139158a8e4226a0dd8b297974c8e42bb12c363ba1f",
+      "ink_contrast": 146.3113361055867,
+      "page_number": 2,
+      "text_sha256": "f98b77c6d20820d66baff3830049c2d9a3cd13eb312d1b5faa2c313b1b89f0e8",
+      "width": 612.0
+    }
+  ],
+  "parser_name": "docling",
+  "parser_version": "2.121.0",
+  "quality_metrics": {
+    "empty_page_count": 0,
+    "item_count": 12,
+    "minimum_ink_contrast": 137.46852553219276,
+    "pages_with_text": 2,
+    "replacement_character_count": 0
+  },
+  "source_hash": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+  "source_version_id": "fixture-native_legal_opinion",
+  "warnings": [],
+  "worker_version": "0.0.1"
+}

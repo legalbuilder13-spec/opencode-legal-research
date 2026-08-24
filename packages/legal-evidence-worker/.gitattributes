@@ -1,0 +1,3 @@
+fixtures/generated/*.pdf binary
+fixtures/generated/*.png binary
+fixtures/results/**/*.png binary

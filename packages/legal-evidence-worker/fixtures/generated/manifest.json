@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "license": "CC0-1.0 synthetic fixture; no real client or case data",
+  "page_size": {
+    "width": 612.0,
+    "height": 792.0
+  },
+  "documents": [
+    {
+      "file": "native_legal_opinion.pdf",
+      "kind": "native",
+      "sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "page_count": 2,
+      "gold_passages": [
+        {
+          "id": "native-rule",
+          "page": 1,
+          "text": "A court may grant relief only when the movant establishes each required element.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 160.0,
+            "right": 548,
+            "bottom": 184.0
+          }
+        },
+        {
+          "id": "native-footnote",
+          "page": 2,
+          "text": "1. Pinpoint citations must identify the exact passage relied upon.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 700.0,
+            "right": 548,
+            "bottom": 724.0
+          }
+        }
+      ]
+    },
+    {
+      "file": "scanned_legal_opinion.pdf",
+      "kind": "scanned",
+      "sha256": "3f75f051d94f79638885eb7ca569c74e11d764bb27093598493a5ea46bef6b46",
+      "page_count": 2,
+      "gold_passages": [
+        {
+          "id": "scan-rule",
+          "page": 1,
+          "text": "The record must be reviewed as a whole, including contrary authority.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 160.0,
+            "right": 548,
+            "bottom": 184.0
+          }
+        },
+        {
+          "id": "scan-faint",
+          "page": 2,
+          "text": "Faint scan: material limitations must remain visible to the reviewer.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 160.0,
+            "right": 548,
+            "bottom": 184.0
+          }
+        }
+      ]
+    },
+    {
+      "file": "mixed_legal_record.pdf",
+      "kind": "mixed",
+      "sha256": "502ec5deac07b25e9a3e28decb1ab0996a38949706dc6c2910952a9d7a383630",
+      "page_count": 2,
+      "gold_passages": [
+        {
+          "id": "mixed-native",
+          "page": 1,
+          "text": "Page one contains searchable native text and section 1983 analysis.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 160.0,
+            "right": 548,
+            "bottom": 184.0
+          }
+        },
+        {
+          "id": "mixed-scan",
+          "page": 2,
+          "text": "The record must be reviewed as a whole, including contrary authority.",
+          "bbox": {
+            "origin": "top-left",
+            "left": 68,
+            "top": 160.0,
+            "right": 548,
+            "bottom": 184.0
+          }
+        }
+      ]
+    }
+  ]
+}

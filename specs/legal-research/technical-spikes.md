@@ -1,6 +1,6 @@
 # Legal Research MVP Technical Spikes
 
-Status: TS-01 conditionally selected; TS-02 and TS-03 proposed
+Status: TS-01 and TS-02 conditionally selected; TS-03 proposed
 
 Product requirements: [`prd.md`](./prd.md)
 
@@ -178,6 +178,8 @@ AS-11 and AS-13 may use controlled fault injection rather than real credential e
 ### Decision question
 
 Can a separately supervised Docling worker produce stable passage text, page identity, character spans, and bounding boxes accurate enough to support legal retrieval and click-to-evidence review across representative source types?
+
+Implementation and result: [`../../packages/legal-evidence-worker`](../../packages/legal-evidence-worker), [`spike-results/ts-02.md`](./spike-results/ts-02.md), and [`ADR 0002`](./adr/0002-evidence-worker-ocr.md).
 
 ### Why this is risky
 

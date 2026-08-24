@@ -1,0 +1,390 @@
+{
+  "fixture_manifest": "../generated/manifest.json",
+  "metrics": {
+    "correct_page_rate": 1.0,
+    "exact_text_rate": 1.0,
+    "median_character_accuracy": 1.0,
+    "region_hit_rate": 1.0
+  },
+  "passage_evaluation_count": 12,
+  "passages": [
+    {
+      "actual_bbox": {
+        "bottom": 174.31360761347003,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 432.17300000000023,
+        "top": 164.71799999999996
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "A court may grant relief only when the movant establishes each required element.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "native_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "A court may grant relief only when the movant establishes each required element.",
+      "gold_id": "native-rule",
+      "intersection_over_union": 0.3000068386255518,
+      "kind": "native",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_b8383c37811ee3bd26693706"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 713.863,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 328.1310000000002,
+        "top": 705.538
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "1. Pinpoint citations must identify the exact passage relied upon.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "native_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "1. Pinpoint citations must identify the exact passage relied upon.",
+      "gold_id": "native-footnote",
+      "intersection_over_union": 0.18509466796875115,
+      "kind": "native",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_24972945709c1b572cba9aea"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 174.33333333333337,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 431.3333333333333,
+        "top": 164.33333333333337
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "A court may grant relief only when the movant establishes each required element.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "native_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "A court may grant relief only when the movant establishes each required element.",
+      "gold_id": "native-rule",
+      "intersection_over_union": 0.3119212962962963,
+      "kind": "native",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_b8383c37811ee3bd26693706"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 714.0,
+        "left": 73.0,
+        "origin": "top-left",
+        "right": 327.3333333333333,
+        "top": 705.3333333333334
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "1. Pinpoint citations must identify the exact passage relied upon.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "native_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "1. Pinpoint citations must identify the exact passage relied upon.",
+      "gold_id": "native-footnote",
+      "intersection_over_union": 0.1913387345679004,
+      "kind": "native",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_32759140dbf8c7816468289d"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 184.0,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 404.6666666666667,
+        "top": 173.66666666666674
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "The record must be reviewed as a whole, including contrary authority.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "scanned_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "The record must be reviewed as a whole, including contrary authority.",
+      "gold_id": "scan-rule",
+      "intersection_over_union": 0.29839891975308425,
+      "kind": "scanned",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_4f20c8e1ae708f2ed64b5a4c"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 183.33333333333337,
+        "left": 71.33333333333333,
+        "origin": "top-left",
+        "right": 389.0,
+        "top": 173.33333333333326
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "Faint scan: material limitations must remain visible to the reviewer.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "scanned_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "Faint scan: material limitations must remain visible to the reviewer.",
+      "gold_id": "scan-faint",
+      "intersection_over_union": 0.27575231481481793,
+      "kind": "scanned",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_4a8280f2e6ae162fb97c2bcd"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 184.0,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 404.6666666666667,
+        "top": 174.0
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "The record must be reviewed as a whole, including contrary authority.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "scanned_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "The record must be reviewed as a whole, including contrary authority.",
+      "gold_id": "scan-rule",
+      "intersection_over_union": 0.2887731481481482,
+      "kind": "scanned",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_4f20c8e1ae708f2ed64b5a4c"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 183.66666666666663,
+        "left": 71.33333333333333,
+        "origin": "top-left",
+        "right": 389.0,
+        "top": 173.66666666666663
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "Faint scan: material limitations must remain visible to the reviewer.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "scanned_legal_opinion.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "Faint scan: material limitations must remain visible to the reviewer.",
+      "gold_id": "scan-faint",
+      "intersection_over_union": 0.2757523148148148,
+      "kind": "scanned",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_4a8280f2e6ae162fb97c2bcd"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 174.31360761347003,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 367.7240000000001,
+        "top": 164.71799999999996
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "Page one contains searchable native text and section 1983 analysis.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "mixed_legal_record.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "Page one contains searchable native text and section 1983 analysis.",
+      "gold_id": "mixed-native",
+      "intersection_over_union": 0.24632391196925546,
+      "kind": "mixed",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_63b24a5b298a34dc376d806b"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 184.0,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 404.6666666666667,
+        "top": 173.66666666666674
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "The record must be reviewed as a whole, including contrary authority.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "mixed_legal_record.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "The record must be reviewed as a whole, including contrary authority.",
+      "gold_id": "mixed-scan",
+      "intersection_over_union": 0.29839891975308425,
+      "kind": "mixed",
+      "mode": "adaptive",
+      "region_hit": true,
+      "worker_item_id": "wrk_ea11ddaf6ba9472dc4fda123"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 174.33333333333337,
+        "left": 72.33333333333333,
+        "origin": "top-left",
+        "right": 367.0,
+        "top": 164.33333333333337
+      },
+      "actual_pages": [
+        1
+      ],
+      "actual_text": "Page one contains searchable native text and section 1983 analysis.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "mixed_legal_record.pdf",
+      "exact_text": true,
+      "expected_page": 1,
+      "expected_text": "Page one contains searchable native text and section 1983 analysis.",
+      "gold_id": "mixed-native",
+      "intersection_over_union": 0.2557870370370371,
+      "kind": "mixed",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_63b24a5b298a34dc376d806b"
+    },
+    {
+      "actual_bbox": {
+        "bottom": 184.0,
+        "left": 72.0,
+        "origin": "top-left",
+        "right": 404.6666666666667,
+        "top": 174.0
+      },
+      "actual_pages": [
+        2
+      ],
+      "actual_text": "The record must be reviewed as a whole, including contrary authority.",
+      "character_accuracy": 1.0,
+      "correct_page": true,
+      "document": "mixed_legal_record.pdf",
+      "exact_text": true,
+      "expected_page": 2,
+      "expected_text": "The record must be reviewed as a whole, including contrary authority.",
+      "gold_id": "mixed-scan",
+      "intersection_over_union": 0.2887731481481482,
+      "kind": "mixed",
+      "mode": "strict_visual",
+      "region_hit": true,
+      "worker_item_id": "wrk_ea11ddaf6ba9472dc4fda123"
+    }
+  ],
+  "run_count": 6,
+  "runs": [
+    {
+      "document": "native_legal_opinion.pdf",
+      "elapsed_seconds": 7.907475500134751,
+      "item_count": 12,
+      "kind": "native",
+      "mode": "adaptive",
+      "normalized_text_sha256": "30d8de68476094db6c30b1e4b5b632e94cba74c790997ea0a6e5df8030861c06",
+      "page_count": 2,
+      "warnings": []
+    },
+    {
+      "document": "native_legal_opinion.pdf",
+      "elapsed_seconds": 2.2482848749496043,
+      "item_count": 13,
+      "kind": "native",
+      "mode": "strict_visual",
+      "normalized_text_sha256": "612e6dfc3102b5b1ec43a8cfc641eaae48c9f362e9a08011a459bbec044c4796",
+      "page_count": 2,
+      "warnings": []
+    },
+    {
+      "document": "scanned_legal_opinion.pdf",
+      "elapsed_seconds": 2.0085012081544846,
+      "item_count": 7,
+      "kind": "scanned",
+      "mode": "adaptive",
+      "normalized_text_sha256": "5dd1ae3cc9c5d53ec809fee3d1e14a855d4ad62ecb48c8af0ee6a12e0ad2a94b",
+      "page_count": 2,
+      "warnings": [
+        {
+          "code": "low_contrast",
+          "message": "Canonical page image has low ink contrast; OCR review is required.",
+          "page_number": 2,
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "document": "scanned_legal_opinion.pdf",
+      "elapsed_seconds": 2.1612831249367446,
+      "item_count": 7,
+      "kind": "scanned",
+      "mode": "strict_visual",
+      "normalized_text_sha256": "5dd1ae3cc9c5d53ec809fee3d1e14a855d4ad62ecb48c8af0ee6a12e0ad2a94b",
+      "page_count": 2,
+      "warnings": [
+        {
+          "code": "low_contrast",
+          "message": "Canonical page image has low ink contrast; OCR review is required.",
+          "page_number": 2,
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "document": "mixed_legal_record.pdf",
+      "elapsed_seconds": 1.927462332881987,
+      "item_count": 8,
+      "kind": "mixed",
+      "mode": "adaptive",
+      "normalized_text_sha256": "e94eecf1974b0df942083c0f72e5435c17fc5fe0a35dca98529e23605b19df80",
+      "page_count": 2,
+      "warnings": []
+    },
+    {
+      "document": "mixed_legal_record.pdf",
+      "elapsed_seconds": 2.1809572919737548,
+      "item_count": 8,
+      "kind": "mixed",
+      "mode": "strict_visual",
+      "normalized_text_sha256": "e94eecf1974b0df942083c0f72e5435c17fc5fe0a35dca98529e23605b19df80",
+      "page_count": 2,
+      "warnings": []
+    }
+  ],
+  "version": 1
+}

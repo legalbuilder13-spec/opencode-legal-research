@@ -1,0 +1,281 @@
+{
+  "contract_version": 1,
+  "elapsed_seconds": 1.927462332881987,
+  "items": [
+    {
+      "kind": "section_header",
+      "order": 0,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 74.89800000000002,
+            "left": 209.939,
+            "origin": "top-left",
+            "right": 402.06100000000004,
+            "top": 61.94799999999998
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            209.939,
+            730.052,
+            402.06100000000004,
+            717.102
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/0",
+      "text": "MIXED SYNTHETIC RECORD",
+      "text_sha256": "024b51ef8f5aa32971559a8e2f2f732af3cb32de91872dece672493eadf9b68e",
+      "worker_item_id": "wrk_d70e3f57b71a176a22eef253"
+    },
+    {
+      "kind": "text",
+      "order": 1,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 100.27700000000004,
+            "left": 276.652,
+            "origin": "top-left",
+            "right": 335.3479999999999,
+            "top": 90.10199999999998
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            276.652,
+            701.898,
+            335.3479999999999,
+            691.723
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/1",
+      "text": "Native page",
+      "text_sha256": "6a8b5131a408f81c3b8b8d20470d3f8b0331e5efa01ff2b961b39017af70d16b",
+      "worker_item_id": "wrk_977a287280c18e9dc12a1cb8"
+    },
+    {
+      "kind": "text",
+      "order": 2,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 174.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 367.7240000000001,
+            "top": 164.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            627.282,
+            367.7240000000001,
+            617.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/2",
+      "text": "Page one contains searchable native text and section 1983 analysis.",
+      "text_sha256": "dc6fcf643a6916b6df0bc0166c29ba05fd0a0270643cd94bf14397cf6a0951c6",
+      "worker_item_id": "wrk_63b24a5b298a34dc376d806b"
+    },
+    {
+      "kind": "text",
+      "order": 3,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 198.31360761347003,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 293.21000000000004,
+            "top": 188.71799999999996
+          },
+          "page_height": 792.0,
+          "page_number": 1,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            603.282,
+            293.21000000000004,
+            593.68639238653
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/3",
+      "text": "Page two is an image-only exhibit requiring OCR.",
+      "text_sha256": "7023d758d96afd5c86373d425fce008ab7b4401a242013b48ad1ddec2e0058ca",
+      "worker_item_id": "wrk_d83e8fb815f34f81758d96c5"
+    },
+    {
+      "kind": "section_header",
+      "order": 4,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 105.0,
+            "left": 72.66666666666667,
+            "origin": "top-left",
+            "right": 286.66666666666663,
+            "top": 94.66666666666663
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.66666666666667,
+            697.3333333333334,
+            286.66666666666663,
+            687.0
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/5",
+      "text": "SCANNED SYNTHETIC OPINION",
+      "text_sha256": "c2e3a2fd97f93a6b63c564199d92855a3fc8a21873d3b6bddc8f05b17482c0c7",
+      "worker_item_id": "wrk_03f254ed5eb7bc8581d44f8c"
+    },
+    {
+      "kind": "text",
+      "order": 5,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 184.0,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 404.6666666666667,
+            "top": 173.66666666666674
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            618.3333333333333,
+            404.6666666666667,
+            608.0
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/6",
+      "text": "The record must be reviewed as a whole, including contrary authority.",
+      "text_sha256": "54e6f3228784560507c426f660ad62c97fbe8931392d010fa5bb3867f3bb80dd",
+      "worker_item_id": "wrk_ea11ddaf6ba9472dc4fda123"
+    },
+    {
+      "kind": "text",
+      "order": 6,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 224.0,
+            "left": 72.0,
+            "origin": "top-left",
+            "right": 444.6666666666667,
+            "top": 213.66666666666663
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.0,
+            578.3333333333334,
+            444.6666666666667,
+            568.0
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/7",
+      "text": "A scanned source remains evidence only when its page location is preserved.",
+      "text_sha256": "1510259d080f896d631050f710e7f44c51e8364e0d632f96e8f9a87ebaf9586c",
+      "worker_item_id": "wrk_a3bbb69253fd1540bdc19e36"
+    },
+    {
+      "kind": "text",
+      "order": 7,
+      "regions": [
+        {
+          "bbox": {
+            "bottom": 264.0,
+            "left": 72.33333333333333,
+            "origin": "top-left",
+            "right": 309.6666666666667,
+            "top": 253.66666666666663
+          },
+          "page_height": 792.0,
+          "page_number": 2,
+          "page_width": 612.0,
+          "source_bbox": [
+            72.33333333333333,
+            538.3333333333334,
+            309.6666666666667,
+            528.0
+          ],
+          "source_coord_origin": "CoordOrigin.BOTTOMLEFT"
+        }
+      ],
+      "source_ref": "#/texts/8",
+      "text": "Citation: 999 F.4th 201, 205 (Synthetic Cir. 2026).",
+      "text_sha256": "95d7da8a796d1bf5943a09455251afdef89ff46d2ae96636b6deac8473574535",
+      "worker_item_id": "wrk_a8a0c0ad2fee5c31fb79c522"
+    }
+  ],
+  "job_id": "evaluation-mixed_legal_record-adaptive",
+  "normalized_text": "MIXED SYNTHETIC RECORD\n\nNative page\n\nPage one contains searchable native text and section 1983 analysis.\n\nPage two is an image-only exhibit requiring OCR.\n\nSCANNED SYNTHETIC OPINION\n\nThe record must be reviewed as a whole, including contrary authority.\n\nA scanned source remains evidence only when its page location is preserved.\n\nCitation: 999 F.4th 201, 205 (Synthetic Cir. 2026).",
+  "normalized_text_sha256": "e94eecf1974b0df942083c0f72e5435c17fc5fe0a35dca98529e23605b19df80",
+  "ocr_engine": "tesseract 5.5.2",
+  "ocr_mode": "adaptive",
+  "page_count": 2,
+  "pages": [
+    {
+      "character_count": 151,
+      "grayscale_stddev": 15.114618070123544,
+      "height": 792.0,
+      "image_path": "pages/page-0001.png",
+      "image_sha256": "bbf5d1bf5bfb1459ca4398e6917f6645d11785a40ec560c34c19dcb7612ddd69",
+      "ink_contrast": 149.5697972972973,
+      "page_number": 1,
+      "text_sha256": "fead9b4eedad490ddd2c7703fbdece7f935720a98345bfb785757046a70c4faa",
+      "width": 612.0
+    },
+    {
+      "character_count": 223,
+      "grayscale_stddev": 18.884511667736273,
+      "height": 792.0,
+      "image_path": "pages/page-0002.png",
+      "image_sha256": "81d8f845da141036a6a22ae56517943e3576b382344f7a92bf3691e2fdbdc5e7",
+      "ink_contrast": 100.78078935941679,
+      "page_number": 2,
+      "text_sha256": "3f3fe996fc73e043035697d664779b8840dc669feb572be400e5779bb208f353",
+      "width": 612.0
+    }
+  ],
+  "parser_name": "docling",
+  "parser_version": "2.121.0",
+  "quality_metrics": {
+    "empty_page_count": 0,
+    "item_count": 8,
+    "minimum_ink_contrast": 100.78078935941679,
+    "pages_with_text": 2,
+    "replacement_character_count": 0
+  },
+  "source_hash": "502ec5deac07b25e9a3e28decb1ab0996a38949706dc6c2910952a9d7a383630",
+  "source_version_id": "fixture-mixed_legal_record",
+  "warnings": [],
+  "worker_version": "0.0.1"
+}
