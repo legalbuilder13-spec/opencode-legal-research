@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { createHash } from "node:crypto"
 import { mkdir, mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -37,6 +38,15 @@ describe("packaged evidence worker discovery", () => {
       detail: expect.stringContaining("model artifacts"),
     })
   })
+
+  test("rejects a changed third-party license receipt", async () => {
+    const root = await fixtureRuntime()
+    await Bun.write(join(root, "THIRD_PARTY_LICENSES.json"), "changed")
+    expect(discoverEvidenceWorkerRuntime(root)).toMatchObject({
+      status: "unavailable",
+      detail: expect.stringContaining("license receipt hash"),
+    })
+  })
 })
 
 async function fixtureRuntime(overrides: { executable?: string; included?: boolean } = {}) {
@@ -46,6 +56,8 @@ async function fixtureRuntime(overrides: { executable?: string; included?: boole
   await mkdir(join(root, "models"), { recursive: true })
   await Bun.write(join(root, "python", "bin", "python3"), "fixture")
   await Bun.write(join(root, "legal_evidence_worker", "cli.py"), "# fixture\n")
+  const licenseReceipt = `${JSON.stringify({ contractVersion: 1, reviewStatus: "pending-counsel-review" })}\n`
+  await Bun.write(join(root, "THIRD_PARTY_LICENSES.json"), licenseReceipt)
   await Bun.write(
     join(root, "runtime-manifest.json"),
     `${JSON.stringify(
@@ -56,6 +68,13 @@ async function fixtureRuntime(overrides: { executable?: string; included?: boole
         packageRoot: ".",
         models: { path: "models", included: overrides.included ?? true, sha256: hash },
         ocr: { engine: "rapidocr", backend: "torch", languages: ["latin"] },
+        licenses: {
+          path: "THIRD_PARTY_LICENSES.json",
+          sha256: createHash("sha256").update(licenseReceipt).digest("hex"),
+          pythonDistributions: 1,
+          modelSets: 1,
+          reviewStatus: "pending-counsel-review",
+        },
         lockSha256: hash,
       },
       null,

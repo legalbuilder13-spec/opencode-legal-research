@@ -3,6 +3,7 @@ import { createHash } from "node:crypto"
 import { createReadStream } from "node:fs"
 import { cp, mkdir, readdir, rename, rm } from "node:fs/promises"
 import { basename, dirname, join, relative, resolve, sep } from "node:path"
+import { auditEvidenceWorkerLicenses } from "./evidence-worker-license-audit"
 
 const desktopRoot = resolve(import.meta.dir, "..")
 const workerRoot = resolve(desktopRoot, "../legal-evidence-worker")
@@ -71,7 +72,10 @@ try {
   ])
 
   await cp(join(workerRoot, "legal_evidence_worker"), join(staging, "legal_evidence_worker"), { recursive: true })
-  for (const name of ["README.md", "pyproject.toml", "uv.lock"]) await cp(join(workerRoot, name), join(staging, name))
+  for (const name of ["README.md", "pyproject.toml", "uv.lock", "packaged-model-policy.json"])
+    await cp(join(workerRoot, name), join(staging, name))
+
+  const licenses = await auditEvidenceWorkerLicenses(staging, { write: true })
 
   const installedVersion = (await runCapture([python, "--version"])).replace(/^Python\s+/, "").trim()
   const manifest = {
@@ -91,6 +95,13 @@ try {
       sha256: await hashTree(models),
     },
     ocr: { engine: "rapidocr", backend: "torch", languages: ["latin"] },
+    licenses: {
+      path: "THIRD_PARTY_LICENSES.json",
+      sha256: await hashFile(join(staging, "THIRD_PARTY_LICENSES.json")),
+      pythonDistributions: licenses.pythonDistributions.length,
+      modelSets: licenses.models.length,
+      reviewStatus: licenses.reviewStatus,
+    },
     lockSha256: await hashFile(join(workerRoot, "uv.lock")),
   }
   await Bun.write(join(staging, "runtime-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`)

@@ -1,0 +1,15 @@
+{
+  "contractVersion": 1,
+  "overrides": {
+    "@openauthjs/openauth@0.0.0-20250322224806": {
+      "license": ["MIT"],
+      "evidence": "https://github.com/anomalyco/openauth/blob/main/LICENSE",
+      "note": "The published package omits license metadata and a license file; the upstream source repository declares MIT. Counsel must confirm that this repository license covers the pinned package before release."
+    },
+    "poe-oauth@0.0.8": {
+      "license": ["MIT"],
+      "evidence": "https://github.com/poe-platform/poe-code/blob/main/LICENSE",
+      "note": "The published package omits license metadata and a license file; its package metadata identifies the MIT-licensed poe-platform/poe-code repository. Counsel must confirm coverage of the pinned package before release."
+    }
+  }
+}

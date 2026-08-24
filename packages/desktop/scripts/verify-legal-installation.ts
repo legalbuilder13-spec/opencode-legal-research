@@ -7,21 +7,23 @@ import { basename, isAbsolute, join, relative, resolve } from "node:path"
 
 import { discoverEvidenceWorkerRuntime } from "../../legal-workbench/src/worker-runtime"
 import { spawnLegalWorkbench } from "../src/main/legal-workbench"
+import { verifyEvidenceWorkerLicenseReceipt } from "./evidence-worker-license-audit"
+import { desktopLicenseReceiptName, verifyDesktopLicenseReceipt } from "./desktop-license-audit"
 
 const resourcesPath = resolve(Bun.argv[2] ?? "")
 const fixturePath = resolve(Bun.argv[3] ?? "")
 
-if (!Bun.argv[2] || !Bun.argv[3])
-  throw new Error("usage: bun verify-legal-installation.ts RESOURCES_DIR OCR_FIXTURE")
+if (!Bun.argv[2] || !Bun.argv[3]) throw new Error("usage: bun verify-legal-installation.ts RESOURCES_DIR OCR_FIXTURE")
 
 const workbenchPath = join(resourcesPath, process.platform === "win32" ? "legal-workbench.exe" : "legal-workbench")
 const workerRoot = join(resourcesPath, "legal-evidence-worker")
+await verifyEvidenceWorkerLicenseReceipt(workerRoot)
+await verifyDesktopLicenseReceipt(resolve(import.meta.dir, "../../.."), join(resourcesPath, desktopLicenseReceiptName))
 const workbenchStat = await stat(workbenchPath)
 if (!workbenchStat.isFile()) throw new Error("Installed legal workbench is not a file")
 
 const discovery = discoverEvidenceWorkerRuntime(workerRoot)
-if (discovery.status !== "ready" || discovery.runtime.kind !== "packaged")
-  throw new Error(discovery.detail)
+if (discovery.status !== "ready" || discovery.runtime.kind !== "packaged") throw new Error(discovery.detail)
 for (const path of [discovery.runtime.python, discovery.runtime.packageRoot, discovery.runtime.artifactsPath]) {
   if (!path || !contained(workerRoot, path)) throw new Error(`Installed worker path escapes its resource root: ${path}`)
 }
@@ -78,26 +80,23 @@ async function verifyOcr() {
       language_hints: ["eng"],
     })}\n`,
   )
-  const processHandle = Bun.spawn(
-    [discovery.runtime.python, "-m", "legal_evidence_worker.cli", requestPath],
-    {
-      cwd: discovery.runtime.packageRoot,
-      env: {
-        ...safeEnvironment(),
-        PYTHONPATH: discovery.runtime.packageRoot,
-        PYTHONNOUSERSITE: "1",
-        DOCLING_ARTIFACTS_PATH: discovery.runtime.artifactsPath,
-        LEGAL_EVIDENCE_OCR_ENGINE: discovery.runtime.ocrEngine,
-        LEGAL_EVIDENCE_OCR_LANGUAGES: discovery.runtime.ocrLanguages.join(","),
-        HF_HUB_OFFLINE: "1",
-        HF_HUB_DISABLE_TELEMETRY: "1",
-        TRANSFORMERS_OFFLINE: "1",
-      },
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
+  const processHandle = Bun.spawn([discovery.runtime.python, "-m", "legal_evidence_worker.cli", requestPath], {
+    cwd: discovery.runtime.packageRoot,
+    env: {
+      ...safeEnvironment(),
+      PYTHONPATH: discovery.runtime.packageRoot,
+      PYTHONNOUSERSITE: "1",
+      DOCLING_ARTIFACTS_PATH: discovery.runtime.artifactsPath,
+      LEGAL_EVIDENCE_OCR_ENGINE: discovery.runtime.ocrEngine,
+      LEGAL_EVIDENCE_OCR_LANGUAGES: discovery.runtime.ocrLanguages.join(","),
+      HF_HUB_OFFLINE: "1",
+      HF_HUB_DISABLE_TELEMETRY: "1",
+      TRANSFORMERS_OFFLINE: "1",
     },
-  )
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+  })
   const timeout = setTimeout(() => processHandle.kill(), 5 * 60_000)
   const [code, stdout, stderr] = await Promise.all([
     processHandle.exited,
@@ -128,9 +127,7 @@ function safeEnvironment(): NodeJS.ProcessEnv {
 function contained(root: string, candidate: string) {
   const relation = relative(resolve(root), resolve(candidate))
   return (
-    relation !== ".." &&
-    !relation.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) &&
-    !isAbsolute(relation)
+    relation !== ".." && !relation.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) && !isAbsolute(relation)
   )
 }
 

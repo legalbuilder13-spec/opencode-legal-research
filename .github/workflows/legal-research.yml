@@ -59,6 +59,10 @@ jobs:
       - name: Typecheck workspace
         run: bun typecheck
 
+      - name: Verify desktop dependency license receipt
+        working-directory: packages/desktop
+        run: bun ./scripts/desktop-license-audit.ts --write=/tmp/THIRD_PARTY_LICENSES.desktop.json
+
       - name: Run legal unit and integration tests
         run: bun test:legal
 
@@ -99,6 +103,10 @@ jobs:
         env:
           UV: /home/runner/.local/bin/uv
         run: bun ./scripts/build-evidence-worker.ts /tmp/legal-evidence-worker
+
+      - name: Verify dependency and model license receipt
+        working-directory: packages/desktop
+        run: bun ./scripts/evidence-worker-license-audit.ts /tmp/legal-evidence-worker
 
       - name: Run evidence worker tests from packaged Python
         working-directory: packages/legal-evidence-worker

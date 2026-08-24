@@ -82,5 +82,5 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 - Add OS keychain-backed connector credentials and rotation/revocation tests.
 - Complete organizational ChatGPT workspace policy and retention review for confidential matters.
 - Add authenticated local UI access before any deployment intentionally binds beyond loopback.
-- Complete dependency, license, secret, and supply-chain scanning in CI.
+- Obtain counsel approval for the CI-generated dependency/model license receipts and exact-version overrides; add vulnerability, secret, and broader supply-chain provenance scanning.
 - Have security and legal reviewers approve the full adversarial corpus and deletion/retention policy.

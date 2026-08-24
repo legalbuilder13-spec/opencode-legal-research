@@ -78,6 +78,11 @@ test("bundles the CLI outside the dev app archive", async () => {
   else process.env.OPENCODE_CHANNEL = previous
 
   expect(config.files).toContain("!resources/opencode-cli*")
+  expect(config.files).toContain("!resources/THIRD_PARTY_LICENSES.desktop.json")
+  expect(config.extraResources).toContainEqual({
+    from: "resources/THIRD_PARTY_LICENSES.desktop.json",
+    to: "THIRD_PARTY_LICENSES.desktop.json",
+  })
   expect(config.extraResources).toContainEqual({
     from: "resources/",
     to: "",

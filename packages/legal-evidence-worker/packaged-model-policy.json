@@ -1,0 +1,45 @@
+{
+  "contractVersion": 1,
+  "reviewStatus": "pending-counsel-review",
+  "models": [
+    {
+      "id": "docling-layout-heron",
+      "directory": "docling-project--docling-layout-heron",
+      "source": "https://huggingface.co/docling-project/docling-layout-heron",
+      "revision": "8f39ad3c0b4c58e9c2d2c84a38465abf757272d8",
+      "declaredLicense": "apache-2.0",
+      "licenseEvidence": "https://huggingface.co/docling-project/docling-layout-heron/tree/8f39ad3c0b4c58e9c2d2c84a38465abf757272d8"
+    },
+    {
+      "id": "docling-layout-heron-onnx",
+      "directory": "docling-project--docling-layout-heron-onnx",
+      "source": "https://huggingface.co/docling-project/docling-layout-heron-onnx",
+      "revision": "40bde044036bb181c130ddf6c51792187268748f",
+      "declaredLicense": "apache-2.0",
+      "licenseEvidence": "https://huggingface.co/docling-project/docling-layout-heron-onnx/tree/40bde044036bb181c130ddf6c51792187268748f"
+    },
+    {
+      "id": "docling-tableformer",
+      "directory": "docling-project--docling-models",
+      "source": "https://huggingface.co/docling-project/docling-models",
+      "revision": "fc0f2d45e2218ea24bce5045f58a389aed16dc23",
+      "declaredLicense": "cdla-permissive-2.0",
+      "licenseEvidence": "https://huggingface.co/docling-project/docling-models/tree/fc0f2d45e2218ea24bce5045f58a389aed16dc23"
+    }
+  ],
+  "rapidOcr": {
+    "id": "rapidocr-pp-ocr-latin-torch",
+    "directory": "RapidOcr",
+    "source": "https://www.modelscope.cn/models/RapidAI/RapidOCR",
+    "revision": "v3.9.2",
+    "declaredLicense": "Apache-2.0",
+    "licenseEvidence": "https://github.com/RapidAI/RapidOCR/blob/main/README.md#-license",
+    "copyrightNote": "RapidOCR states that Baidu holds the OCR model copyright.",
+    "files": {
+      "ch_PP-OCRv4_det_mobile.pth": "89622c3f3e76b3ac7d10d9434c1f117a7471dba44723885cc04b49932a740d5b",
+      "ch_ptocr_mobile_v2.0_cls_mobile.pth": "bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1",
+      "latin_PP-OCRv3_rec_mobile.pth": "caf8e0f2572a7dea2d901c7f50bd78fc310a4246a655d062b69f30258c15bf90",
+      "latin_dict.txt": "8e6d4e3629788c35c31f7e530287d6147b549bb7a265bd6708bb281134429e2c"
+    }
+  }
+}

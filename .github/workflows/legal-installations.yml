@@ -81,6 +81,10 @@ jobs:
           UV: uv
         run: bun ./scripts/build-evidence-worker.ts "${{ runner.temp }}/legal-evidence-worker"
 
+      - name: Verify dependency and model license receipt
+        working-directory: packages/desktop
+        run: bun ./scripts/evidence-worker-license-audit.ts "${{ runner.temp }}/legal-evidence-worker"
+
       - name: Build unpacked desktop and run installed legal sidecars
         working-directory: packages/desktop
         timeout-minutes: 45

@@ -62,6 +62,7 @@ const getBase = (appId: string): Configuration => ({
     "!resources/opencode-cli*",
     "!resources/legal-workbench*",
     "!resources/legal-evidence-worker/**",
+    "!resources/THIRD_PARTY_LICENSES.desktop.json",
   ],
   extraResources: [
     {
@@ -73,6 +74,10 @@ const getBase = (appId: string): Configuration => ({
       from: "resources/",
       to: "",
       filter: ["legal-evidence-worker/**"],
+    },
+    {
+      from: "resources/THIRD_PARTY_LICENSES.desktop.json",
+      to: "THIRD_PARTY_LICENSES.desktop.json",
     },
     ...(channel === "dev"
       ? [

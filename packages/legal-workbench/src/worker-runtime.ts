@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import { isAbsolute, relative, resolve } from "node:path"
 
@@ -9,6 +10,7 @@ export interface EvidenceWorkerRuntime {
   artifactsPath?: string
   ocrEngine: "rapidocr" | "tesseract"
   ocrLanguages: string[]
+  licenseReviewStatus?: "pending-counsel-review" | "approved"
 }
 
 export type EvidenceWorkerDiscovery =
@@ -22,6 +24,13 @@ interface RuntimeManifest {
   packageRoot: string
   models: { path: string; included: boolean; sha256: string }
   ocr: { engine: "rapidocr"; backend: "torch"; languages: string[] }
+  licenses: {
+    path: string
+    sha256: string
+    pythonDistributions: number
+    modelSets: number
+    reviewStatus: "pending-counsel-review" | "approved"
+  }
   lockSha256: string
 }
 
@@ -34,11 +43,15 @@ export function discoverEvidenceWorkerRuntime(workerRoot: string): EvidenceWorke
       const python = containedPath(root, manifest.python.executable, "Python executable")
       const packageRoot = containedPath(root, manifest.packageRoot, "worker package")
       const artifactsPath = containedPath(root, manifest.models.path, "Docling model artifacts")
+      const licensesPath = containedPath(root, manifest.licenses.path, "third-party license receipt")
       if (!existsSync(python)) throw new Error("Python executable is missing")
       if (!existsSync(resolve(packageRoot, "legal_evidence_worker", "cli.py")))
         throw new Error("worker package is missing")
       if (!manifest.models.included || !existsSync(artifactsPath))
         throw new Error("offline model artifacts are missing")
+      if (!existsSync(licensesPath)) throw new Error("third-party license receipt is missing")
+      if (createHash("sha256").update(readFileSync(licensesPath)).digest("hex") !== manifest.licenses.sha256)
+        throw new Error("third-party license receipt hash does not match the runtime manifest")
       return {
         status: "ready",
         runtime: {
@@ -49,6 +62,7 @@ export function discoverEvidenceWorkerRuntime(workerRoot: string): EvidenceWorke
           artifactsPath,
           ocrEngine: manifest.ocr.engine,
           ocrLanguages: manifest.ocr.languages,
+          licenseReviewStatus: manifest.licenses.reviewStatus,
         },
         detail: `Packaged Docling/${manifest.ocr.engine} worker ready (${manifest.ocr.languages.join(", ")} OCR)`,
       }
@@ -103,6 +117,17 @@ function runtimeManifest(value: unknown): RuntimeManifest {
     manifest.ocr.languages.some((language) => typeof language !== "string" || !language.trim())
   )
     throw new Error("runtime manifest has no supported OCR configuration")
+  if (
+    !manifest.licenses ||
+    typeof manifest.licenses.path !== "string" ||
+    !isSha256(manifest.licenses.sha256) ||
+    !Number.isInteger(manifest.licenses.pythonDistributions) ||
+    manifest.licenses.pythonDistributions < 1 ||
+    !Number.isInteger(manifest.licenses.modelSets) ||
+    manifest.licenses.modelSets < 1 ||
+    (manifest.licenses.reviewStatus !== "pending-counsel-review" && manifest.licenses.reviewStatus !== "approved")
+  )
+    throw new Error("runtime manifest has no valid third-party license identity")
   if (!isSha256(manifest.lockSha256)) throw new Error("runtime manifest has no valid lock identity")
   return manifest as RuntimeManifest
 }
