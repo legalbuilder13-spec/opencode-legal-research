@@ -400,10 +400,10 @@ Never evaluate only whether a citation exists. A real case can still be cited fo
 
 ## Fork operations
 
-The fork is published at `legalbuilder13-spec/Open-Legal-Harness`. The local checkout uses:
+The fork is published at `legalbuilder13-spec/opencode-legal-research`. The local checkout uses:
 
 ```bash
-origin    https://github.com/legalbuilder13-spec/Open-Legal-Harness.git
+origin    https://github.com/legalbuilder13-spec/opencode-legal-research.git
 upstream  https://github.com/anomalyco/opencode.git
 ```
 
