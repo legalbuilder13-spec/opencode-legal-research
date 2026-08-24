@@ -4,6 +4,8 @@ const state = {
   citationDemo: null,
   accountStatus: "checking",
   egressAcknowledged: localStorage.getItem("legalbuilder:chatgpt-egress-v1") === "acknowledged",
+  accountLoginId: null,
+  accountLoginTimer: null,
 }
 const $ = (selector) => document.querySelector(selector)
 
@@ -25,6 +27,25 @@ $("#egress-confirm").addEventListener("click", () => {
   $("#egress-consent").hidden = true
   syncResearchAvailability()
   toast("ChatGPT matter-data egress acknowledged")
+})
+
+$("#account-copy-code").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("#account-user-code").textContent)
+    toast("One-time code copied")
+  } catch {
+    toast("Copy was unavailable; select the displayed code", true)
+  }
+})
+$("#account-login-cancel").addEventListener("click", async () => {
+  if (state.accountLoginTimer) clearTimeout(state.accountLoginTimer)
+  if (state.accountLoginId)
+    await api(`/api/account/login/${encodeURIComponent(state.accountLoginId)}`, { method: "DELETE" }).catch(
+      () => undefined,
+    )
+  state.accountLoginId = null
+  state.accountLoginTimer = null
+  $("#account-login").hidden = true
 })
 
 document.querySelectorAll(".nav-item").forEach((button) => {
@@ -262,6 +283,19 @@ async function loadAccount() {
   }
   content.append(label, detail)
   root.append(pulse, content)
+  if (account.accountSwitchingAvailable && (account.status === "ready" || account.status === "limited")) {
+    const change = document.createElement("button")
+    change.type = "button"
+    change.textContent = "Change account"
+    change.addEventListener("click", async () => {
+      if (!window.confirm("Sign out of ChatGPT and choose another account? Local matters and evidence will remain."))
+        return
+      await api("/api/account/logout", { method: "POST" })
+      resetEgressAcknowledgement()
+      await beginAccountLogin()
+    })
+    root.append(change)
+  }
   if (account.status !== "ready") {
     const retry = document.createElement("button")
     retry.type = "button"
@@ -269,9 +303,57 @@ async function loadAccount() {
     retry.addEventListener("click", () => void loadAccount())
     root.append(retry)
   }
+  if (account.accountSwitchingAvailable && (account.status === "signed-out" || account.status === "wrong-account")) {
+    const signIn = document.createElement("button")
+    signIn.type = "button"
+    signIn.textContent = "Sign in"
+    signIn.addEventListener("click", async () => {
+      if (account.status === "wrong-account") await api("/api/account/logout", { method: "POST" })
+      resetEgressAcknowledgement()
+      await beginAccountLogin()
+    })
+    root.append(signIn)
+  }
   if (account.status === "ready" && !state.egressAcknowledged && !currentMatter()?.localOnly)
     $("#egress-consent").hidden = false
   syncResearchAvailability()
+}
+
+async function beginAccountLogin() {
+  const login = await api("/api/account/login/device", { method: "POST" })
+  state.accountLoginId = login.loginId
+  $("#account-verification-link").href = login.verificationUrl
+  $("#account-user-code").textContent = login.userCode
+  $("#account-login-status").textContent = "Waiting for ChatGPT sign-in…"
+  $("#account-login-cancel").textContent = "Cancel sign-in"
+  $("#account-login").hidden = false
+  await pollAccountLogin()
+}
+
+async function pollAccountLogin() {
+  if (!state.accountLoginId) return
+  const result = await api(`/api/account/login/${encodeURIComponent(state.accountLoginId)}`)
+  if (result.status === "pending") {
+    state.accountLoginTimer = setTimeout(() => void pollAccountLogin(), 1000)
+    return
+  }
+  state.accountLoginTimer = null
+  if (result.status === "completed") {
+    state.accountLoginId = null
+    $("#account-login").hidden = true
+    await loadAccount()
+    toast("ChatGPT account changed · local matters preserved")
+    return
+  }
+  $("#account-login-status").textContent = result.error || "ChatGPT sign-in did not complete"
+  $("#account-login-cancel").textContent = "Close"
+}
+
+function resetEgressAcknowledgement() {
+  state.egressAcknowledged = false
+  localStorage.removeItem("legalbuilder:chatgpt-egress-v1")
+  $("#egress-check").checked = false
+  $("#egress-confirm").disabled = true
 }
 
 function resetLabel(rateLimit) {
@@ -378,11 +460,39 @@ async function loadSources() {
       const title = document.createElement("strong")
       title.textContent = source.title
       const meta = document.createElement("span")
+      meta.className = "source-technical-meta"
       const representation = source.representations.at(-1)
       const warnings = Array.isArray(representation?.warnings) ? representation.warnings.length : 0
       meta.textContent = `${source.mime} · ${source.capture_status}${representation ? ` · ${representation.parserName} ${representation.mode}` : ""}${warnings ? ` · ${warnings} warning${warnings === 1 ? "" : "s"}` : ""} · ${source.content_sha256.slice(0, 12)}…`
       article.append(kind, title, meta)
-      if (source.mime !== "text/plain" && source.capture_status === "complete") {
+      if (source.authority_type || source.court || source.precedential_status || source.metadata_source) {
+        const legalMeta = document.createElement("span")
+        legalMeta.className = "source-legal-meta"
+        legalMeta.textContent = [
+          source.citation || source.authority_type,
+          source.court || source.jurisdiction,
+          source.precedential_status ? `${source.precedential_status} status` : null,
+          source.decision_date ? `decided ${source.decision_date}` : "decision date unavailable",
+          `metadata: ${source.metadata_source || "captured source"}`,
+          `reviewed as of ${matter.researchAsOf}`,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+        article.append(legalMeta)
+      }
+      if (source.access_notes) {
+        const access = document.createElement("span")
+        access.className = "source-access-note"
+        access.textContent = `Access note: ${source.access_notes}`
+        article.append(access)
+      }
+      if (
+        (source.mime === "application/pdf" ||
+          source.mime.startsWith("image/") ||
+          source.mime === "text/html" ||
+          source.mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") &&
+        source.capture_status === "complete"
+      ) {
         article.append(reprocessControls(source))
       }
       const remove = document.createElement("button")

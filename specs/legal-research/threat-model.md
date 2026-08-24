@@ -49,7 +49,7 @@ ChatGPT auth, CourtListener tokens, matter text, and raw tool payloads must not 
 
 ### Excessive or undisclosed egress
 
-Personal ChatGPT workspace use may be inappropriate for privileged matters. Before first use the UI identifies subscription-backed research and warns that matter evidence is sent to the selected ChatGPT workspace. CourtListener search disclosure is separate. A persisted local-only matter setting keeps ingestion, OCR, storage, retrieval, inspection, and export local while UI and API block ChatGPT synthesis before context construction. Organizational policy, retention, training, and data-control decisions remain deployment prerequisites.
+Personal ChatGPT workspace use may be inappropriate for privileged matters. Before first use the UI identifies subscription-backed research and warns that matter evidence is sent to the selected ChatGPT workspace. CourtListener search disclosure is separate. A persisted local-only matter setting keeps ingestion, OCR, storage, retrieval, inspection, and export local while UI and API block ChatGPT synthesis before context construction. Account switching uses app-server device login, keeps the one-time session in memory, leaves the matter store untouched, and clears the prior egress acknowledgement. Organizational policy, retention, training, and data-control decisions remain deployment prerequisites.
 
 ### Availability and resource exhaustion
 

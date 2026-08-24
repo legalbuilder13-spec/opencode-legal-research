@@ -320,6 +320,25 @@
         <button id="egress-confirm" class="primary-button" type="button" disabled>Enable subscription drafting</button>
       </section>
     </div>
+    <div id="account-login" class="modal-backdrop" hidden>
+      <section class="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="account-login-title">
+        <p class="eyebrow">ChatGPT subscription</p>
+        <h2 id="account-login-title">Sign in on another device</h2>
+        <p>
+          Open the secure ChatGPT verification page, then enter this one-time code. Your local matters and evidence do
+          not change when the signed-in account changes.
+        </p>
+        <a id="account-verification-link" class="secondary-button" href="#" target="_blank" rel="noopener noreferrer"
+          >Open ChatGPT verification</a
+        >
+        <div class="device-code-row">
+          <code id="account-user-code"></code>
+          <button id="account-copy-code" class="secondary-button" type="button">Copy code</button>
+        </div>
+        <p id="account-login-status" class="egress-note">Waiting for ChatGPT sign-in…</p>
+        <button id="account-login-cancel" class="secondary-button" type="button">Cancel sign-in</button>
+      </section>
+    </div>
     <div id="toast" class="toast" role="status" hidden></div>
     <script type="module" src="/app.js"></script>
   </body>

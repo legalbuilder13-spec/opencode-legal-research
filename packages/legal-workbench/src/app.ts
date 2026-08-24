@@ -31,6 +31,18 @@ export interface WorkbenchOptions {
   workerRunner?: EvidenceWorkerRunner
   courtListener?: { fetcher?: CourtListenerFetcher; baseUrl?: string }
   webCapture?: { fetcher?: WebCaptureFetcher; resolver?: WebAddressResolver; renderer?: WebCaptureRenderer }
+  accountConnect?: () => Promise<AccountClient>
+}
+
+type AccountClient = Pick<
+  Awaited<ReturnType<typeof connect>>,
+  "account" | "rateLimits" | "startLogin" | "waitForLogin" | "cancelLogin" | "logout" | "close"
+>
+
+interface AccountLoginSession {
+  client: AccountClient
+  status: "pending" | "completed" | "failed" | "cancelled"
+  error: string | null
 }
 
 export async function createWorkbench(options: WorkbenchOptions) {
@@ -46,6 +58,9 @@ export async function createWorkbench(options: WorkbenchOptions) {
   const answers = new AnswerFinalizer(core)
   const ingestion = new EvidenceIngestionService(core, dataRoot, options.workerRunner)
   const webCapture = new WebCaptureService(options.webCapture)
+  const connectAccount =
+    options.accountConnect ?? (() => connect({ cwd: process.cwd(), notificationTimeoutMs: 10 * 60_000 }))
+  const accountLogins = new Map<string, AccountLoginSession>()
   const synthesize =
     options.synthesizer ?? (options.fixtureAccount ? fixtureSynthesizer : subscriptionSynthesizer(dataRoot))
   const citations = new CitationStore()
@@ -69,10 +84,11 @@ export async function createWorkbench(options: WorkbenchOptions) {
             planType: "fixture",
             apiKeyRequired: false,
             rateLimit: null,
+            accountSwitchingAvailable: Boolean(options.accountConnect),
           })
-        let client: Awaited<ReturnType<typeof connect>> | undefined
+        let client: AccountClient | undefined
         try {
-          client = await connect({ cwd: process.cwd() })
+          client = await connectAccount()
           const state = await client.account()
           if (!state.account)
             return Response.json({
@@ -81,6 +97,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
               planType: null,
               apiKeyRequired: false,
               rateLimit: null,
+              accountSwitchingAvailable: true,
             })
           if (state.account.type !== "chatgpt")
             return Response.json({
@@ -89,6 +106,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
               planType: null,
               apiKeyRequired: false,
               rateLimit: null,
+              accountSwitchingAvailable: true,
             })
           const limits = await client.rateLimits()
           return Response.json({
@@ -97,6 +115,7 @@ export async function createWorkbench(options: WorkbenchOptions) {
             planType: state.account.planType,
             apiKeyRequired: false,
             rateLimit: limits,
+            accountSwitchingAvailable: true,
           })
         } catch {
           return Response.json({
@@ -105,10 +124,69 @@ export async function createWorkbench(options: WorkbenchOptions) {
             planType: null,
             apiKeyRequired: false,
             rateLimit: null,
+            accountSwitchingAvailable: true,
           })
         } finally {
           await client?.close()
         }
+      }
+      if (url.pathname === "/api/account/logout" && request.method === "POST") {
+        requireAccountManagement(options)
+        let client: AccountClient | undefined
+        try {
+          client = await connectAccount()
+          await client.logout()
+          return Response.json({ status: "signed-out", retainedMatterCount: core.listMatters({ includeArchived: true }).length })
+        } finally {
+          await client?.close()
+        }
+      }
+      if (url.pathname === "/api/account/login/device" && request.method === "POST") {
+        requireAccountManagement(options)
+        for (const [loginId, session] of accountLogins) {
+          if (session.status === "pending") await session.client.cancelLogin(loginId).catch(() => undefined)
+          await session.client.close().catch(() => undefined)
+        }
+        accountLogins.clear()
+        const client = await connectAccount()
+        try {
+          const login = await client.startLogin("chatgptDeviceCode")
+          const verificationUrl = safeLoginUrl(login.verificationUrl)
+          if (!login.userCode) throw new Error("ChatGPT device login did not provide a user code")
+          const session: AccountLoginSession = { client, status: "pending", error: null }
+          accountLogins.set(login.loginId, session)
+          void client
+            .waitForLogin(login)
+            .then((completion) => {
+              session.status = completion.success ? "completed" : "failed"
+              session.error = completion.error
+            })
+            .catch((error: unknown) => {
+              session.status = "failed"
+              session.error = error instanceof Error ? error.message : "ChatGPT login failed"
+            })
+            .finally(() => client.close().catch(() => undefined))
+          return Response.json({ loginId: login.loginId, verificationUrl, userCode: login.userCode }, { status: 201 })
+        } catch (error) {
+          await client.close()
+          throw error
+        }
+      }
+      const accountLoginMatch = url.pathname.match(/^\/api\/account\/login\/([^/]+)$/)
+      if (accountLoginMatch && request.method === "GET") {
+        const loginId = pathParameter(accountLoginMatch)
+        const session = accountLogins.get(loginId)
+        if (!session) return jsonError("Unknown ChatGPT login", 404)
+        return Response.json({ loginId, status: session.status, error: session.error })
+      }
+      if (accountLoginMatch && request.method === "DELETE") {
+        const loginId = pathParameter(accountLoginMatch)
+        const session = accountLogins.get(loginId)
+        if (!session) return jsonError("Unknown ChatGPT login", 404)
+        if (session.status === "pending") await session.client.cancelLogin(loginId)
+        session.status = "cancelled"
+        await session.client.close()
+        return Response.json({ loginId, status: "cancelled" })
       }
       if (url.pathname === "/api/matters" && request.method === "POST") {
         const body = object(await request.json(), "matter request")
@@ -414,6 +492,8 @@ export async function createWorkbench(options: WorkbenchOptions) {
   }
 
   function close() {
+    for (const session of accountLogins.values()) void session.client.close()
+    accountLogins.clear()
     core.close()
     citations.close()
   }
@@ -453,6 +533,18 @@ function optionalBoolean(value: unknown) {
   if (value === undefined) return undefined
   if (typeof value !== "boolean") throw new Error("Invalid boolean value")
   return value
+}
+
+function safeLoginUrl(value: string | undefined) {
+  if (!value) throw new Error("ChatGPT device login did not provide a verification URL")
+  const url = new URL(value)
+  if (url.protocol !== "https:") throw new Error("ChatGPT verification URL must use HTTPS")
+  return url.toString()
+}
+
+function requireAccountManagement(options: WorkbenchOptions) {
+  if (options.fixtureAccount && !options.accountConnect)
+    throw new Error("Account switching is unavailable in deterministic fixture mode")
 }
 
 function evidenceMode(value: unknown): "adaptive" | "strict_visual" {

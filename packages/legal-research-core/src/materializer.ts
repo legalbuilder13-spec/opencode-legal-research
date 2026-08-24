@@ -127,6 +127,11 @@ export class SourceMaterializer {
         mime: block.mime,
         bytes: block.data,
         origin: `tool:${input.connector}:${index}`,
+        status: block.mime === "text/plain" ? "complete" : "partial",
+        accessNotes:
+          block.mime === "text/plain"
+            ? undefined
+            : "Connector resource captured but requires supervised parsing before context admission",
       })
       if (block.mime === "text/plain") {
         const text = new TextDecoder().decode(block.data)

@@ -516,6 +516,7 @@ export class LegalResearchStore {
           mime: string
           retrieved_at: string
           capture_status: CaptureStatus
+          access_notes: string | null
           jurisdiction: string | null
           court: string | null
           decision_date: string | null
@@ -529,7 +530,7 @@ export class LegalResearchStore {
       >(
         `SELECT source.id AS source_id, source.title, source.kind, source_version.id AS source_version_id,
           source_version.content_sha256, source_version.mime, source_version.retrieved_at,
-          source_version.capture_status, legal_metadata.jurisdiction, legal_metadata.court,
+          source_version.capture_status, source_version.access_notes, legal_metadata.jurisdiction, legal_metadata.court,
           legal_metadata.decision_date, legal_metadata.authority_type,
           legal_metadata.precedential_status, legal_metadata.citation, legal_metadata.full_source,
           courtlistener_record.metadata_source

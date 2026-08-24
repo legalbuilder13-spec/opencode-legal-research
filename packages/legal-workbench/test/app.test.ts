@@ -42,6 +42,7 @@ describe("legal workbench integration", () => {
       planType: "fixture",
       apiKeyRequired: false,
       rateLimit: null,
+      accountSwitchingAvailable: false,
     })
   })
 
@@ -408,7 +409,16 @@ describe("legal workbench integration", () => {
       (source) => record(source, "source"),
     )
     expect(sources).toHaveLength(1)
-    expect(sources[0]).toMatchObject({ kind: "courtlistener", capture_status: "complete" })
+    expect(sources[0]).toMatchObject({
+      kind: "courtlistener",
+      capture_status: "complete",
+      court: "Court of Appeals for the Ninth Circuit",
+      jurisdiction: "9th Cir.",
+      decision_date: "2025-05-02",
+      precedential_status: "published",
+      citation: "999 F.4th 123",
+      metadata_source: "CourtListener REST API v4.7",
+    })
     const receipt = await (await call(handler, `/api/matters/${matterId}/export`)).text()
     expect(receipt).not.toContain("fixture-token")
     expect(apiFixture.authorizations.every((authorization) => authorization === "Token fixture-token")).toBe(true)
@@ -578,6 +588,88 @@ describe("legal workbench integration", () => {
       expect(readable).toContain(string(item.textSha256, "text hash"))
       expect(readable.replaceAll("\\.", ".")).toContain(string(item.text, "exact passage"))
     }
+  })
+
+  test("WB-12 changes ChatGPT accounts without changing local matters or evidence", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "legal-workbench-account-switch-"))
+    let signedIn = true
+    let completeLogin: (() => void) | undefined
+    const loginCompletion = new Promise<void>((resolve) => {
+      completeLogin = resolve
+    })
+    const workbench = await createWorkbench({
+      dataRoot,
+      accountConnect: async () => ({
+        account: async () => ({
+          requiresOpenaiAuth: true,
+          account: signedIn ? ({ type: "chatgpt", planType: "fixture-plus" } as const) : null,
+        }),
+        rateLimits: async () => ({ limitId: null, primary: null, secondary: null, reachedType: null }),
+        logout: async () => {
+          signedIn = false
+        },
+        startLogin: async () => ({
+          type: "chatgptDeviceCode" as const,
+          loginId: "fixture-login",
+          verificationUrl: "https://chatgpt.example/device",
+          userCode: "ABCD-EFGH",
+          cursor: 0,
+        }),
+        waitForLogin: async () => {
+          await loginCompletion
+          signedIn = true
+          return { loginId: "fixture-login", success: true, error: null }
+        },
+        cancelLogin: async () => undefined,
+        close: async () => undefined,
+      }),
+    })
+    close.push(workbench.close)
+    const created = await call(workbench.handler, "/api/matters", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Account-independent matter",
+        jurisdiction: "U.S.",
+        researchAsOf: "2026-08-24",
+        confidentiality: "privileged",
+      }),
+    })
+    const matterId = string(record(await created.json(), "matter").id, "matter id")
+    await call(workbench.handler, `/api/matters/${matterId}/sources`, {
+      method: "POST",
+      body: JSON.stringify({ title: "Preserved source", text: "This evidence remains local across account changes." }),
+    })
+    expect(await (await call(workbench.handler, "/api/account")).json()).toMatchObject({
+      status: "ready",
+      planType: "fixture-plus",
+    })
+
+    const logout = await call(workbench.handler, "/api/account/logout", { method: "POST" })
+    expect(await logout.json()).toEqual({ status: "signed-out", retainedMatterCount: 1 })
+    expect(await (await call(workbench.handler, "/api/account")).json()).toHaveProperty("status", "signed-out")
+    const login = await call(workbench.handler, "/api/account/login/device", { method: "POST" })
+    expect(await login.json()).toEqual({
+      loginId: "fixture-login",
+      verificationUrl: "https://chatgpt.example/device",
+      userCode: "ABCD-EFGH",
+    })
+    expect(await (await call(workbench.handler, "/api/account/login/fixture-login")).json()).toHaveProperty(
+      "status",
+      "pending",
+    )
+    completeLogin?.()
+    await Bun.sleep(0)
+    expect(await (await call(workbench.handler, "/api/account/login/fixture-login")).json()).toHaveProperty(
+      "status",
+      "completed",
+    )
+    expect(await (await call(workbench.handler, "/api/account")).json()).toHaveProperty("status", "ready")
+    const sources = await call(workbench.handler, `/api/matters/${matterId}/sources`)
+    expect(array(await sources.json(), "preserved sources")).toHaveLength(1)
+    expect(record(await (await call(workbench.handler, "/api/bootstrap")).json(), "bootstrap")).toMatchObject({
+      selectedMatterId: matterId,
+      matters: [{ id: matterId, name: "Account-independent matter" }],
+    })
   })
 })
 

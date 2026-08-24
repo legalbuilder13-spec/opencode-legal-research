@@ -539,10 +539,18 @@ textarea {
   grid-template-columns: auto 1fr;
   align-items: center;
 }
-.source-row > span:last-child {
+.source-technical-meta,
+.source-legal-meta,
+.source-access-note {
   grid-column: 2;
   color: var(--muted);
   font-size: 11px;
+}
+.source-legal-meta {
+  color: var(--forest-deep);
+}
+.source-access-note {
+  color: var(--amber);
 }
 .reprocess-controls {
   display: grid;
@@ -825,6 +833,24 @@ details li {
   margin: 16px 0;
   color: var(--muted);
   line-height: 1.55;
+}
+.device-code-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 10px;
+}
+.device-code-row code {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 12px;
+  color: var(--forest-deep);
+  background: #f7faf8;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
 }
 .consent-check {
   display: grid;

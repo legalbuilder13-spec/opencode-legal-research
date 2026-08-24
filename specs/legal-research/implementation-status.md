@@ -19,6 +19,8 @@ Last updated: 2026-08-24
 | Recovery and destructive lifecycle controls       | Synthetic product gate passed              | [`milestone-results/g-recovery-lifecycle.md`](./milestone-results/g-recovery-lifecycle.md)                 |
 | Matter-scoped local-only mode                     | Synthetic product gate passed              | [`adr/0012-matter-local-only-mode.md`](./adr/0012-matter-local-only-mode.md)                               |
 | Readable provenance export                        | Synthetic product gate passed              | [`milestone-results/e-readable-provenance-export.md`](./milestone-results/e-readable-provenance-export.md) |
+| Private-beta P1 controls                          | Synthetic product gates passed             | [`milestone-results/h-private-beta-controls.md`](./milestone-results/h-private-beta-controls.md)           |
+| ChatGPT account switching                         | Synthetic product gate passed              | [`adr/0014-account-switching-boundary.md`](./adr/0014-account-switching-boundary.md)                         |
 | Parser resource and malformed-input hardening     | Local security gate passed                 | [`threat-model.md`](./threat-model.md)                                                                     |
 | Primary OpenCode shell route                      | Alpha route implemented                    | [`adr/0010-primary-shell-route.md`](./adr/0010-primary-shell-route.md)                                     |
 | Desktop sidecar/install packaging                 | Pending                                    | ADR 0010                                                                                                   |

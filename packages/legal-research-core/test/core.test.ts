@@ -266,6 +266,7 @@ describe("immutable source materialization", () => {
       blocks: [
         { type: "text", text: injection },
         { type: "resource", mime: "text/plain", name: "Linked record", data: new TextEncoder().encode("Linked text") },
+        { type: "resource", mime: "application/pdf", name: "Linked PDF", data: new Uint8Array([37, 80, 68, 70]) },
         { type: "excluded", reason: "unsupported active content", metadata: { type: "script" } },
       ],
     })
@@ -277,6 +278,16 @@ describe("immutable source materialization", () => {
     expect(first.text).toBe(injection)
     expect(store.passageForContext(matter.id, first.passageId).textSha256).toBe(hashText(injection))
     expect(store.db.query<{ count: number }, []>("SELECT COUNT(*) AS count FROM excluded_content").get()?.count).toBe(1)
+    expect(
+      store.db
+        .query<{ capture_status: string; access_notes: string | null }, []>(
+          "SELECT capture_status, access_notes FROM source_version WHERE mime = 'application/pdf'",
+        )
+        .get(),
+    ).toEqual({
+      capture_status: "partial",
+      access_notes: "Connector resource captured but requires supervised parsing before context admission",
+    })
   })
 
   test("SEC-04 core operations emit no raw source text to default diagnostics", async () => {

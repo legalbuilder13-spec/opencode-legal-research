@@ -17,6 +17,8 @@ The primary OpenCode app also exposes `/legal-research` and a command-palette en
 
 The workbench reads the current Codex/ChatGPT login through `codex app-server`; it does not require `OPENAI_API_KEY`. For deterministic local UI testing only, set `LEGAL_WORKBENCH_FIXTURE_ACCOUNT=1`.
 
+The account card supports explicit logout and ChatGPT device-code sign-in. Changing accounts does not modify local matters or evidence and clears the prior model-egress acknowledgement, so the newly displayed subscription context must be acknowledged before drafting resumes. One-time login state remains in workbench/page memory and is never written to matter data.
+
 Each matter can be marked local-only. Local ingestion, OCR, storage, retrieval, inspection, and export continue to work, while the UI and API block ChatGPT drafting before any model context is constructed. CourtListener query egress remains a separate explicit action. The alpha does not claim a local generative fallback unless a future packaged local model is configured.
 
 Data defaults to `packages/legal-workbench/.data`. Set `LEGAL_RESEARCH_DATA_DIR` to use another local directory. Original source bytes live in a content-addressed blob directory and are not duplicated into messages or retrieval logs.
@@ -32,3 +34,5 @@ The model receives only support-eligible, matter-scoped passage envelopes. It mu
 This remains an alpha integration workbench, not a production legal opinion generator. Synthetic transaction tests do not establish legal accuracy, research completeness, or treatment validity. The remaining product work is the attorney-reviewed corpus, strict visual URL capture, production worker sandboxing, live CourtListener token evaluation, and primary OpenCode shell packaging/localization.
 
 CourtListener materialization requires a user-supplied CourtListener token. The token is held in the page only, is cleared on reload, and is not stored in matter data, local storage, or exports. Search snippets remain leads only; only materialized full opinions may support verified claims.
+
+Materialized CourtListener source cards display the court, jurisdiction, decision date, citation, precedential status, metadata provider, and matter research-as-of date. Citation-graph data is labeled derived and is never presented as editorial good-law treatment.
