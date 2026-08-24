@@ -547,6 +547,15 @@
         "@typescript/native-preview": "catalog:",
       },
     },
+    "packages/legal-citation-spike": {
+      "name": "@legalbuilder/legal-citation-spike",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
     "packages/llm": {
       "name": "@opencode-ai/llm",
       "version": "1.18.21",
@@ -1811,6 +1820,8 @@
     "@kurkle/color": ["@kurkle/color@0.3.4", "", {}, "sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w=="],
 
     "@legalbuilder/codex-app-server-spike": ["@legalbuilder/codex-app-server-spike@workspace:packages/codex-app-server"],
+
+    "@legalbuilder/legal-citation-spike": ["@legalbuilder/legal-citation-spike@workspace:packages/legal-citation-spike"],
 
     "@leichtgewicht/ip-codec": ["@leichtgewicht/ip-codec@2.0.5", "", {}, "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="],
 

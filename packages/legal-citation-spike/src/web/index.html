@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Legal Evidence Citation Prototype</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Legal Builder · Evidence prototype</p>
+          <h1>Research answer with resolvable citations</h1>
+        </div>
+        <div id="completion-status" class="completion-status">Loading evidence…</div>
+      </header>
+
+      <section class="workspace">
+        <article class="answer-panel" aria-labelledby="answer-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Research response</p>
+              <h2 id="answer-heading">Section 1983 memorandum</h2>
+            </div>
+            <span class="as-of">Synthetic fixture · Aug 2026</span>
+          </div>
+          <div id="answer" class="answer" aria-live="polite"></div>
+          <div class="legend" aria-label="Citation status legend">
+            <span><i class="dot supported"></i>Supported</span>
+            <span><i class="dot qualified"></i>Qualified</span>
+            <span><i class="dot contradicted"></i>Contradicted</span>
+            <span><i class="dot unverified"></i>Unverified</span>
+          </div>
+          <section class="ledger">
+            <p class="eyebrow">Evidence controls</p>
+            <h3>Citations are application-minted</h3>
+            <p>
+              Hover or focus a footnote to inspect every stored passage. Select a passage to open its exact persisted
+              page region. No quotation is copied from model output.
+            </p>
+            <details>
+              <summary>Sources-read ledger</summary>
+              <ul id="ledger-list"></ul>
+            </details>
+            <div class="trust-grid" aria-label="Trust checks">
+              <span><strong>Source integrity</strong>Hash checked</span>
+              <span><strong>Quote fidelity</strong>Exact or OCR-labeled</span>
+              <span><strong>Claim support</strong>Relationship shown</span>
+              <span><strong>Citation resolution</strong>Stored ID and region</span>
+              <span><strong>Legal treatment</strong>Not evaluated</span>
+            </div>
+          </section>
+        </article>
+
+        <aside class="source-panel" aria-labelledby="source-heading">
+          <div class="panel-heading source-title-row">
+            <div>
+              <p class="eyebrow">Original source</p>
+              <h2 id="source-heading">Select a cited passage</h2>
+            </div>
+            <span id="page-label" class="page-label">No page selected</span>
+          </div>
+          <div id="viewer-empty" class="viewer-empty">
+            <div class="empty-icon">⌖</div>
+            <p>Choose evidence from a citation card to navigate to the exact page and region.</p>
+          </div>
+          <div id="page-viewer" class="page-viewer" hidden>
+            <div id="page-canvas" class="page-canvas">
+              <img id="page-image" alt="Persisted source page" />
+              <div id="page-highlight" class="page-highlight" aria-label="Cited passage highlight"></div>
+            </div>
+          </div>
+          <div id="passage-detail" class="passage-detail" hidden></div>
+        </aside>
+      </section>
+    </main>
+
+    <div id="citation-popover" class="citation-popover" role="dialog" aria-label="Citation evidence" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

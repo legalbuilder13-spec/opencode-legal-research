@@ -1,6 +1,6 @@
 # Legal Research MVP Technical Spikes
 
-Status: TS-01 and TS-02 conditionally selected; TS-03 proposed
+Status: TS-01 and TS-02 conditionally selected; TS-03 selected
 
 Product requirements: [`prd.md`](./prd.md)
 
@@ -34,11 +34,11 @@ These are evidence-producing experiments, not miniature production implementatio
 
 ## 3. Summary and order
 
-| Spike | Decision | Depends on | Suggested timebox | Required output |
-|---|---|---|---:|---|
-| TS-01 | Select the default ChatGPT-subscription backend. | None | 3 engineering days | Harness, redacted transcripts, compatibility matrix, ADR |
-| TS-02 | Select the Docling/OCR pipeline and provenance contract. | Gold document fixtures | 5 engineering days | Worker prototype, fixture results, performance report, ADR |
-| TS-03 | Select the citation persistence and finalization design. | Minimal TS-02 output contract | 5 engineering days | Vertical prototype, adversarial tests, UI recording, ADR |
+| Spike | Decision                                                 | Depends on                    |  Suggested timebox | Required output                                            |
+| ----- | -------------------------------------------------------- | ----------------------------- | -----------------: | ---------------------------------------------------------- |
+| TS-01 | Select the default ChatGPT-subscription backend.         | None                          | 3 engineering days | Harness, redacted transcripts, compatibility matrix, ADR   |
+| TS-02 | Select the Docling/OCR pipeline and provenance contract. | Gold document fixtures        | 5 engineering days | Worker prototype, fixture results, performance report, ADR |
+| TS-03 | Select the citation persistence and finalization design. | Minimal TS-02 output contract | 5 engineering days | Vertical prototype, adversarial tests, UI recording, ADR   |
 
 TS-01 and the fixture preparation for TS-02 can begin independently. TS-03 should consume the provenance shape proven by TS-02 rather than inventing a second coordinate model.
 
@@ -96,35 +96,35 @@ The harness must not yet expose legal tools, dynamic tools, MCP orchestration, s
 
 ### Required test cases
 
-| ID | Scenario | Expected evidence |
-|---|---|---|
-| AS-01 | Start with no cached auth and no OpenAI API key. | `account/read` shows signed out; environment snapshot proves the key is absent. |
-| AS-02 | Complete managed browser login. | Login completion and account update show ChatGPT auth mode and available plan type. |
-| AS-03 | Cancel browser login. | The pending login reaches a distinct unsuccessful terminal state without hanging the adapter. |
-| AS-04 | Complete device-code login. | Verification URL/code are surfaced; completion produces managed ChatGPT auth. |
-| AS-05 | Start a thread and turn. | One agent answer streams through structured notifications and reaches completed status. |
-| AS-06 | Preserve ordering under streaming. | Reassembled agent text and item lifecycle match the final turn record with no duplicate deltas. |
-| AS-07 | Interrupt a long turn. | The adapter sends turn interruption and receives a terminal interrupted/cancelled outcome within the timeout. |
-| AS-08 | Restart app-server and resume. | A persisted thread ID resumes and accepts a new turn after process restart. |
-| AS-09 | Restart the host application. | The OpenCode-side mapping restores without creating a duplicate thread or losing prior messages. |
-| AS-10 | Read rate limits. | The adapter exposes used percentage, window/reset data when available, and a clear unavailable state otherwise. |
-| AS-11 | Expire or invalidate auth. | Authorization failure becomes a reauthentication state; secrets do not appear in logs. |
-| AS-12 | Kill app-server mid-turn. | The host reports model execution interrupted, keeps the admitted user request durable, and can safely restart. |
-| AS-13 | Run with an incompatible schema/version. | Startup fails with a clear compatibility message before a legal-research turn begins. |
-| AS-14 | Logout. | Account state clears while local matters and source records remain intact. |
+| ID    | Scenario                                         | Expected evidence                                                                                               |
+| ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| AS-01 | Start with no cached auth and no OpenAI API key. | `account/read` shows signed out; environment snapshot proves the key is absent.                                 |
+| AS-02 | Complete managed browser login.                  | Login completion and account update show ChatGPT auth mode and available plan type.                             |
+| AS-03 | Cancel browser login.                            | The pending login reaches a distinct unsuccessful terminal state without hanging the adapter.                   |
+| AS-04 | Complete device-code login.                      | Verification URL/code are surfaced; completion produces managed ChatGPT auth.                                   |
+| AS-05 | Start a thread and turn.                         | One agent answer streams through structured notifications and reaches completed status.                         |
+| AS-06 | Preserve ordering under streaming.               | Reassembled agent text and item lifecycle match the final turn record with no duplicate deltas.                 |
+| AS-07 | Interrupt a long turn.                           | The adapter sends turn interruption and receives a terminal interrupted/cancelled outcome within the timeout.   |
+| AS-08 | Restart app-server and resume.                   | A persisted thread ID resumes and accepts a new turn after process restart.                                     |
+| AS-09 | Restart the host application.                    | The OpenCode-side mapping restores without creating a duplicate thread or losing prior messages.                |
+| AS-10 | Read rate limits.                                | The adapter exposes used percentage, window/reset data when available, and a clear unavailable state otherwise. |
+| AS-11 | Expire or invalidate auth.                       | Authorization failure becomes a reauthentication state; secrets do not appear in logs.                          |
+| AS-12 | Kill app-server mid-turn.                        | The host reports model execution interrupted, keeps the admitted user request durable, and can safely restart.  |
+| AS-13 | Run with an incompatible schema/version.         | Startup fails with a clear compatibility message before a legal-research turn begins.                           |
+| AS-14 | Logout.                                          | Account state clears while local matters and source records remain intact.                                      |
 
 ### Event mapping to prove
 
-| App-server concept | OpenCode target concept | Proof required |
-|---|---|---|
-| Thread ID | External execution-thread reference on a session | Stable one-to-one mapping across restart |
-| Turn ID | Provider execution record | One durable execution identity per provider turn |
-| Agent-message delta | Assistant message stream part | Ordered, idempotent append |
-| Item start/completion | Tool/reasoning/status event | No invented lifecycle from text parsing |
-| Turn completion | Session execution boundary | Exactly one terminal transition |
-| Turn interruption | User cancellation | No later delta accepted as ordinary completion |
-| Account update | Authentication state | Active mode and plan displayed without tokens |
-| Rate-limit update/read | Usage state | Reset and reached states represented independently from errors |
+| App-server concept     | OpenCode target concept                          | Proof required                                                 |
+| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| Thread ID              | External execution-thread reference on a session | Stable one-to-one mapping across restart                       |
+| Turn ID                | Provider execution record                        | One durable execution identity per provider turn               |
+| Agent-message delta    | Assistant message stream part                    | Ordered, idempotent append                                     |
+| Item start/completion  | Tool/reasoning/status event                      | No invented lifecycle from text parsing                        |
+| Turn completion        | Session execution boundary                       | Exactly one terminal transition                                |
+| Turn interruption      | User cancellation                                | No later delta accepted as ordinary completion                 |
+| Account update         | Authentication state                             | Active mode and plan displayed without tokens                  |
+| Rate-limit update/read | Usage state                                      | Reset and reached states represented independently from errors |
 
 ### Measurements
 
@@ -267,23 +267,23 @@ Do not choose a default from one visually clean PDF. Run every candidate over th
 
 ### Required test cases
 
-| ID | Scenario | Expected evidence |
-|---|---|---|
-| DL-01 | Verify source hash before conversion. | Hash mismatch fails before parsing and produces no completed representation. |
-| DL-02 | Parse native opinion. | Gold text, reading order, page association, and regions meet thresholds. |
-| DL-03 | Parse scanned opinion adaptively. | OCR text is present and low-confidence regions are identifiable. |
-| DL-04 | Run strict visual mode. | Every page has a canonical image and full-page OCR representation in addition to native output. |
-| DL-05 | Parse mixed PDF. | Native and OCR pages remain ordered in one document without silent gaps. |
-| DL-06 | Preserve footnotes. | Gold footnote text and marker relationship survive serialization. |
-| DL-07 | Preserve table structure. | Gold cells and row/column relationships are represented or explicitly degraded. |
-| DL-08 | Normalize coordinates. | Stored boxes reopen on the intended visual text at multiple zoom levels. |
-| DL-09 | Handle rotation and crop boxes. | Region navigation remains correct or the source is visibly blocked. |
-| DL-10 | Reprocess with language hint. | A new immutable representation is created; the earlier one remains resolvable. |
-| DL-11 | Cancel and restart worker. | Partial jobs do not appear completed; a retry is idempotent by job/source/mode. |
-| DL-12 | Parse malformed input. | Failure is bounded, classified, and does not crash the host. |
-| DL-13 | Detect empty or near-empty pages. | Quality warning points to the affected page range. |
-| DL-14 | Detect native/OCR disagreement. | Material disagreement creates a warning with page and compared representation IDs. |
-| DL-15 | Restart and reopen coordinates. | Serialized output alone reproduces the same page and highlight after restart. |
+| ID    | Scenario                              | Expected evidence                                                                               |
+| ----- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| DL-01 | Verify source hash before conversion. | Hash mismatch fails before parsing and produces no completed representation.                    |
+| DL-02 | Parse native opinion.                 | Gold text, reading order, page association, and regions meet thresholds.                        |
+| DL-03 | Parse scanned opinion adaptively.     | OCR text is present and low-confidence regions are identifiable.                                |
+| DL-04 | Run strict visual mode.               | Every page has a canonical image and full-page OCR representation in addition to native output. |
+| DL-05 | Parse mixed PDF.                      | Native and OCR pages remain ordered in one document without silent gaps.                        |
+| DL-06 | Preserve footnotes.                   | Gold footnote text and marker relationship survive serialization.                               |
+| DL-07 | Preserve table structure.             | Gold cells and row/column relationships are represented or explicitly degraded.                 |
+| DL-08 | Normalize coordinates.                | Stored boxes reopen on the intended visual text at multiple zoom levels.                        |
+| DL-09 | Handle rotation and crop boxes.       | Region navigation remains correct or the source is visibly blocked.                             |
+| DL-10 | Reprocess with language hint.         | A new immutable representation is created; the earlier one remains resolvable.                  |
+| DL-11 | Cancel and restart worker.            | Partial jobs do not appear completed; a retry is idempotent by job/source/mode.                 |
+| DL-12 | Parse malformed input.                | Failure is bounded, classified, and does not crash the host.                                    |
+| DL-13 | Detect empty or near-empty pages.     | Quality warning points to the affected page range.                                              |
+| DL-14 | Detect native/OCR disagreement.       | Material disagreement creates a warning with page and compared representation IDs.              |
+| DL-15 | Restart and reopen coordinates.       | Serialized output alone reproduces the same page and highlight after restart.                   |
 
 ### Metrics
 
@@ -406,24 +406,24 @@ The deterministic test suite must not require a live model. A single live subscr
 
 ### Required test cases
 
-| ID | Scenario | Expected evidence |
-|---|---|---|
-| CT-01 | One claim, one supporting passage. | One application-minted anchor resolves to stored passage text and region. |
-| CT-02 | One claim, multiple supporting sources. | Hover shows every passage without merging away source identity. |
-| CT-03 | Support plus qualification. | Relationships are visually distinct and the qualifier is not hidden behind an aggregate green state. |
-| CT-04 | Contradictory passage. | The claim cannot appear ordinarily verified; contradiction is visible. |
-| CT-05 | Model emits fake Markdown footnote. | Text may display as untrusted prose, but no clickable verified anchor is created. |
-| CT-06 | Model returns unknown passage ID. | Finalization rejects that evidence link and records an unverified result. |
-| CT-07 | Passage hash changes. | Integrity check fails and the prior citation does not silently retarget. |
-| CT-08 | Answer offsets are invalid or stale. | Finalization fails closed or recomputes only through a documented deterministic mapping. |
-| CT-09 | Stream is interrupted before finalization. | Provisional markers remain visibly pending/unverified and never become ordinary citations. |
-| CT-10 | Duplicate source text appears on multiple pages. | Click uses stored page/region identity, not first text-search match. |
-| CT-11 | OCR-normalized quote differs from visual glyphs. | Hover labels the OCR-normalized state and still opens the stored region. |
-| CT-12 | Source has no coordinates. | Hover remains available; click uses a visibly labeled structural/text fallback. |
-| CT-13 | Restart application. | All finalized anchors resolve to identical source versions, passages, relationships, and regions. |
-| CT-14 | Delete a referenced source. | Product explains the reference and deletion scope; no dangling ordinary-looking citation remains. |
-| CT-15 | Uncited context passage. | The passage appears in the sources-read ledger but not as a citation. |
-| CT-16 | Material claim has no evidence. | Coverage gate prevents `source-complete` status. |
+| ID    | Scenario                                         | Expected evidence                                                                                    |
+| ----- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| CT-01 | One claim, one supporting passage.               | One application-minted anchor resolves to stored passage text and region.                            |
+| CT-02 | One claim, multiple supporting sources.          | Hover shows every passage without merging away source identity.                                      |
+| CT-03 | Support plus qualification.                      | Relationships are visually distinct and the qualifier is not hidden behind an aggregate green state. |
+| CT-04 | Contradictory passage.                           | The claim cannot appear ordinarily verified; contradiction is visible.                               |
+| CT-05 | Model emits fake Markdown footnote.              | Text may display as untrusted prose, but no clickable verified anchor is created.                    |
+| CT-06 | Model returns unknown passage ID.                | Finalization rejects that evidence link and records an unverified result.                            |
+| CT-07 | Passage hash changes.                            | Integrity check fails and the prior citation does not silently retarget.                             |
+| CT-08 | Answer offsets are invalid or stale.             | Finalization fails closed or recomputes only through a documented deterministic mapping.             |
+| CT-09 | Stream is interrupted before finalization.       | Provisional markers remain visibly pending/unverified and never become ordinary citations.           |
+| CT-10 | Duplicate source text appears on multiple pages. | Click uses stored page/region identity, not first text-search match.                                 |
+| CT-11 | OCR-normalized quote differs from visual glyphs. | Hover labels the OCR-normalized state and still opens the stored region.                             |
+| CT-12 | Source has no coordinates.                       | Hover remains available; click uses a visibly labeled structural/text fallback.                      |
+| CT-13 | Restart application.                             | All finalized anchors resolve to identical source versions, passages, relationships, and regions.    |
+| CT-14 | Delete a referenced source.                      | Product explains the reference and deletion scope; no dangling ordinary-looking citation remains.    |
+| CT-15 | Uncited context passage.                         | The passage appears in the sources-read ledger but not as a citation.                                |
+| CT-16 | Material claim has no evidence.                  | Coverage gate prevents `source-complete` status.                                                     |
 
 ### UI prototype requirements
 
@@ -515,12 +515,12 @@ The product owner and technical reviewer approve the decision. An attorney revie
 
 ## 9. PRD traceability
 
-| Spike | Primary PRD requirements |
-|---|---|
-| TS-01 | AUTH-01 through AUTH-05; PER-01; SEC-03; MVP Milestone A |
-| TS-02 | SRC-05 through SRC-07; ING-01 through ING-08; CIT-05; PER-01; SEC-02; MVP Milestone C |
-| TS-03 | SRC-04; CIT-01 through CIT-08; VER-01 through VER-06; LED-01 through EXP-01; MVP Milestone E |
-| Composed gate | MVP release definition steps 1 through 12 and the evidence-integrity release gates |
+| Spike         | Primary PRD requirements                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| TS-01         | AUTH-01 through AUTH-05; PER-01; SEC-03; MVP Milestone A                                     |
+| TS-02         | SRC-05 through SRC-07; ING-01 through ING-08; CIT-05; PER-01; SEC-02; MVP Milestone C        |
+| TS-03         | SRC-04; CIT-01 through CIT-08; VER-01 through VER-06; LED-01 through EXP-01; MVP Milestone E |
+| Composed gate | MVP release definition steps 1 through 12 and the evidence-integrity release gates           |
 
 ## 10. Sources
 
