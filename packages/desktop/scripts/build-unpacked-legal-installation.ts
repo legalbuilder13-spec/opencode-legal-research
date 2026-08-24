@@ -58,6 +58,7 @@ async function run(command: string[]) {
       OPENCODE_CHANNEL: "prod",
       LEGAL_SKIP_WINDOWS_SIGNING: "1",
       CSC_IDENTITY_AUTO_DISCOVERY: "false",
+      NODE_OPTIONS: process.env.NODE_OPTIONS ?? "--max-old-space-size=4096",
     },
     stdin: "ignore",
     stdout: "inherit",
