@@ -35,14 +35,27 @@ try {
     pythonInstallRoot,
   ])
   const python = await findManagedPython(pythonInstallRoot, pythonVersion)
-  const requirements = join(staging, "frozen-requirements.txt")
+  const requirements = join(staging, "pylock.evidence-worker.toml")
   await run(
-    [uv, "export", "--frozen", "--no-dev", "--format", "requirements-txt", "--output-file", requirements],
+    [
+      uv,
+      "--preview-features",
+      "pylock",
+      "export",
+      "--frozen",
+      "--no-dev",
+      "--format",
+      "pylock.toml",
+      "--output-file",
+      requirements,
+    ],
     workerRoot,
     "ignore",
   )
   await run([
     uv,
+    "--preview-features",
+    "pylock",
     "pip",
     "sync",
     "--python",

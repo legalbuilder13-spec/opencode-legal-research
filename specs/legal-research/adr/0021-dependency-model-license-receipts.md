@@ -15,11 +15,11 @@ The receipts deliberately state `pending-counsel-review`. A `--require-approved`
 ## Current evidence
 
 - The desktop closure contains 940 third-party package identities and their available notice text.
-- The packaged worker contains 104 top-level Python distributions, the managed CPython license, and four model sets.
+- The verified macOS worker contains 104 top-level Python distributions, the managed CPython license, and four model sets; the receipt derives the exact platform-specific closure during each build.
 - Docling Heron, Heron ONNX, and TableFormer are locked to observed 40-character Hugging Face revisions and model-card license declarations.
 - The four RapidOCR/PaddleOCR Latin-pipeline files are locked to the hashes published by the installed RapidOCR registry. The receipt preserves RapidOCR's statement that Baidu holds the OCR model copyright.
 - Two exact-version desktop packages omit license metadata/files in their published archives. Narrow overrides point to their MIT-licensed upstream repositories and remain explicitly pending counsel confirmation; an unused or version-mismatched override fails.
-- Unit tests reject missing Python license metadata and modified model artifacts. Runtime discovery rejects a missing or altered worker receipt. The unpacked installation verifier re-derives both receipts from the installed resources.
+- Unit tests reject missing Python license metadata and modified model artifacts. Managed CPython license discovery covers the Unix `lib/pythonX.Y/LICENSE.txt` and Windows root/install layouts without admitting package-level license files. Runtime discovery rejects a missing or altered worker receipt. The unpacked installation verifier re-derives both receipts from the installed resources.
 
 ## Remaining gate
 

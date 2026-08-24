@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto"
 import { mkdtemp, mkdir, rm } from "node:fs/promises"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 import { tmpdir } from "node:os"
 import { afterEach, describe, expect, test } from "bun:test"
-import { auditEvidenceWorkerLicenses, verifyEvidenceWorkerLicenseReceipt } from "./evidence-worker-license-audit"
+import {
+  auditEvidenceWorkerLicenses,
+  isManagedPythonLicensePath,
+  verifyEvidenceWorkerLicenseReceipt,
+} from "./evidence-worker-license-audit"
 
 const roots: string[] = []
 
@@ -12,6 +16,28 @@ afterEach(async () => {
 })
 
 describe("packaged evidence-worker license audit", () => {
+  test("pins the packaged OCR runtime to the explicit CPU-only PyTorch index", async () => {
+    const workerRoot = resolve(import.meta.dir, "../../legal-evidence-worker")
+    const project = await Bun.file(join(workerRoot, "pyproject.toml")).text()
+    const lock = await Bun.file(join(workerRoot, "uv.lock")).text()
+
+    expect(project).toContain('url = "https://download.pytorch.org/whl/cpu"')
+    expect(project).toContain('explicit = true')
+    expect(lock).toContain('source = { registry = "https://download.pytorch.org/whl/cpu" }')
+    for (const name of ["cuda-bindings", "cuda-toolkit", "triton", "nvidia-cudnn-cu13"])
+      expect(lock).not.toContain(`name = "${name}"`)
+  })
+
+  test("recognizes managed CPython license layouts on every packaged platform", () => {
+    expect(isManagedPythonLicensePath("cpython-3.14.2-macos-aarch64-none/lib/python3.14/LICENSE.txt")).toBe(true)
+    expect(isManagedPythonLicensePath("cpython-3.14.2-linux-x86_64-gnu/install/lib/python3.14/LICENSE.txt")).toBe(
+      true,
+    )
+    expect(isManagedPythonLicensePath("cpython-3.14.2-windows-x86_64-none/install/LICENSE.txt")).toBe(true)
+    expect(isManagedPythonLicensePath("cpython-3.14.2-windows-x86_64-none\\LICENSE")).toBe(true)
+    expect(isManagedPythonLicensePath("cpython/lib/python3.14/site-packages/demo/LICENSE.txt")).toBe(false)
+  })
+
   test("writes and verifies a complete deterministic receipt", async () => {
     const root = await fixture()
     const report = await auditEvidenceWorkerLicenses(root, { write: true })

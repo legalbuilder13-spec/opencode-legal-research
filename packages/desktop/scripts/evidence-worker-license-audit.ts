@@ -95,8 +95,9 @@ export async function auditEvidenceWorkerLicenses(
   )
   assert(!duplicate, `Duplicate installed Python distribution metadata: ${duplicate?.name}`)
 
-  const pythonLicenseFiles = (await listFiles(join(root, "python"))).filter(
-    (path) => basename(path) === "LICENSE.txt" && /[/\\]lib[/\\]python\d+\.\d+[/\\]LICENSE\.txt$/.test(path),
+  const pythonLicenseRoot = join(root, "python")
+  const pythonLicenseFiles = (await listFiles(pythonLicenseRoot)).filter((path) =>
+    isManagedPythonLicensePath(portable(relative(pythonLicenseRoot, path))),
   )
   assert(pythonLicenseFiles.length === 1, "Expected exactly one managed CPython license file")
 
@@ -254,6 +255,14 @@ function hashFile(path: string) {
 
 function portable(value: string) {
   return value.split(sep).join("/")
+}
+
+export function isManagedPythonLicensePath(path: string) {
+  const normalized = path.replaceAll("\\", "/")
+  return (
+    /^[^/]+\/(?:install\/)?LICENSE(?:\.txt)?$/i.test(normalized) ||
+    /^[^/]+\/(?:install\/)?lib\/python\d+\.\d+\/LICENSE\.txt$/i.test(normalized)
+  )
 }
 
 function assert(condition: unknown, message: string): asserts condition {

@@ -8,6 +8,8 @@ Status: Linux x64, macOS arm64, and Windows x64 unpacked gates passed; signed in
 
 Electron Builder now includes the compiled legal workbench and relocatable evidence worker exactly once as external resources. They are excluded from `app.asar`, preventing the approximately 2.0 GB Python/Docling/RapidOCR tree from being duplicated inside an installation.
 
+The worker dependency handoff uses `pylock.toml`, preserving exact package indexes, artifact URLs, and hashes into installation. PyTorch and TorchVision are pinned to the explicit CPU-only index on all platforms; the packaged lock excludes CUDA, NVIDIA, and Triton dependencies.
+
 The platform-neutral verifier runs only after Electron assembly. It validates contained manifest paths, starts and stops the workbench from the installed resources directory, requires the health contract to report packaged evidence readiness, and runs a real offline strict-visual RapidOCR ingestion from the installed Python and model paths.
 
 ## Verification
