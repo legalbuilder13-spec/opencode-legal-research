@@ -507,6 +507,41 @@ export class LegalResearchStore {
             sent_to_model: Boolean(candidate.sent_to_model),
           })),
       }))
+    const representations = this.db
+      .query<
+        {
+          id: string
+          source_version_id: string
+          parser_name: string
+          parser_version: string
+          ocr_engine: string | null
+          ocr_version: string | null
+          mode: string
+          normalized_text_sha256: string
+          quality_metrics_json: string
+          warnings_json: string
+          created_at: string
+        },
+        [string]
+      >(
+        `SELECT id, source_version_id, parser_name, parser_version, ocr_engine, ocr_version,
+          mode, normalized_text_sha256, quality_metrics_json, warnings_json, created_at
+        FROM representation WHERE matter_id = ? ORDER BY created_at, id`,
+      )
+      .all(matterId)
+      .map((representation) => ({
+        id: representation.id,
+        sourceVersionId: representation.source_version_id,
+        parserName: representation.parser_name,
+        parserVersion: representation.parser_version,
+        ocrEngine: representation.ocr_engine,
+        ocrVersion: representation.ocr_version,
+        mode: representation.mode,
+        normalizedTextSha256: representation.normalized_text_sha256,
+        qualityMetrics: JSON.parse(representation.quality_metrics_json) as unknown,
+        warnings: JSON.parse(representation.warnings_json) as unknown,
+        createdAt: representation.created_at,
+      }))
     return {
       contractVersion: 1,
       exportedAt: new Date().toISOString(),
@@ -518,6 +553,7 @@ export class LegalResearchStore {
         textSha256: passage.text_sha256,
         sectionPath: passage.section_path,
       })),
+      representations,
       retrievalRuns,
       blobPolicy: "content-addressed blobs are retained until explicit compaction",
     }
@@ -532,6 +568,24 @@ export class LegalResearchStore {
       .get(id)
     if (!row) throw new Error(`Unknown source version: ${id}`)
     return row
+  }
+
+  setCaptureStatus(id: string, status: CaptureStatus, accessNotes?: string) {
+    const version = this.sourceVersion(id)
+    if (version.deleted_at) throw new Error("Deleted source version cannot change capture status")
+    const now = new Date().toISOString()
+    const write = this.db.transaction(() => {
+      this.db
+        .query("UPDATE source_version SET capture_status = ?, access_notes = COALESCE(?, access_notes) WHERE id = ?")
+        .run(status, accessNotes ?? null, id)
+      this.db
+        .query(
+          "INSERT INTO acquisition_event (id, matter_id, source_version_id, origin, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(`acq_${randomUUID()}`, version.matter_id, id, "host:capture-status", status, now)
+    })
+    write()
+    return this.sourceVersion(id)
   }
 
   private requireActiveMatter(id: string) {

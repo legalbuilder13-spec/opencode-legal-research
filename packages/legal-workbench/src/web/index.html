@@ -51,7 +51,7 @@
               ></textarea>
               <div class="question-footer">
                 <input id="posture" placeholder="Procedural posture (optional)" />
-                <button id="research-button" class="primary-button">Plan and search</button>
+                <button id="research-button" class="primary-button">Research and draft</button>
               </div>
               <p class="egress-note">
                 Matter evidence is sent only to the selected ChatGPT workspace. CourtListener searches disclose query
@@ -64,6 +64,22 @@
               <p>Create or select a matter, add sources, then ask a focused question.</p>
             </aside>
           </div>
+          <section id="generated-answer" class="generated-answer empty-answer">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Finalized answer</p>
+                <h2>Subscription-backed synthesis</h2>
+              </div>
+              <div class="answer-actions">
+                <span id="generated-answer-status" class="trust-pill">No answer yet</span>
+                <a id="answer-export-link" class="secondary-button disabled" href="#">Export answer receipt</a>
+              </div>
+            </div>
+            <div id="generated-answer-text" class="generated-answer-text">
+              Research will retrieve matter evidence, ask the signed-in ChatGPT subscription for structured synthesis,
+              then mint citations only after passage and hash checks pass.
+            </div>
+          </section>
           <section class="results-section">
             <div class="section-heading">
               <div>
@@ -89,19 +105,37 @@
             <span class="as-of">Captured before inference</span>
           </div>
           <div class="sources-layout">
-            <form id="source-form" class="source-form">
-              <h2>Add text source</h2>
-              <label for="source-title">Title</label>
-              <input id="source-title" required placeholder="Client memorandum or authority" />
-              <label for="source-text">Source text</label>
-              <textarea
-                id="source-text"
-                required
-                rows="9"
-                placeholder="Paste source text. It will be hashed, persisted, and marked as untrusted source data."
-              ></textarea>
-              <button class="primary-button" type="submit">Capture source</button>
-            </form>
+            <div class="source-forms">
+              <form id="source-form" class="source-form">
+                <h2>Add text source</h2>
+                <label for="source-title">Title</label>
+                <input id="source-title" required placeholder="Client memorandum or authority" />
+                <label for="source-text">Source text</label>
+                <textarea
+                  id="source-text"
+                  required
+                  rows="9"
+                  placeholder="Paste source text. It will be hashed, persisted, and marked as untrusted source data."
+                ></textarea>
+                <button class="primary-button" type="submit">Capture source</button>
+              </form>
+              <form id="pdf-form" class="source-form">
+                <h2>Ingest PDF locally</h2>
+                <label for="pdf-file">PDF source</label>
+                <input id="pdf-file" name="file" type="file" accept="application/pdf,.pdf" required />
+                <label for="pdf-mode">Evidence mode</label>
+                <select id="pdf-mode" name="mode">
+                  <option value="adaptive">Adaptive native text + OCR</option>
+                  <option value="strict_visual">Strict visual OCR every page</option>
+                </select>
+                <label for="pdf-languages">OCR language hints</label>
+                <input id="pdf-languages" name="languageHints" value="eng" placeholder="eng, spa" />
+                <p class="egress-note">
+                  Docling and OCR run locally. The source does not enter model context until parsing completes.
+                </p>
+                <button id="pdf-button" class="primary-button" type="submit">Ingest and OCR PDF</button>
+              </form>
+            </div>
             <section>
               <div class="section-heading">
                 <h2>Materialized sources</h2>
@@ -122,7 +156,7 @@
           </div>
           <div class="evidence-layout">
             <article class="answer-card">
-              <p class="eyebrow">Synthetic protocol demonstration</p>
+              <p id="evidence-answer-label" class="eyebrow">Synthetic protocol demonstration</p>
               <div id="answer" class="answer"></div>
               <div class="status-legend">
                 <span>● Supported</span><span>● Qualified</span><span>● Contradicted</span><span>● Unverified</span>
@@ -163,20 +197,40 @@
             <span class="as-of">Local-first workspace</span>
           </div>
           <div class="matters-layout">
-            <form id="matter-form" class="matter-form">
-              <h2>Create matter</h2>
-              <label for="matter-name">Matter name</label><input id="matter-name" required />
-              <label for="jurisdiction">Default jurisdiction</label
-              ><input id="jurisdiction" required placeholder="9th Cir." />
-              <label for="research-date">Research as of</label><input id="research-date" required type="date" />
-              <label for="confidentiality-input">Confidentiality</label
-              ><select id="confidentiality-input">
-                <option value="privileged">Privileged</option>
-                <option value="confidential">Confidential</option>
-                <option value="public">Public</option>
-              </select>
-              <button class="primary-button" type="submit">Create matter</button>
-            </form>
+            <div class="matter-forms">
+              <form id="matter-form" class="matter-form">
+                <h2>Create matter</h2>
+                <label for="matter-name">Matter name</label><input id="matter-name" required />
+                <label for="jurisdiction">Default jurisdiction</label
+                ><input id="jurisdiction" required placeholder="9th Cir." />
+                <label for="research-date">Research as of</label><input id="research-date" required type="date" />
+                <label for="confidentiality-input">Confidentiality</label
+                ><select id="confidentiality-input">
+                  <option value="privileged">Privileged</option>
+                  <option value="confidential">Confidential</option>
+                  <option value="public">Public</option>
+                </select>
+                <button class="primary-button" type="submit">Create matter</button>
+              </form>
+              <form id="matter-edit-form" class="matter-form" hidden>
+                <h2>Edit selected matter</h2>
+                <label for="matter-edit-name">Matter name</label><input id="matter-edit-name" required />
+                <label for="matter-edit-jurisdiction">Default jurisdiction</label
+                ><input id="matter-edit-jurisdiction" required /> <label for="matter-edit-date">Research as of</label
+                ><input id="matter-edit-date" required type="date" />
+                <label for="matter-edit-client">Client / matter label</label><input id="matter-edit-client" />
+                <label for="matter-edit-confidentiality">Confidentiality</label
+                ><select id="matter-edit-confidentiality">
+                  <option value="privileged">Privileged</option>
+                  <option value="confidential">Confidential</option>
+                  <option value="public">Public</option>
+                </select>
+                <div class="matter-edit-actions">
+                  <button class="primary-button" type="submit">Save changes</button>
+                  <button id="matter-status-button" class="secondary-button" type="button">Archive matter</button>
+                </div>
+              </form>
+            </div>
             <section>
               <div class="section-heading">
                 <h2>Local matters</h2>

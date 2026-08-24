@@ -1,0 +1,51 @@
+name: legal research
+
+on:
+  push:
+    branches:
+      - legal-research
+    paths:
+      - ".github/workflows/legal-research.yml"
+      - "packages/codex-app-server/**"
+      - "packages/legal-citation-spike/**"
+      - "packages/legal-evaluation/**"
+      - "packages/legal-research-core/**"
+      - "packages/legal-workbench/**"
+      - "specs/legal-research/**"
+      - "bun.lock"
+      - "package.json"
+  pull_request:
+    paths:
+      - ".github/workflows/legal-research.yml"
+      - "packages/codex-app-server/**"
+      - "packages/legal-citation-spike/**"
+      - "packages/legal-evaluation/**"
+      - "packages/legal-research-core/**"
+      - "packages/legal-workbench/**"
+      - "specs/legal-research/**"
+      - "bun.lock"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  legal:
+    name: legal TypeScript gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Typecheck workspace
+        run: bun typecheck
+
+      - name: Run legal unit and integration tests
+        run: bun test:legal

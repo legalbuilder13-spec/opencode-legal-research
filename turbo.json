@@ -28,6 +28,21 @@
     "@opencode-ai/session-ui#test": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "@legalbuilder/codex-app-server-spike#test": {
+      "outputs": []
+    },
+    "@legalbuilder/legal-citation-spike#test": {
+      "outputs": []
+    },
+    "@legalbuilder/legal-evaluation#test": {
+      "outputs": []
+    },
+    "@legalbuilder/legal-research-core#test": {
+      "outputs": []
+    },
+    "@legalbuilder/legal-workbench#test": {
+      "outputs": []
     }
   }
 }

@@ -1,4 +1,6 @@
 export { BlobStore, hashBytes, hashText } from "./blob-store"
+export { AnswerFinalizer } from "./answer"
+export type { AnswerClaimSelection, AnswerClaimStatus, AnswerRelationship } from "./answer"
 export { CourtListenerClient, CourtListenerError } from "./courtlistener"
 export type { CourtListenerFetcher, CourtListenerSearchOptions, CourtListenerSearchResult } from "./courtlistener"
 export { SourceMaterializer } from "./materializer"

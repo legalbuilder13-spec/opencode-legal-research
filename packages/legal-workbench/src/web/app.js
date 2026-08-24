@@ -8,7 +8,7 @@ renderMatters()
 renderCurrentMatter()
 renderCitationDemo()
 void loadAccount()
-if (state.selectedMatterId) void loadSources()
+if (state.selectedMatterId) void Promise.all([loadSources(), loadAnswers()])
 
 document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => {
@@ -37,9 +37,38 @@ $("#matter-form").addEventListener("submit", async (event) => {
   $("#research-date").value = new Date().toISOString().slice(0, 10)
   renderMatters()
   renderCurrentMatter()
-  await loadSources()
+  await Promise.all([loadSources(), loadAnswers()])
   toast("Matter created and isolated")
   activate("research")
+})
+
+$("#matter-edit-form").addEventListener("submit", async (event) => {
+  event.preventDefault()
+  const matter = currentMatter()
+  if (!matter) return
+  const updated = await api(`/api/matters/${encodeURIComponent(matter.id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      name: $("#matter-edit-name").value,
+      jurisdiction: $("#matter-edit-jurisdiction").value,
+      researchAsOf: $("#matter-edit-date").value,
+      clientLabel: $("#matter-edit-client").value,
+      confidentiality: $("#matter-edit-confidentiality").value,
+    }),
+  })
+  replaceMatter(updated)
+  toast("Matter defaults saved")
+})
+
+$("#matter-status-button").addEventListener("click", async () => {
+  const matter = currentMatter()
+  if (!matter) return
+  const updated = await api(`/api/matters/${encodeURIComponent(matter.id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: matter.status === "active" ? "archived" : "active" }),
+  })
+  replaceMatter(updated)
+  toast(updated.status === "active" ? "Matter reopened" : "Matter archived")
 })
 
 $("#source-form").addEventListener("submit", async (event) => {
@@ -55,29 +84,49 @@ $("#source-form").addEventListener("submit", async (event) => {
   toast("Source hashed and materialized")
 })
 
+$("#pdf-form").addEventListener("submit", async (event) => {
+  event.preventDefault()
+  const matter = currentMatter()
+  if (!matter) return toast("Create a matter before adding sources", true)
+  const button = $("#pdf-button")
+  button.disabled = true
+  button.textContent = "Parsing and OCRing…"
+  try {
+    const result = await api(`/api/matters/${encodeURIComponent(matter.id)}/uploads`, {
+      method: "POST",
+      body: new FormData(event.target),
+    })
+    event.target.reset()
+    $("#pdf-languages").value = "eng"
+    await loadSources()
+    const warningCount = Array.isArray(result.warnings) ? result.warnings.length : 0
+    toast(
+      `${result.pageCount} page PDF materialized in ${result.mode} mode${warningCount ? ` · ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`,
+    )
+  } finally {
+    button.disabled = false
+    button.textContent = "Ingest and OCR PDF"
+  }
+})
+
 $("#research-button").addEventListener("click", async () => {
   const matter = currentMatter()
   const question = $("#question").value.trim()
   if (!matter) return toast("Create or select a matter first", true)
   if (!question) return toast("Enter a focused legal question", true)
   $("#research-button").disabled = true
-  $("#research-button").textContent = "Searching…"
+  $("#research-button").textContent = "Researching with ChatGPT…"
   try {
-    const [plan, research] = await Promise.all([
-      api(`/api/matters/${encodeURIComponent(matter.id)}/plan`, {
-        method: "POST",
-        body: JSON.stringify({ question, proceduralPosture: $("#posture").value }),
-      }),
-      api(`/api/matters/${encodeURIComponent(matter.id)}/research`, {
-        method: "POST",
-        body: JSON.stringify({ question }),
-      }),
-    ])
-    renderPlan(plan)
-    renderResults(research)
+    const result = await api(`/api/matters/${encodeURIComponent(matter.id)}/answers`, {
+      method: "POST",
+      body: JSON.stringify({ question, proceduralPosture: $("#posture").value }),
+    })
+    renderPlan(result.plan)
+    renderResults(result.research)
+    renderGeneratedAnswer(result.answer)
   } finally {
     $("#research-button").disabled = false
-    $("#research-button").textContent = "Plan and search"
+    $("#research-button").textContent = "Research and draft"
   }
 })
 
@@ -113,6 +162,22 @@ function renderCurrentMatter() {
   $("#as-of").textContent = matter ? `As of ${matter.researchAsOf} · ${matter.jurisdiction}` : "Research date not set"
   $("#export-link").classList.toggle("disabled", !matter)
   $("#export-link").href = matter ? `/api/matters/${encodeURIComponent(matter.id)}/export` : "#"
+  $("#matter-edit-form").hidden = !matter
+  if (matter) {
+    $("#matter-edit-name").value = matter.name
+    $("#matter-edit-jurisdiction").value = matter.jurisdiction
+    $("#matter-edit-date").value = matter.researchAsOf
+    $("#matter-edit-client").value = matter.clientLabel ?? ""
+    $("#matter-edit-confidentiality").value = matter.confidentiality
+    $("#matter-status-button").textContent = matter.status === "active" ? "Archive matter" : "Reopen matter"
+  }
+}
+
+function replaceMatter(updated) {
+  const index = state.matters.findIndex((matter) => matter.id === updated.id)
+  if (index >= 0) state.matters.splice(index, 1, updated)
+  renderMatters()
+  renderCurrentMatter()
 }
 
 function renderMatters() {
@@ -132,7 +197,7 @@ function renderMatters() {
         state.selectedMatterId = matter.id
         renderMatters()
         renderCurrentMatter()
-        await loadSources()
+        await Promise.all([loadSources(), loadAnswers()])
         activate("research")
       })
       return button
@@ -155,11 +220,20 @@ async function loadSources() {
       const title = document.createElement("strong")
       title.textContent = source.title
       const meta = document.createElement("span")
-      meta.textContent = `${source.mime} · ${source.capture_status} · ${source.content_sha256.slice(0, 12)}…`
+      const representation = source.representations.at(-1)
+      const warnings = Array.isArray(representation?.warnings) ? representation.warnings.length : 0
+      meta.textContent = `${source.mime} · ${source.capture_status}${representation ? ` · ${representation.parserName} ${representation.mode}` : ""}${warnings ? ` · ${warnings} warning${warnings === 1 ? "" : "s"}` : ""} · ${source.content_sha256.slice(0, 12)}…`
       article.append(kind, title, meta)
       return article
     }),
   )
+}
+
+async function loadAnswers() {
+  const matter = currentMatter()
+  if (!matter) return
+  const answers = await api(`/api/matters/${encodeURIComponent(matter.id)}/answers`)
+  renderGeneratedAnswer(answers[0] ?? null)
 }
 
 function renderPlan(plan) {
@@ -223,12 +297,78 @@ function renderResults(research) {
   )
 }
 
+function renderGeneratedAnswer(answer) {
+  const root = $("#generated-answer")
+  const text = $("#generated-answer-text")
+  const status = $("#generated-answer-status")
+  const exportLink = $("#answer-export-link")
+  if (!answer) {
+    root.classList.add("empty-answer")
+    status.textContent = "No answer yet"
+    exportLink.classList.add("disabled")
+    exportLink.href = "#"
+    text.textContent =
+      "Research will retrieve matter evidence, ask the signed-in ChatGPT subscription for structured synthesis, then mint citations only after passage and hash checks pass."
+    renderCitationDemo()
+    return
+  }
+  root.classList.remove("empty-answer")
+  status.textContent = answer.sourceComplete ? "Source-complete" : "Verification required"
+  status.classList.toggle("warning", !answer.sourceComplete)
+  exportLink.classList.remove("disabled")
+  exportLink.href = `/api/answers/${encodeURIComponent(answer.id)}/export`
+  text.replaceChildren()
+  let cursor = 0
+  for (const citation of [...answer.citations].sort((left, right) => left.claimEnd - right.claimEnd)) {
+    text.append(document.createTextNode(answer.text.slice(cursor, citation.claimEnd)))
+    const button = document.createElement("button")
+    button.className = `citation ${citation.status}`
+    button.textContent = citation.footnoteNumber
+    button.setAttribute("aria-label", `Answer citation ${citation.footnoteNumber}: ${citation.status}`)
+    button.addEventListener("mouseenter", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    button.addEventListener("focus", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    button.addEventListener("click", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    text.append(button)
+    cursor = citation.claimEnd
+  }
+  text.append(document.createTextNode(answer.text.slice(cursor)))
+  renderMatterEvidence(answer)
+}
+
+function renderMatterEvidence(answer) {
+  $("#evidence-answer-label").textContent = "Current matter answer"
+  $("#source-complete").textContent = answer.sourceComplete ? "Source-complete" : "Verification required"
+  const root = $("#answer")
+  root.replaceChildren()
+  let cursor = 0
+  for (const citation of [...answer.citations].sort((left, right) => left.claimEnd - right.claimEnd)) {
+    root.append(document.createTextNode(answer.text.slice(cursor, citation.claimEnd)))
+    const button = document.createElement("button")
+    button.className = `citation ${citation.status}`
+    button.textContent = citation.footnoteNumber
+    button.setAttribute("aria-label", `Answer citation ${citation.footnoteNumber}: ${citation.status}`)
+    button.addEventListener("mouseenter", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    button.addEventListener("focus", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    button.addEventListener("click", () => showCitation(button, citation.citationId, "/api/answer-citations/"))
+    root.append(button)
+    cursor = citation.claimEnd
+  }
+  root.append(document.createTextNode(answer.text.slice(cursor)))
+  const ledger = new Map()
+  for (const entry of answer.ledger) {
+    ledger.set(entry.passage_id, [...(ledger.get(entry.passage_id) ?? []), entry.disposition])
+  }
+  renderLedger(ledger)
+}
+
 function renderCitationDemo() {
   const demo = state.citationDemo
   if (!demo) return
+  $("#evidence-answer-label").textContent = "Synthetic protocol demonstration"
   $("#source-complete").textContent = demo.sourceComplete ? "Source-complete" : "Verification required"
   let cursor = 0
   const answer = $("#answer")
+  answer.replaceChildren()
   for (const citation of [...demo.citations].sort((a, b) => a.claimEnd - b.claimEnd)) {
     answer.append(document.createTextNode(demo.text.slice(cursor, citation.claimEnd)))
     const button = document.createElement("button")
@@ -245,6 +385,10 @@ function renderCitationDemo() {
   const ledger = new Map()
   for (const entry of demo.ledger)
     ledger.set(entry.passage_id, [...(ledger.get(entry.passage_id) ?? []), entry.disposition])
+  renderLedger(ledger)
+}
+
+function renderLedger(ledger) {
   $("#ledger").replaceChildren(
     ...[...ledger].map(([id, dispositions]) => {
       const item = document.createElement("li")
@@ -254,8 +398,8 @@ function renderCitationDemo() {
   )
 }
 
-async function showCitation(anchor, citationId) {
-  const citation = await api(`/api/citations/${encodeURIComponent(citationId)}`)
+async function showCitation(anchor, citationId, endpoint = "/api/citations/") {
+  const citation = await api(`${endpoint}${encodeURIComponent(citationId)}`)
   const popover = $("#citation-popover")
   popover.replaceChildren()
   const heading = document.createElement("div")
@@ -293,25 +437,32 @@ async function showCitation(anchor, citationId) {
 }
 
 function openEvidence(evidence) {
-  if (!evidence.available || evidence.locationMode !== "coordinates") return
+  if (!evidence.available) return
+  activate("evidence")
   $("#viewer-empty").hidden = true
-  $("#page-viewer").hidden = false
   $("#passage-detail").hidden = false
   $("#viewer-title").textContent = evidence.sourceTitle
-  $("#page-label").textContent = `Page ${evidence.pageNumber}`
-  $("#page-image").src = evidence.imageUrl
   $("#passage-detail").textContent = evidence.text
-  Object.assign($("#page-highlight").style, {
-    left: `${(evidence.bbox.left / evidence.pageWidth) * 100}%`,
-    top: `${(evidence.bbox.top / evidence.pageHeight) * 100}%`,
-    width: `${((evidence.bbox.right - evidence.bbox.left) / evidence.pageWidth) * 100}%`,
-    height: `${Math.max(((evidence.bbox.bottom - evidence.bbox.top) / evidence.pageHeight) * 100, 1)}%`,
-  })
+  if (evidence.locationMode === "coordinates") {
+    $("#page-viewer").hidden = false
+    $("#page-label").textContent = `Page ${evidence.pageNumber}`
+    $("#page-image").src = evidence.imageUrl
+    Object.assign($("#page-highlight").style, {
+      left: `${(evidence.bbox.left / evidence.pageWidth) * 100}%`,
+      top: `${(evidence.bbox.top / evidence.pageHeight) * 100}%`,
+      width: `${((evidence.bbox.right - evidence.bbox.left) / evidence.pageWidth) * 100}%`,
+      height: `${Math.max(((evidence.bbox.bottom - evidence.bbox.top) / evidence.pageHeight) * 100, 1)}%`,
+    })
+  } else {
+    $("#page-viewer").hidden = true
+    $("#page-label").textContent = "Structural passage"
+  }
   $("#citation-popover").hidden = true
 }
 
 async function api(path, init) {
-  const response = await fetch(path, { headers: { "Content-Type": "application/json" }, ...init })
+  const headers = init?.body instanceof FormData ? undefined : { "Content-Type": "application/json" }
+  const response = await fetch(path, { ...init, headers })
   const body = await response.json()
   if (!response.ok) {
     toast(body.error ?? "Request failed", true)

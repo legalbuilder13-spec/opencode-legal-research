@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "dev:desktop": "bun --cwd packages/desktop dev",
+    "dev:legal": "bun --cwd packages/legal-workbench dev",
     "dev:web": "bun --cwd packages/app dev",
     "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",
     "dev:stats": "bun sst shell --stage=production -- bun run --cwd packages/stats/app dev",
@@ -20,7 +21,8 @@
     "random": "echo 'Random script'",
     "sso": "aws sso login --sso-session=opencode --no-browser",
     "translate:app": "bun run script/translate-app.ts",
-    "test": "echo 'do not run tests from root' && exit 1"
+    "test": "echo 'do not run tests from root' && exit 1",
+    "test:legal": "bun turbo test --filter=@legalbuilder/codex-app-server-spike --filter=@legalbuilder/legal-citation-spike --filter=@legalbuilder/legal-research-core --filter=@legalbuilder/legal-workbench --filter=@legalbuilder/legal-evaluation"
   },
   "workspaces": {
     "packages": [

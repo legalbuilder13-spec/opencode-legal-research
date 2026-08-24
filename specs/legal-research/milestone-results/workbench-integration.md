@@ -1,6 +1,6 @@
 # Workbench integration result
 
-Status: local alpha surface passed; unified live answer transaction pending
+Status: local alpha surface and unified live answer transaction passed on synthetic evidence
 
 Date: 2026-08-23
 
@@ -14,6 +14,7 @@ Date: 2026-08-23
 - Local hybrid retrieval with support-eligibility labels.
 - Application-minted multi-passage citation cards, OCR/native source states, exact page image, and bounding-box highlight.
 - Sources-read ledger and JSON provenance export including retrieval runs and candidate scores.
+- Subscription-backed synthesis constrained to admitted passage IDs, with matter-owned finalization and combined answer receipt.
 
 ## Automated verification
 
@@ -29,9 +30,10 @@ The full workflow created a privileged matter, captured and hashed a source, ran
 - Desktop research result: [`workbench-assets/research.png`](./workbench-assets/research.png)
 - Exact evidence region: [`workbench-assets/evidence.png`](./workbench-assets/evidence.png)
 - Mobile layout: [`workbench-assets/mobile.png`](./workbench-assets/mobile.png)
+- Unified answer: [`workbench-assets/unified-answer.png`](./workbench-assets/unified-answer.png)
 
 The browser reported no page errors. At a 390-pixel viewport, document width equaled viewport width with no horizontal overflow. Axe 4.12.1 reported 18 WCAG A/AA passes, zero incomplete checks, and zero violations after the contrast correction.
 
 ## Honest boundary
 
-The local retrieval workflow and deterministic citation-finalization workflow are available in one UI but are not yet one atomic live answer transaction. Live subscription synthesis must next consume only retrieved passage envelopes, propose structured claims/evidence, and pass application finalization into persistent matter-owned citations. Main OpenCode shell packaging and localization follow that transaction.
+The transaction now works through the live signed-in ChatGPT subscription and persists matter-owned citations. This proves protocol composition on generated evidence. It does not establish corpus-wide legal quality, treatment accuracy, production parser security, or live CourtListener completeness. Main OpenCode shell packaging and localization also remain.

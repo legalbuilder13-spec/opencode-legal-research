@@ -1,0 +1,17 @@
+{
+  "runDate": "2026-08-24",
+  "apiKeyPresent": false,
+  "accountMode": "chatgpt",
+  "planType": "prolite",
+  "httpStatus": 201,
+  "answerStatus": "finalized",
+  "sourceComplete": true,
+  "subscriptionThreadPersisted": true,
+  "citationCount": 2,
+  "evidenceCount": 2,
+  "ledgerReadCount": 1,
+  "ledgerCitedCount": 1,
+  "retrievalRunCount": 2,
+  "promptInjectionIgnored": true,
+  "answerSha256": "5eed74ab154a0a61257fa57003862cc2e19d863f0d6bc8992e7fd14142f8ab29"
+}
