@@ -2,6 +2,7 @@ const state = {
   matters: [],
   selectedMatterId: null,
   citationDemo: null,
+  runtimeCapabilities: null,
   accountStatus: "checking",
   egressAcknowledged: localStorage.getItem("legalbuilder:chatgpt-egress-v1") === "acknowledged",
   accountLoginId: null,
@@ -15,6 +16,7 @@ $("#research-date").value = new Date().toISOString().slice(0, 10)
 renderMatters()
 renderCurrentMatter()
 renderCitationDemo()
+renderCapabilities()
 void loadAccount()
 if (state.selectedMatterId) void Promise.all([loadSources(), loadAnswers()])
 
@@ -182,6 +184,7 @@ $("#web-form").addEventListener("submit", async (event) => {
 
 $("#pdf-form").addEventListener("submit", async (event) => {
   event.preventDefault()
+  if (!capabilityReady("evidenceWorker")) return toast("Local document OCR is unavailable in this installation", true)
   const matter = currentMatter()
   if (!matter) return toast("Create a matter before adding sources", true)
   const button = $("#pdf-button")
@@ -200,7 +203,7 @@ $("#pdf-form").addEventListener("submit", async (event) => {
       `${result.passageCount} passage source materialized in ${result.mode} mode${warningCount ? ` · ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`,
     )
   } finally {
-    button.disabled = false
+    button.disabled = !capabilityReady("evidenceWorker")
     button.textContent = "Ingest source locally"
   }
 })
@@ -365,10 +368,9 @@ function syncResearchAvailability() {
   const button = $("#research-button")
   const localOnly = Boolean(currentMatter()?.localOnly)
   button.disabled = localOnly || state.accountStatus !== "ready" || !state.egressAcknowledged
-  button.title =
-    localOnly
-      ? "ChatGPT drafting is disabled for this local-only matter"
-      : state.accountStatus !== "ready"
+  button.title = localOnly
+    ? "ChatGPT drafting is disabled for this local-only matter"
+    : state.accountStatus !== "ready"
       ? "A ready ChatGPT subscription is required"
       : state.egressAcknowledged
         ? ""
@@ -556,6 +558,12 @@ function reprocessControls(source) {
   button.className = "secondary-button"
   button.type = "button"
   button.textContent = "Reprocess"
+  if (!capabilityReady("evidenceWorker")) {
+    mode.disabled = true
+    languages.disabled = true
+    button.disabled = true
+    button.title = "Local document OCR is unavailable in this installation"
+  }
   button.addEventListener("click", async () => {
     const matter = currentMatter()
     if (!matter) return
@@ -581,12 +589,52 @@ function reprocessControls(source) {
         `New ${result.mode} representation added${warningCount ? ` · ${warningCount} warning${warningCount === 1 ? "" : "s"}` : ""}`,
       )
     } finally {
-      button.disabled = false
+      button.disabled = !capabilityReady("evidenceWorker")
       button.textContent = "Reprocess"
     }
   })
   controls.append(mode, languages, button)
   return controls
+}
+
+function renderCapabilities() {
+  const evidenceWorker = state.runtimeCapabilities?.evidenceWorker
+  const webRenderer = state.runtimeCapabilities?.strictVisualWebRenderer
+  renderCapability(
+    $("#evidence-worker-capability"),
+    "Document OCR",
+    evidenceWorker,
+    "Upload and reprocessing controls are disabled",
+  )
+  renderCapability(
+    $("#web-renderer-capability"),
+    "Visual web capture",
+    webRenderer,
+    "Structural URL capture remains available",
+  )
+
+  const workerReady = capabilityReady("evidenceWorker")
+  for (const selector of ["#pdf-file", "#pdf-mode", "#pdf-languages", "#pdf-button"])
+    $(selector).disabled = !workerReady
+  $("#pdf-form").classList.toggle("capability-disabled", !workerReady)
+
+  const rendererReady = capabilityReady("strictVisualWebRenderer")
+  const strictOption = $("#web-mode option[value='strict_visual']")
+  strictOption.disabled = !rendererReady
+  if (!rendererReady && $("#web-mode").value === "strict_visual") $("#web-mode").value = "structural"
+}
+
+function renderCapability(element, label, capability, fallback) {
+  const ready = capability?.status === "ready"
+  element.classList.toggle("ready", ready)
+  element.classList.toggle("unavailable", !ready)
+  element.textContent = `${label}: ${ready ? "ready" : "unavailable"}`
+  element.title = capability?.detail || fallback
+  element.setAttribute("aria-label", `${element.textContent}. ${capability?.detail || fallback}`)
+}
+
+function capabilityReady(name) {
+  return state.runtimeCapabilities?.[name]?.status === "ready"
 }
 
 function renderCourtListener(results) {

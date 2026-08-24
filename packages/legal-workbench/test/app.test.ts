@@ -38,6 +38,14 @@ describe("legal workbench integration", () => {
       status: "ok",
     })
 
+    const bootstrap = await call(handler, "/api/bootstrap")
+    expect(await bootstrap.json()).toMatchObject({
+      runtimeCapabilities: {
+        evidenceWorker: { status: "ready" },
+        strictVisualWebRenderer: { status: "unavailable" },
+      },
+    })
+
     const shell = await call(handler, "/")
     expect(shell.status).toBe(200)
     expect(await shell.text()).toContain("Review exact evidence")

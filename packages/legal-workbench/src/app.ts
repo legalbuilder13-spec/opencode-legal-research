@@ -44,11 +44,6 @@ export interface WorkbenchRuntimeCapabilities {
   strictVisualWebRenderer: { status: "ready" | "unavailable"; detail: string }
 }
 
-const defaultRuntimeCapabilities: WorkbenchRuntimeCapabilities = {
-  evidenceWorker: { status: "unavailable", detail: "No supervised evidence worker was configured" },
-  strictVisualWebRenderer: { status: "unavailable", detail: "No supervised browser renderer was configured" },
-}
-
 const staticAssets = {
   "index.html": { body: indexHtml, type: "text/html; charset=utf-8" },
   "app.js": { body: appJavascript, type: "text/javascript; charset=utf-8" },
@@ -86,11 +81,25 @@ export async function createWorkbench(options: WorkbenchOptions) {
     options.synthesizer ?? (options.fixtureAccount ? fixtureSynthesizer : subscriptionSynthesizer(dataRoot))
   const citations = new CitationStore()
   const citationDemo = options.citationDemo === false ? null : await seedDemo(citations)
-  const runtimeCapabilities = options.runtimeCapabilities ?? defaultRuntimeCapabilities
+  const runtimeCapabilities =
+    options.runtimeCapabilities ??
+    ({
+      evidenceWorker: options.workerRunner
+        ? { status: "ready", detail: "A supervised evidence worker is configured" }
+        : { status: "unavailable", detail: "No supervised evidence worker was configured" },
+      strictVisualWebRenderer: options.webCapture?.renderer
+        ? { status: "ready", detail: "A supervised browser renderer is configured" }
+        : { status: "unavailable", detail: "No supervised browser renderer was configured" },
+    } satisfies WorkbenchRuntimeCapabilities)
 
   async function bootstrap() {
     const matters = core.listMatters({ includeArchived: true })
-    return { matters, selectedMatterId: matters.find((matter) => matter.status === "active")?.id ?? null, citationDemo }
+    return {
+      matters,
+      selectedMatterId: matters.find((matter) => matter.status === "active")?.id ?? null,
+      citationDemo,
+      runtimeCapabilities,
+    }
   }
 
   async function handler(request: Request): Promise<Response> {

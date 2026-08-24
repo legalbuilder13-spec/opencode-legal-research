@@ -16,7 +16,8 @@ The compiled artifact embeds its interface and no longer depends on repository-o
 - 7 Electron Builder tests include the companion on all three channels and preserve existing platform identity/resource behavior.
 - Desktop and legal-workbench type-checks pass.
 - The build script produced and ad-hoc signed the local macOS native artifact.
+- Browser verification covers ready and unavailable worker states, visible capability labels, disabled unsupported controls, and continued structural capture without console errors.
 
 ## Boundary
 
-This result packages the Bun workbench service only. OCR/Docling, the strict-visual browser renderer, signed installer artifacts for each supported OS, and the complete Electron UI restart transaction remain release gates. The health response says those absent capabilities are unavailable.
+This result packages the Bun workbench service only. OCR/Docling, the strict-visual browser renderer, signed installer artifacts for each supported OS, and the complete Electron UI restart transaction remain release gates. Health, bootstrap, and the Sources screen say those absent capabilities are unavailable.

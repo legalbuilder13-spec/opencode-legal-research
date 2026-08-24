@@ -14,7 +14,7 @@ The process inherits the user's environment. On macOS it may use the Codex execu
 
 ## Fail-closed capability boundary
 
-The native workbench executable is packaged, but the current 1.1 GB repository Python virtual environment is not relocatable and is not bundled. `/api/health` therefore reports the evidence worker unavailable unless `LEGAL_EVIDENCE_WORKER_DIR` points to a valid pinned runtime. Strict visual browser rendering also remains unavailable. Uploads that need the absent worker fail visibly instead of searching an invalid compiled path.
+The native workbench executable is packaged, but the current 1.1 GB repository Python virtual environment is not relocatable and is not bundled. `/api/health` and `/api/bootstrap` therefore report the evidence worker unavailable unless `LEGAL_EVIDENCE_WORKER_DIR` points to a valid pinned runtime. The Sources screen shows the capability state and disables upload/reprocessing controls when the worker is absent. Strict visual browser rendering also remains unavailable; its mode is disabled while structural URL capture remains usable. Missing capabilities fail visibly instead of searching an invalid compiled path.
 
 ## Evidence
 
@@ -22,6 +22,7 @@ The native workbench executable is packaged, but the current 1.1 GB repository P
 - Electron Builder configuration tests prove the companion resource is included on dev, beta, and production channels.
 - Lifecycle tests start, identify, reuse, stop, and restart a temporary companion without killing a reused process.
 - The real compiled executable starts from an isolated profile, serves its embedded interface, reports unavailable OCR/renderer capabilities truthfully, and stops cleanly.
+- Browser verification covers both capability states without console errors: repository development reports OCR ready, while the compiled standalone artifact visibly disables document ingestion and strict-visual URL mode but leaves text and structural URL capture available.
 
 ## Remaining packaging gates
 

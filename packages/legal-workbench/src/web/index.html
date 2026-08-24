@@ -72,7 +72,9 @@
               </div>
               <div class="answer-actions">
                 <span id="generated-answer-status" class="trust-pill">No answer yet</span>
-                <a id="answer-readable-export-link" class="secondary-button disabled" href="#">Export readable answer</a>
+                <a id="answer-readable-export-link" class="secondary-button disabled" href="#"
+                  >Export readable answer</a
+                >
                 <a id="answer-export-link" class="secondary-button disabled" href="#">Export answer receipt</a>
               </div>
             </div>
@@ -105,6 +107,16 @@
             </div>
             <span class="as-of">Captured before inference</span>
           </div>
+          <section id="runtime-capabilities" class="capability-banner" aria-label="Local evidence capabilities">
+            <div>
+              <p class="eyebrow">Installation capabilities</p>
+              <h2>Local evidence processing</h2>
+            </div>
+            <div class="capability-items">
+              <span id="evidence-worker-capability" class="capability-item">Checking document OCR…</span>
+              <span id="web-renderer-capability" class="capability-item">Checking visual web capture…</span>
+            </div>
+          </section>
           <div class="sources-layout">
             <div class="source-forms">
               <form id="source-form" class="source-form">
@@ -132,9 +144,9 @@
                 <label for="web-languages">OCR language hints</label>
                 <input id="web-languages" value="eng" placeholder="eng, spa" />
                 <p class="egress-note">
-                  The URL is fetched only from a public HTTP(S) address. Redirects and response size are bounded; scripts
-                  are stored as inert source bytes and never executed by the parser. Strict visual mode also requires the
-                  supervised browser renderer.
+                  The URL is fetched only from a public HTTP(S) address. Redirects and response size are bounded;
+                  scripts are stored as inert source bytes and never executed by the parser. Strict visual mode also
+                  requires the supervised browser renderer.
                 </p>
                 <button id="web-button" class="primary-button" type="submit">Capture public URL</button>
               </form>
