@@ -10,7 +10,7 @@ Build the legal product as an evidence system around OpenCode, not as a legal sy
 
 The fork should have two model backends:
 
-1. **ChatGPT subscription (default):** integrate the documented Codex app-server over local stdio. Let Codex own ChatGPT login, refresh, plan limits, and streamed model events. This is the supported path for embedding Codex authentication and conversations in a product.
+1. **ChatGPT subscription (candidate default):** evaluate the documented Codex app-server over local stdio. Let Codex own ChatGPT login, refresh, plan limits, and streamed model events. App-server is the documented embedding interface, but the current official documentation also carries an experimental/unsupported-for-production maturity warning; the subscription spike and ADR must determine whether it is acceptable as the production default.
 2. **OpenCode's existing OpenAI OAuth provider (compatibility/experimental):** retain the current `ChatGPT Pro/Plus` browser and device flows, but do not make them the durability boundary. They currently call a private ChatGPT Codex backend directly and therefore have more change and policy risk than the documented app-server protocol.
 
 API-key providers remain optional fallbacks and must not be required for the default product. The ChatGPT subscription covers model use only. CourtListener, Midpage, or other content services can still require their own accounts, licenses, or usage plans. Embeddings, OCR, parsing, and reranking should run locally by default so they do not create a hidden OpenAI API-key dependency.
@@ -82,12 +82,12 @@ That is sufficient for an early local spike. It is not the recommended long-term
 
 Add a `codex-app-server` execution adapter that:
 
-- Starts `codex app-server --stdio` as a supervised local child process.
+- Starts `codex app-server` (the default `stdio://` transport) as a supervised local child process.
 - Generates and pins TypeScript protocol bindings from the installed Codex version.
 - Maps OpenCode sessions to Codex threads and OpenCode turns to Codex turns.
 - Streams `item/agentMessage/delta`, tool lifecycle, approval, and completion events into OpenCode's session model.
 - Uses the app-server `account/read`, `account/login/start`, `account/login/completed`, `account/logout`, and `account/rateLimits/read` surfaces for sign-in and usage UI.
-- Starts with the stable app-server API. Dynamic tools are experimental, so the first implementation should expose legal tools to Codex through configured local MCP servers or keep tool orchestration in OpenCode and use the existing OAuth provider for that slice.
+- Starts with the non-experimental app-server API surface. Dynamic tools are experimental, so the first implementation should expose legal tools to Codex through configured local MCP servers or keep tool orchestration in OpenCode and use the existing OAuth provider for that slice.
 - Records the Codex version and generated protocol version and fails clearly on incompatible changes.
 
 The adapter is accepted only when a clean machine can sign in with ChatGPT, run a multi-turn session, resume it after restart, show plan limits, cancel a turn, and complete all of this without an OpenAI API key.
