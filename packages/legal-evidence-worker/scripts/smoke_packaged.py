@@ -5,9 +5,11 @@ import sys
 from pathlib import Path
 
 from legal_evidence_worker import IngestRequest, ingest
+from legal_evidence_worker.limits import apply_process_limits
 
 
 def main() -> None:
+    apply_process_limits()
     if len(sys.argv) != 3:
         raise SystemExit("usage: smoke_packaged.py SOURCE_IMAGE OUTPUT_DIR")
     source = Path(sys.argv[1]).resolve()

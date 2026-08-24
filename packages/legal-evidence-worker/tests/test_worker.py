@@ -11,6 +11,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from pydantic import ValidationError
 
@@ -22,7 +23,11 @@ from legal_evidence_worker.ingest import (
     packaged_ocr_languages,
     rapidocr_language,
 )
-from legal_evidence_worker.limits import apply_process_limits
+from legal_evidence_worker.limits import (
+    MAX_ADDRESS_SPACE_BYTES,
+    MAX_PROCESS_COUNT,
+    apply_process_limits,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED = ROOT / "fixtures" / "generated"
@@ -112,6 +117,38 @@ class IngestionSafetyTests(unittest.TestCase):
             RLIMIT_CPU = 2
             RLIMIT_FSIZE = 3
             RLIMIT_NOFILE = 4
+            RLIMIT_AS = 5
+            RLIMIT_NPROC = 6
+
+            def __init__(self) -> None:
+                self.applied: list[tuple[int, tuple[int, int]]] = []
+
+            def getrlimit(self, _resource: int) -> tuple[int, int]:
+                return (-1, -1)
+
+            def setrlimit(self, resource: int, limits: tuple[int, int]) -> None:
+                self.applied.append((resource, limits))
+
+        resource = FakeResource()
+        apply_process_limits(resource)
+        self.assertEqual(len(resource.applied), 6)
+        self.assertIn((resource.RLIMIT_CORE, (0, 0)), resource.applied)
+        self.assertIn((resource.RLIMIT_CPU, (300, 330)), resource.applied)
+        self.assertIn(
+            (resource.RLIMIT_AS, (MAX_ADDRESS_SPACE_BYTES, MAX_ADDRESS_SPACE_BYTES)),
+            resource.applied,
+        )
+        self.assertIn(
+            (resource.RLIMIT_NPROC, (MAX_PROCESS_COUNT, MAX_PROCESS_COUNT)),
+            resource.applied,
+        )
+
+    def test_process_resource_limits_tolerate_missing_optional_platform_limits(self) -> None:
+        class FakeResource:
+            RLIMIT_CORE = 1
+            RLIMIT_CPU = 2
+            RLIMIT_FSIZE = 3
+            RLIMIT_NOFILE = 4
 
             def __init__(self) -> None:
                 self.applied: list[tuple[int, tuple[int, int]]] = []
@@ -125,8 +162,47 @@ class IngestionSafetyTests(unittest.TestCase):
         resource = FakeResource()
         apply_process_limits(resource)
         self.assertEqual(len(resource.applied), 4)
-        self.assertIn((resource.RLIMIT_CORE, (0, 0)), resource.applied)
-        self.assertIn((resource.RLIMIT_CPU, (300, 330)), resource.applied)
+
+    def test_process_resource_limits_tolerate_rejected_optional_platform_limits(self) -> None:
+        class FakeResource:
+            RLIMIT_CORE = 1
+            RLIMIT_CPU = 2
+            RLIMIT_FSIZE = 3
+            RLIMIT_NOFILE = 4
+            RLIMIT_AS = 5
+            RLIMIT_NPROC = 6
+
+            def __init__(self) -> None:
+                self.applied: list[tuple[int, tuple[int, int]]] = []
+
+            def getrlimit(self, _resource: int) -> tuple[int, int]:
+                return (-1, -1)
+
+            def setrlimit(self, resource: int, limits: tuple[int, int]) -> None:
+                if resource == self.RLIMIT_AS:
+                    raise ValueError("unsupported address-space ceiling")
+                self.applied.append((resource, limits))
+
+        resource = FakeResource()
+        apply_process_limits(resource)
+        self.assertEqual(len(resource.applied), 5)
+        self.assertIn(
+            (resource.RLIMIT_NPROC, (MAX_PROCESS_COUNT, MAX_PROCESS_COUNT)),
+            resource.applied,
+        )
+
+    def test_supervised_server_applies_limits_before_accepting_work(self) -> None:
+        from legal_evidence_worker import server
+
+        with (
+            patch.object(server, "apply_process_limits") as apply_limits,
+            patch.object(server, "Server") as server_type,
+        ):
+            server.main()
+
+        apply_limits.assert_called_once_with()
+        server_type.assert_called_once_with()
+        server_type.return_value.run.assert_called_once_with()
 
     def test_hash_mismatch_fails_before_converter(self) -> None:
         called = False

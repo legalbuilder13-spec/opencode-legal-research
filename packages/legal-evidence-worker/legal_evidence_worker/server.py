@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from .contract import IngestRequest
 from .ingest import CancelledError, IngestError, ingest
+from .limits import apply_process_limits
 
 
 class Server:
@@ -95,6 +96,7 @@ class Server:
 
 
 def main() -> None:
+    apply_process_limits()
     Server().run()
 
 

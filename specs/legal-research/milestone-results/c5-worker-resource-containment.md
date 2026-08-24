@@ -1,0 +1,23 @@
+# Milestone C5 result: evidence-worker resource containment
+
+Date: 2026-08-24
+
+Status: macOS arm64 packaged process gate passed; Linux x64 memory/process CI-gated; full parser sandbox partial
+
+## Implemented boundary
+
+The real supervised JSONL server now applies the existing CPU, output-file, core-dump, and descriptor limits before accepting work. It also requests an 8 GiB virtual-address-space ceiling and a 256-process ceiling before Docling or PyTorch model construction. The one-shot CLI and packaged OCR smoke use the same limit function.
+
+Optional resource identifiers are capability-checked. A platform that does not expose or rejects an optional ceiling retains all other controls, while failures to apply the portable four limits remain blocking. Existing lower host ceilings are never raised.
+
+## Verification
+
+- Ruff format and lint pass.
+- All 25 development worker tests pass, including real image OCR, malformed-input gates, the supervised subprocess protocol, optional-limit rejection, and server-startup invocation.
+- A fresh 2.0 GB relocatable macOS arm64 worker resource passes all 25 tests offline.
+- The contained packaged smoke passes with RapidOCR 3.9.2, three OCR items, and one canonical page.
+- macOS accepts the 256-process ceiling. Apple ARM64's pre-reserved shared virtual-address map causes the kernel to reject an 8 GiB `RLIMIT_AS`; the worker continues under the remaining limits and the documentation records that gap.
+
+## Remaining release gate
+
+The updated Linux x64 packaged-worker CI must pass to verify the 8 GiB address-space and process path with the installed resource. This milestone does not provide network denial, a job-scoped filesystem namespace, enforceable macOS/Windows memory containment, Windows process containment, disk quotas, crash recovery, or a reviewed malicious-format corpus. SEC-02 therefore remains partial.

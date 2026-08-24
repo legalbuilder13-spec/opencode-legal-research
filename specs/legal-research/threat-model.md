@@ -37,7 +37,7 @@ Model prose can fabricate footnotes, URLs, quotes, cases, or verification labels
 
 ### Parser and active-content compromise
 
-PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. The worker applies OS CPU, output-file, core-dump, and descriptor limits before parser import; it also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio, and malformed images. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs OS memory/network isolation and broader malformed-file fuzzing.
+PDF, DOCX, image, and HTML inputs can exploit parsers or execute scripts/macros. Parsing belongs in a supervised worker. The alpha host forwards an environment allowlist that excludes application and connector credentials, limits execution to five minutes, bounds stdout and stderr to 4 MB each, constrains page assets to the assigned job directory before and after symlink resolution, and independently validates result hashes and geometry. Before parser import, the supervised server applies OS CPU, output-file, core-dump, and descriptor limits plus an 8 GiB virtual-address-space and 256-process ceiling where the Unix host accepts them. Linux accepts both optional ceilings; macOS ARM64 rejects the address-space ceiling because its process map already reserves a much larger shared range, but accepts the process ceiling. The worker also bounds source bytes, page ranges/count, pixels, items, normalized text, DOCX entries/expanded bytes/compression ratio, and malformed images. HTML is parsed inertly; scripts/styles are discarded for text extraction. Viewers render stored page images or structural text, not source macros or live scripts. Production packaging still needs enforceable macOS/Windows memory containment, worker network/filesystem isolation, and broader malformed-file fuzzing.
 
 Strict-visual web capture runs active pages only inside a fresh sandboxed Electron session with no Node integration, permissions, popups, webviews, downloads, or persistent storage. An authenticated loopback service admits one bounded capture at a time. Request interception blocks private/reserved targets, writes, frames, XHR, WebSockets, pings, media, objects, and excessive requests/resources. A second ephemeral loopback proxy resolves and validates every HTTP(S) authority and dials an address from that same answer set, so Chromium cannot re-resolve a rebinding hostname before connection. The proxy allows no direct fallback, request bodies, upgrades, or nonstandard ports and bounds aggregate traffic. Deterministic tests reject a hostname that changes from a public to a private answer before a second dial.
 
@@ -55,7 +55,7 @@ Personal ChatGPT workspace use may be inappropriate for privileged matters. Befo
 
 ### Availability and resource exhaustion
 
-Large or malformed documents, OCR, rate limits, or a stalled model may exhaust CPU, memory, disk, or time. The upload host caps source files at 100 MB; the worker host enforces execution/output limits; the protocol supports progress/cancellation and quality failures; and adapters surface auth/rate-limit classes. Production gates still require page/decompression limits, CPU/memory/disk quotas, crash recovery, and compaction policies.
+Large or malformed documents, OCR, rate limits, or a stalled model may exhaust CPU, memory, disk, or time. The upload host caps source files at 100 MB; the worker host enforces execution/output limits; Linux workers apply an 8 GiB address-space ceiling; the protocol supports progress/cancellation and quality failures; and adapters surface auth/rate-limit classes. Production gates still require enforceable macOS/Windows memory containment, equivalent Windows process enforcement, disk quotas, crash recovery, and compaction policies.
 
 ### Unsafe deletion and retention assumptions
 
@@ -77,7 +77,7 @@ Deleting a source or matter may leave a content-addressed blob referenced elsewh
 
 ## Open production gates
 
-- Add OS-enforced memory, filesystem-namespace, and network isolation around the Docling/OCR worker.
+- Add filesystem/network isolation around the Docling/OCR worker, enforceable macOS memory containment, and equivalent Windows memory/process containment.
 - Fuzz malformed PDF, DOCX, HTML, image, archive, and decompression-bomb inputs.
 - Add OS keychain-backed connector credentials and rotation/revocation tests.
 - Complete organizational ChatGPT workspace policy and retention review for confidential matters.
