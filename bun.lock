@@ -550,6 +550,9 @@
     "packages/legal-citation-spike": {
       "name": "@legalbuilder/legal-citation-spike",
       "version": "0.0.1",
+      "dependencies": {
+        "@legalbuilder/codex-app-server-spike": "workspace:*",
+      },
       "devDependencies": {
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",

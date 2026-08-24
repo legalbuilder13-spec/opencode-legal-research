@@ -472,6 +472,56 @@ export class CitationStore {
       .all(messageId)
   }
 
+  exportReceipt(messageId: string, asOf: string) {
+    const view = this.messageView(messageId)
+    const sources = this.db
+      .query<
+        {
+          passage_id: string
+          passage_text_sha256: string
+          source_title: string
+          source_version_id: string
+          source_content_sha256: string
+          retrieved_at: string
+          rank: number
+          disposition: string
+        },
+        [string]
+      >(
+        `SELECT passage.id AS passage_id, passage.text_sha256 AS passage_text_sha256,
+          source.title AS source_title, source_version.id AS source_version_id,
+          source_version.content_sha256 AS source_content_sha256, source_version.retrieved_at,
+          retrieval_event_passage.rank, citation_ledger_entry.disposition
+        FROM citation_ledger_entry
+        JOIN passage ON passage.id = citation_ledger_entry.passage_id
+        JOIN source_representation ON source_representation.id = passage.representation_id
+        JOIN source_version ON source_version.id = source_representation.source_version_id
+        JOIN source ON source.id = source_version.source_id
+        LEFT JOIN retrieval_event_passage
+          ON retrieval_event_passage.retrieval_event_id = citation_ledger_entry.retrieval_event_id
+          AND retrieval_event_passage.passage_id = citation_ledger_entry.passage_id
+        WHERE citation_ledger_entry.message_id = ?
+        ORDER BY retrieval_event_passage.rank, citation_ledger_entry.disposition`,
+      )
+      .all(messageId)
+    const retrieval = this.db
+      .query<
+        { id: string; query: string; created_at: string },
+        [string]
+      >("SELECT id, query, created_at FROM retrieval_event WHERE message_id = ? ORDER BY created_at")
+      .all(messageId)
+    return {
+      contractVersion: 1,
+      exportedAt: new Date().toISOString(),
+      researchAsOf: asOf,
+      message: view,
+      claims: this.claims(messageId),
+      verificationResults: this.verificationResults(messageId),
+      retrieval,
+      sourcesRead: sources,
+    }
+  }
+
   private message(id: string) {
     const row = this.db
       .query<MessageRow, [string]>("SELECT id, text, status, source_complete FROM assistant_message WHERE id = ?")

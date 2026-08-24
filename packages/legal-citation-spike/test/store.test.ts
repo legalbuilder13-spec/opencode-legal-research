@@ -285,4 +285,34 @@ describe("citation finalization protocol", () => {
     expect(store.messageView(messageId).citations).toEqual([])
     store.close()
   })
+
+  test("EXP-01 exports answer, hashes, retrieval, verification, and cited/uncited evidence", async () => {
+    const { store, passages } = await fixtureStore()
+    const messageId = store.createMessage("The rule applies.")
+    store.recordRetrieval(messageId, "rule and exception", [passages.rule, passages.uncited])
+    store.finalize({
+      messageId,
+      claims: [
+        {
+          start: 0,
+          end: 17,
+          evidence: [{ passageId: passages.rule, relationship: "supports" }],
+        },
+      ],
+    })
+
+    const receipt = store.exportReceipt(messageId, "2026-08-23")
+    expect(receipt).toMatchObject({
+      contractVersion: 1,
+      researchAsOf: "2026-08-23",
+      message: { id: messageId, sourceComplete: true },
+    })
+    expect(receipt.retrieval).toHaveLength(1)
+    expect(receipt.verificationResults).toHaveLength(1)
+    expect(new Set(receipt.sourcesRead.map((entry) => entry.passage_id))).toEqual(
+      new Set([passages.rule, passages.uncited]),
+    )
+    expect(receipt.sourcesRead.every((entry) => entry.source_content_sha256.length === 64)).toBe(true)
+    store.close()
+  })
 })

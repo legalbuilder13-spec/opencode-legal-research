@@ -1,0 +1,211 @@
+{
+  "contractVersion": 1,
+  "exportedAt": "2026-08-24T03:07:18.585Z",
+  "researchAsOf": "2026-08-23",
+  "message": {
+    "id": "msg_composed_live",
+    "text": "A court may grant relief only when the movant establishes each required element. Section 1983 supplies a cause of action but does not itself create substantive rights.",
+    "status": "finalized",
+    "sourceComplete": true,
+    "citations": [
+      {
+        "citationId": "cite_14d306defdf2e773fa5c7c7b",
+        "footnoteNumber": 1,
+        "claimId": "clm_8040a1d570edd33330c31391",
+        "claimText": "A court may grant relief only when the movant establishes each required element.",
+        "claimStart": 0,
+        "claimEnd": 80,
+        "status": "qualified",
+        "evidence": [
+          {
+            "passageId": "psg_194b8cf2927f75ab5f7dae15",
+            "relationship": "supports",
+            "sourceTitle": "Synthetic Court of Appeals Opinion",
+            "sourceVersionId": "srcv_native-opinion",
+            "text": "A court may grant relief only when the movant establishes each required element.",
+            "textSha256": "18607f2b98be85e5c099f0258308f1d9f31237b7256c3d059d81794934b3d017",
+            "available": true,
+            "verificationState": "verified",
+            "locationMode": "coordinates",
+            "pageNumber": 1,
+            "pageWidth": 612,
+            "pageHeight": 792,
+            "bbox": {
+              "left": 72,
+              "top": 164.71799999999996,
+              "right": 432.17300000000023,
+              "bottom": 174.31360761347003
+            },
+            "imageUrl": "/assets/page/psg_194b8cf2927f75ab5f7dae15"
+          },
+          {
+            "passageId": "psg_9e57bfd3b291974e5a543737",
+            "relationship": "qualifies",
+            "sourceTitle": "Scanned Synthetic Opinion",
+            "sourceVersionId": "srcv_scanned-opinion",
+            "text": "The record must be reviewed as a whole, including contrary authority.",
+            "textSha256": "54e6f3228784560507c426f660ad62c97fbe8931392d010fa5bb3867f3bb80dd",
+            "available": true,
+            "verificationState": "ocr-normalized",
+            "locationMode": "coordinates",
+            "pageNumber": 1,
+            "pageWidth": 612,
+            "pageHeight": 792,
+            "bbox": {
+              "left": 72,
+              "top": 173.66666666666674,
+              "right": 404.6666666666667,
+              "bottom": 184
+            },
+            "imageUrl": "/assets/page/psg_9e57bfd3b291974e5a543737"
+          }
+        ]
+      },
+      {
+        "citationId": "cite_bbb352e2a947a4db44c0b9cf",
+        "footnoteNumber": 2,
+        "claimId": "clm_96b17f2efc39104a3d3d407a",
+        "claimText": "Section 1983 supplies a cause of action but does not itself create substantive rights.",
+        "claimStart": 81,
+        "claimEnd": 167,
+        "status": "supported",
+        "evidence": [
+          {
+            "passageId": "psg_36b83c47388d6355bd225d4b",
+            "relationship": "supports",
+            "sourceTitle": "Synthetic Court of Appeals Opinion",
+            "sourceVersionId": "srcv_native-opinion",
+            "text": "42 U.S.C. § 1983 supplies a cause of action; it does not create substantive rights.",
+            "textSha256": "11514902726f10723c581cfe90ad8b5819b269e14fc7d9578a8287535247762a",
+            "available": true,
+            "verificationState": "verified",
+            "locationMode": "coordinates",
+            "pageNumber": 1,
+            "pageWidth": 612,
+            "pageHeight": 792,
+            "bbox": {
+              "left": 72,
+              "top": 212.71799999999996,
+              "right": 427.0250000000001,
+              "bottom": 222.31360761347003
+            },
+            "imageUrl": "/assets/page/psg_36b83c47388d6355bd225d4b"
+          }
+        ]
+      }
+    ]
+  },
+  "claims": [
+    {
+      "id": "clm_8040a1d570edd33330c31391",
+      "text": "A court may grant relief only when the movant establishes each required element.",
+      "material": 1,
+      "status": "qualified"
+    },
+    {
+      "id": "clm_96b17f2efc39104a3d3d407a",
+      "text": "Section 1983 supplies a cause of action but does not itself create substantive rights.",
+      "material": 1,
+      "status": "supported"
+    }
+  ],
+  "verificationResults": [
+    {
+      "passage_id": "psg_194b8cf2927f75ab5f7dae15",
+      "check_kind": "integrity",
+      "status": "passed",
+      "detail": "Passage identity and text hash verified"
+    },
+    {
+      "passage_id": "psg_9e57bfd3b291974e5a543737",
+      "check_kind": "integrity",
+      "status": "passed",
+      "detail": "Passage identity and text hash verified"
+    },
+    {
+      "passage_id": "psg_36b83c47388d6355bd225d4b",
+      "check_kind": "integrity",
+      "status": "passed",
+      "detail": "Passage identity and text hash verified"
+    }
+  ],
+  "retrieval": [
+    {
+      "id": "ret_1f0b5973-bb90-4a20-8287-4813f07a41c4",
+      "query": "relief elements, limitations, and Section 1983",
+      "created_at": "2026-08-24T03:07:18.581Z"
+    }
+  ],
+  "sourcesRead": [
+    {
+      "passage_id": "psg_194b8cf2927f75ab5f7dae15",
+      "passage_text_sha256": "18607f2b98be85e5c099f0258308f1d9f31237b7256c3d059d81794934b3d017",
+      "source_title": "Synthetic Court of Appeals Opinion",
+      "source_version_id": "srcv_native-opinion",
+      "source_content_sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "retrieved_at": "2026-08-24T03:07:04.638Z",
+      "rank": 1,
+      "disposition": "cited"
+    },
+    {
+      "passage_id": "psg_194b8cf2927f75ab5f7dae15",
+      "passage_text_sha256": "18607f2b98be85e5c099f0258308f1d9f31237b7256c3d059d81794934b3d017",
+      "source_title": "Synthetic Court of Appeals Opinion",
+      "source_version_id": "srcv_native-opinion",
+      "source_content_sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "retrieved_at": "2026-08-24T03:07:04.638Z",
+      "rank": 1,
+      "disposition": "read"
+    },
+    {
+      "passage_id": "psg_9e57bfd3b291974e5a543737",
+      "passage_text_sha256": "54e6f3228784560507c426f660ad62c97fbe8931392d010fa5bb3867f3bb80dd",
+      "source_title": "Scanned Synthetic Opinion",
+      "source_version_id": "srcv_scanned-opinion",
+      "source_content_sha256": "3f75f051d94f79638885eb7ca569c74e11d764bb27093598493a5ea46bef6b46",
+      "retrieved_at": "2026-08-24T03:07:04.639Z",
+      "rank": 2,
+      "disposition": "cited"
+    },
+    {
+      "passage_id": "psg_9e57bfd3b291974e5a543737",
+      "passage_text_sha256": "54e6f3228784560507c426f660ad62c97fbe8931392d010fa5bb3867f3bb80dd",
+      "source_title": "Scanned Synthetic Opinion",
+      "source_version_id": "srcv_scanned-opinion",
+      "source_content_sha256": "3f75f051d94f79638885eb7ca569c74e11d764bb27093598493a5ea46bef6b46",
+      "retrieved_at": "2026-08-24T03:07:04.639Z",
+      "rank": 2,
+      "disposition": "read"
+    },
+    {
+      "passage_id": "psg_36b83c47388d6355bd225d4b",
+      "passage_text_sha256": "11514902726f10723c581cfe90ad8b5819b269e14fc7d9578a8287535247762a",
+      "source_title": "Synthetic Court of Appeals Opinion",
+      "source_version_id": "srcv_native-opinion",
+      "source_content_sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "retrieved_at": "2026-08-24T03:07:04.638Z",
+      "rank": 3,
+      "disposition": "cited"
+    },
+    {
+      "passage_id": "psg_36b83c47388d6355bd225d4b",
+      "passage_text_sha256": "11514902726f10723c581cfe90ad8b5819b269e14fc7d9578a8287535247762a",
+      "source_title": "Synthetic Court of Appeals Opinion",
+      "source_version_id": "srcv_native-opinion",
+      "source_content_sha256": "91939bc3c4a3b64ec7d945b9afbe5b6ac696c80e47fe5688ae00bbafd45aba59",
+      "retrieved_at": "2026-08-24T03:07:04.638Z",
+      "rank": 3,
+      "disposition": "read"
+    },
+    {
+      "passage_id": "psg_61f278d23d2ad7614d447e4f",
+      "passage_text_sha256": "1510259d080f896d631050f710e7f44c51e8364e0d632f96e8f9a87ebaf9586c",
+      "source_title": "Scanned Synthetic Opinion",
+      "source_version_id": "srcv_scanned-opinion",
+      "source_content_sha256": "3f75f051d94f79638885eb7ca569c74e11d764bb27093598493a5ea46bef6b46",
+      "retrieved_at": "2026-08-24T03:07:04.639Z",
+      "rank": 4,
+      "disposition": "read"
+    }
+  ]
+}

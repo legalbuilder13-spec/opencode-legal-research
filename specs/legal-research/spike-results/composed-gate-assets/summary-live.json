@@ -1,0 +1,10 @@
+{
+  "mode": "live",
+  "subscriptionPlan": "prolite",
+  "sourceComplete": true,
+  "citationCount": 2,
+  "evidenceCount": 3,
+  "ledgerPassageCount": 4,
+  "restartStable": true,
+  "receipt": "receipt-live.json"
+}
