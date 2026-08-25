@@ -1,16 +1,16 @@
-# Codex app-server subscription spike
+# Codex app-server subscription adapter
 
-This private workspace package tests whether the OpenCode fork can execute model turns through a signed-in ChatGPT account without an OpenAI API key. It is deliberately isolated from OpenCode's production provider path.
+This private workspace package is the shared ChatGPT-subscription boundary for ordinary OpenCode sessions and legal-workbench synthesis. It executes model turns through a signed-in ChatGPT account without an OpenAI API key.
 
 ## Safety boundary
 
 - Uses Codex app-server's default JSONL-over-stdio transport.
 - Removes `OPENAI_API_KEY` from the child environment unless `requireSubscription: false` is explicitly set in code.
-- Starts threads with `sandbox: "read-only"` and `approvalPolicy: "never"`.
+- Defaults standalone/legal synthesis threads to `sandbox: "read-only"` and `approvalPolicy: "never"`; ordinary OpenCode chat explicitly selects workspace-write sandboxing with `approvalPolicy: "on-request"` and routes approval requests through OpenCode permissions.
 - Redacts credentials, login URLs/codes, identity fields, prompts, and model text from optional protocol transcripts.
-- Does not log out, mutate shared authentication, expose legal tools, or alter OpenCode sessions.
+- Does not copy ChatGPT credentials into OpenCode or legal matter storage.
 
-OpenAI currently describes app-server as experimental and unsupported for production workloads. This package is a feasibility harness, not yet a supported production adapter.
+The protocol manifest remains pinned and must be reviewed when the installed Codex executable changes.
 
 ## Commands
 
@@ -33,4 +33,4 @@ The compatibility manifest pins the executable hash and the hash of all generate
 
 ## Automated coverage
 
-The tests launch a real fixture process and exchange newline-delimited JSON-RPC. They cover subscription-only environment handling, browser/device login notifications, streaming, restart/resume, interruption, rate-limit mapping, transcript redaction, controlled API-key opt-in, process failure, and schema drift detection.
+The tests launch a real fixture process and exchange newline-delimited JSON-RPC. They cover subscription-only environment handling, browser/device login notifications, rich turn-event streaming, restart/resume, interruption, rate-limit mapping, transcript redaction, controlled API-key opt-in, process failure, and schema drift detection. OpenCode adapter tests separately cover runtime selection, conversation lowering, and translation of text and provider-executed tool events.

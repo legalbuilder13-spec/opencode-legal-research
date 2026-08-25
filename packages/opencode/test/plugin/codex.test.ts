@@ -1,204 +1,42 @@
+// oxlint-disable typescript-eslint/no-unsafe-type-assertion -- focused partial plugin fixtures
 import { describe, expect, test } from "bun:test"
-import { createServer, type IncomingMessage } from "node:http"
-import { type AddressInfo } from "node:net"
-import { WebSocketServer } from "ws"
-import {
-  CodexAuthPlugin,
-  parseJwtClaims,
-  extractAccountIdFromClaims,
-  extractAccountId,
-  extractResidency,
-  renderOAuthError,
-  type IdTokenClaims,
-} from "../../src/plugin/openai/codex"
-
-function createTestJwt(payload: object): string {
-  const header = Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url")
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url")
-  return `${header}.${body}.sig`
-}
+import { fileURLToPath } from "node:url"
+import { CodexAuthPlugin } from "../../src/plugin/openai/codex"
 
 describe("plugin.codex", () => {
-  test("escapes provider errors in callback HTML", () => {
-    const error = `</div><script>alert("xss" & 'more')</script>`
-    const html = renderOAuthError(error)
+  test("delegates ChatGPT login and credential refresh ownership to Codex app-server", async () => {
+    const fixture = fileURLToPath(new URL("../../../codex-app-server/test/fixture/fake-app-server.ts", import.meta.url))
+    const hooks = await CodexAuthPlugin({} as never, {
+      appServerCommand: [process.execPath, fixture, "app-server"],
+    })
+    const method = hooks.auth!.methods[0]
+    if (method.type !== "oauth") throw new Error("Expected subscription OAuth method")
 
-    expect(html).toContain("&lt;/div&gt;&lt;script&gt;alert(&quot;xss&quot; &amp; &#39;more&#39;)&lt;/script&gt;")
-    expect(html).not.toContain(error)
+    const pending = await method.authorize({} as never)
+    expect(method.label).toBe("ChatGPT subscription (Codex app-server)")
+    expect(pending.url).toContain("example.com/login")
+    expect(pending.instructions).toContain("app-server will keep and refresh")
+    expect(await pending.callback({} as never)).toMatchObject({
+      type: "success",
+      refresh: "codex-app-server-managed",
+      access: "codex-app-server-managed",
+    })
+    await hooks.dispose?.()
   })
 
-  describe("parseJwtClaims", () => {
-    test("parses valid JWT with claims", () => {
-      const payload = { email: "test@example.com", chatgpt_account_id: "acc-123" }
-      const jwt = createTestJwt(payload)
-      const claims = parseJwtClaims(jwt)
-      expect(claims).toEqual(payload)
-    })
+  test("does not expose a direct HTTP transport for subscription credentials", async () => {
+    const hooks = await CodexAuthPlugin({} as never, { experimentalWebSockets: true })
+    const loaded = await hooks.auth!.loader!(
+      async () => ({ type: "oauth", refresh: "stale", access: "stale", expires: 0 }) as never,
+      {} as never,
+    )
 
-    test("returns undefined for JWT with less than 3 parts", () => {
-      expect(parseJwtClaims("invalid")).toBeUndefined()
-      expect(parseJwtClaims("only.two")).toBeUndefined()
-    })
-
-    test("returns undefined for invalid base64", () => {
-      expect(parseJwtClaims("a.!!!invalid!!!.b")).toBeUndefined()
-    })
-
-    test("returns undefined for invalid JSON payload", () => {
-      const header = Buffer.from("{}").toString("base64url")
-      const invalidJson = Buffer.from("not json").toString("base64url")
-      expect(parseJwtClaims(`${header}.${invalidJson}.sig`)).toBeUndefined()
-    })
+    expect(loaded.apiKey).toBeDefined()
+    expect(loaded.fetch).toBeUndefined()
+    await hooks.dispose?.()
   })
 
-  describe("extractAccountIdFromClaims", () => {
-    test("extracts chatgpt_account_id from root", () => {
-      const claims: IdTokenClaims = { chatgpt_account_id: "acc-root" }
-      expect(extractAccountIdFromClaims(claims)).toBe("acc-root")
-    })
-
-    test("extracts chatgpt_account_id from nested https://api.openai.com/auth", () => {
-      const claims: IdTokenClaims = {
-        "https://api.openai.com/auth": { chatgpt_account_id: "acc-nested" },
-      }
-      expect(extractAccountIdFromClaims(claims)).toBe("acc-nested")
-    })
-
-    test("prefers root over nested", () => {
-      const claims: IdTokenClaims = {
-        chatgpt_account_id: "acc-root",
-        "https://api.openai.com/auth": { chatgpt_account_id: "acc-nested" },
-      }
-      expect(extractAccountIdFromClaims(claims)).toBe("acc-root")
-    })
-
-    test("extracts from organizations array as fallback", () => {
-      const claims: IdTokenClaims = {
-        organizations: [{ id: "org-123" }, { id: "org-456" }],
-      }
-      expect(extractAccountIdFromClaims(claims)).toBe("org-123")
-    })
-
-    test("returns undefined when no accountId found", () => {
-      const claims: IdTokenClaims = { email: "test@example.com" }
-      expect(extractAccountIdFromClaims(claims)).toBeUndefined()
-    })
-  })
-
-  describe("extractAccountId", () => {
-    test("extracts from id_token first", () => {
-      const idToken = createTestJwt({ chatgpt_account_id: "from-id-token" })
-      const accessToken = createTestJwt({ chatgpt_account_id: "from-access-token" })
-      expect(
-        extractAccountId({
-          id_token: idToken,
-          access_token: accessToken,
-          refresh_token: "rt",
-        }),
-      ).toBe("from-id-token")
-    })
-
-    test("falls back to access_token when id_token has no accountId", () => {
-      const idToken = createTestJwt({ email: "test@example.com" })
-      const accessToken = createTestJwt({
-        "https://api.openai.com/auth": { chatgpt_account_id: "from-access" },
-      })
-      expect(
-        extractAccountId({
-          id_token: idToken,
-          access_token: accessToken,
-          refresh_token: "rt",
-        }),
-      ).toBe("from-access")
-    })
-
-    test("returns undefined when no tokens have accountId", () => {
-      const token = createTestJwt({ email: "test@example.com" })
-      expect(
-        extractAccountId({
-          id_token: token,
-          access_token: token,
-          refresh_token: "rt",
-        }),
-      ).toBeUndefined()
-    })
-
-    test("handles missing id_token", () => {
-      const accessToken = createTestJwt({ chatgpt_account_id: "acc-123" })
-      expect(
-        extractAccountId({
-          id_token: "",
-          access_token: accessToken,
-          refresh_token: "rt",
-        }),
-      ).toBe("acc-123")
-    })
-  })
-
-  describe("extractResidency", () => {
-    test("extracts compute residency from the namespaced auth claims", () => {
-      expect(
-        extractResidency(
-          createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "eu" },
-          }),
-        ),
-      ).toBe("eu")
-    })
-
-    test("falls back to a root compute residency claim", () => {
-      expect(extractResidency(createTestJwt({ chatgpt_compute_residency: "us" }))).toBe("us")
-    })
-
-    test("supports compute residency values without maintaining a region list", () => {
-      expect(
-        extractResidency(
-          createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "ae" },
-          }),
-        ),
-      ).toBe("ae")
-      expect(
-        extractResidency(
-          createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "future-region_1" },
-          }),
-        ),
-      ).toBe("future-region_1")
-    })
-
-    test("ignores unconstrained and data residency values", () => {
-      expect(
-        extractResidency(
-          createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "no_constraint" },
-          }),
-        ),
-      ).toBeUndefined()
-      expect(
-        extractResidency(
-          createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_data_residency: "gb" },
-          }),
-        ),
-      ).toBeUndefined()
-      expect(extractResidency(createTestJwt({ chatgpt_compute_residency: "" }))).toBeUndefined()
-      expect(extractResidency("not-a-jwt")).toBeUndefined()
-    })
-
-    test("prefers a namespaced unconstrained value over a root residency", () => {
-      expect(
-        extractResidency(
-          createTestJwt({
-            chatgpt_compute_residency: "eu",
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "no_constraint" },
-          }),
-        ),
-      ).toBeUndefined()
-    })
-  })
-
-  test("installs websocket transport only when experimental websockets are enabled", async () => {
+  test("keeps the optional WebSocket transport for API-key OpenAI", async () => {
     const disabled = await CodexAuthPlugin({} as never)
     const enabled = await CodexAuthPlugin({} as never, { experimentalWebSockets: true })
 
@@ -216,74 +54,7 @@ describe("plugin.codex", () => {
     await enabled.dispose?.()
   })
 
-  test("sends token residency only to the ChatGPT Codex backend", async () => {
-    const requests: Array<{ path: string; residency: string | null }> = []
-    using server = Bun.serve({
-      port: 0,
-      fetch(request) {
-        requests.push({
-          path: new URL(request.url).pathname,
-          residency: request.headers.get("x-openai-internal-codex-residency"),
-        })
-        return new Response("{}")
-      },
-    })
-    const hooks = await CodexAuthPlugin({} as never, {
-      codexApiEndpoint: new URL("/backend-api/codex/responses", server.url).toString(),
-    })
-    const loaded = await hooks.auth!.loader!(
-      async () =>
-        ({
-          type: "oauth",
-          refresh: "refresh",
-          access: createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "eu" },
-          }),
-          expires: Date.now() + 60_000,
-        }) as never,
-      {} as never,
-    )
-
-    await loaded.fetch!("https://api.openai.com/v1/responses")
-    await loaded.fetch!(new URL("/other", server.url))
-
-    expect(requests).toEqual([
-      { path: "/backend-api/codex/responses", residency: "eu" },
-      { path: "/other", residency: null },
-    ])
-  })
-
-  test("sends token residency through the WebSocket transport", async () => {
-    await using server = await createCodexWebSocketServer()
-    const hooks = await CodexAuthPlugin({} as never, {
-      codexApiEndpoint: server.url,
-      experimentalWebSockets: true,
-    })
-    const loaded = await hooks.auth!.loader!(
-      async () =>
-        ({
-          type: "oauth",
-          refresh: "refresh",
-          access: createTestJwt({
-            "https://api.openai.com/auth": { chatgpt_compute_residency: "eu" },
-          }),
-          expires: Date.now() + 60_000,
-        }) as never,
-      {} as never,
-    )
-
-    const response = await loaded.fetch!("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { "session-id": "session-1" },
-      body: JSON.stringify({ stream: true, input: "hi" }),
-    })
-
-    expect(await response.text()).toContain("data: [DONE]")
-    expect(server.headers()?.["x-openai-internal-codex-residency"]).toBe("eu")
-    await hooks.dispose?.()
-  })
-
-  test("filters unsupported modes and uses Codex context limits for OAuth GPT models", async () => {
+  test("filters unsupported modes and uses Codex context limits for subscription models", async () => {
     const hooks = await CodexAuthPlugin({} as never)
     const limit = { context: 1_050_000, input: 922_000, output: 128_000 }
     const provider = {
@@ -325,139 +96,4 @@ describe("plugin.codex", () => {
       provider.models as never,
     )
   })
-
-  test("deduplicates concurrent Codex token refreshes", async () => {
-    const refreshedAccess = createTestJwt({
-      "https://api.openai.com/auth": { chatgpt_compute_residency: "eu" },
-    })
-    let auth = {
-      type: "oauth" as const,
-      refresh: "refresh-old",
-      access: "",
-      expires: 0,
-    }
-    const authUpdates: Array<{
-      body: { refresh: string; access: string; expires: number; accountId?: string }
-    }> = []
-    let resolveRefresh: (() => void) | undefined
-    const refreshReady = new Promise<void>((resolve) => {
-      resolveRefresh = resolve
-    })
-    let refreshRequests = 0
-    const apiRequests: { authorization: string | null; accountId: string | null; residency: string | null }[] = []
-
-    using server = Bun.serve({
-      port: 0,
-      async fetch(request) {
-        const url = new URL(request.url)
-        if (url.pathname === "/oauth/token") {
-          expect(await request.text()).toContain("refresh_token=refresh-old")
-          refreshRequests += 1
-          await refreshReady
-          return Response.json({
-            id_token: createTestJwt({ chatgpt_account_id: "acc-123" }),
-            access_token: refreshedAccess,
-            refresh_token: "refresh-new",
-            expires_in: 3600,
-          })
-        }
-
-        if (url.pathname === "/backend-api/codex/responses") {
-          apiRequests.push({
-            authorization: request.headers.get("authorization"),
-            accountId: request.headers.get("ChatGPT-Account-Id"),
-            residency: request.headers.get("x-openai-internal-codex-residency"),
-          })
-          return new Response("{}", { status: 200 })
-        }
-
-        return new Response("unexpected request", { status: 500 })
-      },
-    })
-
-    const hooks = await CodexAuthPlugin(
-      {
-        client: {
-          auth: {
-            async set(input: { body: { refresh: string; access: string; expires: number; accountId?: string } }) {
-              authUpdates.push(input)
-              auth = {
-                type: "oauth",
-                refresh: input.body.refresh,
-                access: input.body.access,
-                expires: input.body.expires,
-                ...(input.body.accountId && { accountId: input.body.accountId }),
-              }
-            },
-          },
-        } as never,
-        project: {} as never,
-        directory: "",
-        worktree: "",
-        experimental_workspace: {
-          register() {},
-        },
-        serverUrl: new URL("https://example.com"),
-        $: {} as never,
-      },
-      {
-        issuer: server.url.origin,
-        codexApiEndpoint: new URL("/backend-api/codex/responses", server.url).toString(),
-      },
-    )
-    const loaded = await hooks.auth!.loader!(async () => auth as never, {} as never)
-
-    const first = loaded.fetch!("https://api.openai.com/v1/responses")
-    const second = loaded.fetch!("https://api.openai.com/v1/responses")
-
-    await waitFor(() => refreshRequests === 1)
-    expect(apiRequests).toHaveLength(0)
-
-    resolveRefresh!()
-    await Promise.all([first, second])
-
-    expect(refreshRequests).toBe(1)
-    expect(authUpdates).toHaveLength(1)
-    expect(authUpdates[0]?.body.refresh).toBe("refresh-new")
-    expect(authUpdates[0]?.body.access).toBe(refreshedAccess)
-    expect(authUpdates[0]?.body.accountId).toBe("acc-123")
-    expect(apiRequests).toEqual([
-      { authorization: `Bearer ${refreshedAccess}`, accountId: "acc-123", residency: "eu" },
-      { authorization: `Bearer ${refreshedAccess}`, accountId: "acc-123", residency: "eu" },
-    ])
-  })
 })
-
-async function waitFor(predicate: () => boolean) {
-  const started = Date.now()
-  while (!predicate()) {
-    if (Date.now() - started > 1_000) throw new Error("timed out waiting for condition")
-    await new Promise((resolve) => setTimeout(resolve, 1))
-  }
-}
-
-async function createCodexWebSocketServer() {
-  let headers: IncomingMessage["headers"] | undefined
-  const server = createServer()
-  const sockets = new WebSocketServer({ server })
-  sockets.on("connection", (socket, request) => {
-    headers = request.headers
-    socket.once("message", () => {
-      socket.send(JSON.stringify({ type: "response.completed", response: { id: "resp_123" } }))
-    })
-  })
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject)
-    server.listen(0, "127.0.0.1", resolve)
-  })
-  const address = server.address() as AddressInfo
-  return {
-    url: `http://127.0.0.1:${address.port}/backend-api/codex/responses`,
-    headers: () => headers,
-    async [Symbol.asyncDispose]() {
-      for (const socket of sockets.clients) socket.terminate()
-      sockets.close()
-      server.close()
-    },
-  }
-}

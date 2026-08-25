@@ -14,7 +14,6 @@ import { GitLabWorkflowLanguageModel } from "gitlab-ai-provider"
 import { ProviderTransform } from "@/provider/transform"
 import { Config } from "@/config/config"
 import type { Agent } from "@/agent/agent"
-import type { MessageV2 } from "./message-v2"
 import { Plugin } from "@/plugin"
 import { Permission } from "@/permission"
 import { EventV2Bridge } from "@/event-v2-bridge"
@@ -28,7 +27,10 @@ import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { LLMAISDK } from "./llm/ai-sdk"
 import { LLMNativeRuntime } from "./llm/native-runtime"
+import { CodexAppServerRuntime } from "./llm/codex-app-server"
 import { LLMRequestPrep } from "./llm/request"
+import { InstanceState } from "@/effect/instance-state"
+import { isRecord } from "@/util/record"
 
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
 
@@ -111,11 +113,65 @@ const live: Layer.Layer<
         flags,
         isWorkflow,
       })
+      const bridge = yield* EffectBridge.make()
+
+      const subscription = CodexAppServerRuntime.stream({
+        model: input.model,
+        provider: item,
+        auth: info,
+        cwd: yield* InstanceState.directory,
+        sessionID: input.sessionID,
+        system: prepared.system,
+        messages: prepared.messages,
+        small: input.small,
+        abort: input.abort,
+        approve: bridge.bind(async (request) => {
+          if (input.small) return { decision: "decline" }
+          if (
+            request.method !== "item/commandExecution/requestApproval" &&
+            request.method !== "item/fileChange/requestApproval"
+          ) {
+            throw new Error(`Unsupported Codex app-server request: ${request.method}`)
+          }
+          const params = isRecord(request.params) ? request.params : {}
+          const command = typeof params.command === "string" ? params.command : undefined
+          const grantRoot = typeof params.grantRoot === "string" ? params.grantRoot : undefined
+          const permission = request.method === "item/commandExecution/requestApproval" ? "bash" : "edit"
+          const pattern = command ?? grantRoot ?? "*"
+          try {
+            await bridge.promise(
+              perm.ask({
+                id: PermissionV1.ID.ascending(),
+                sessionID: SessionID.make(input.sessionID),
+                permission,
+                patterns: [pattern],
+                metadata: { source: "codex-app-server", request: params },
+                always: [pattern],
+                ruleset: Permission.merge(input.agent.permission ?? [], input.permission ?? []),
+              }),
+            )
+            return { decision: "accept" }
+          } catch {
+            return { decision: "decline" }
+          }
+        }),
+      })
+      if (subscription.type === "supported") {
+        yield* Effect.logInfo("llm runtime selected", {
+          "llm.runtime": "codex-app-server",
+          "llm.provider": input.model.providerID,
+          "llm.model": input.model.id,
+          "llm.auth": "chatgpt-subscription",
+        })
+        return {
+          type: "native" as const,
+          stream: subscription.stream,
+        }
+      }
 
       // Wire up toolExecutor for DWS workflow models so that tool calls
       // from the workflow service are executed via opencode's tool system
       // and results sent back over the WebSocket.
-      const bridge = yield* EffectBridge.make()
       if (language instanceof GitLabWorkflowLanguageModel) {
         const workflowModel = language as GitLabWorkflowLanguageModel & {
           sessionID?: string

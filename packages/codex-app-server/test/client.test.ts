@@ -61,6 +61,40 @@ describe("Codex app-server subscription client", () => {
     expect(await completion).toMatchObject({ status: "interrupted", text: "" })
   })
 
+  test("streams the complete turn event sequence for rich clients", async () => {
+    const client = await create()
+    const thread = await client.startThread({
+      cwd: process.cwd(),
+      sandbox: "workspace-write",
+      developerInstructions: "Use the host interface.",
+      ephemeral: true,
+    })
+    const turn = await client.startTurn(thread.threadId, "tools")
+    const methods: string[] = []
+    for await (const notification of client.streamTurn(turn)) methods.push(notification.method)
+
+    expect(methods).toEqual([
+      "item/started",
+      "item/completed",
+      "item/agentMessage/delta",
+      "item/agentMessage/delta",
+      "turn/completed",
+    ])
+  })
+
+  test("routes app-server approval requests through the host client", async () => {
+    const requests: string[] = []
+    const client = await create({
+      onServerRequest: async (request) => {
+        requests.push(request.method)
+        return { decision: "accept" }
+      },
+    })
+    const thread = await client.startThread({ cwd: process.cwd(), approvalPolicy: "on-request" })
+    expect(await client.runTurn(thread.threadId, "approval")).toMatchObject({ status: "completed" })
+    expect(requests).toEqual(["item/commandExecution/requestApproval"])
+  })
+
   test("redacts credentials, identity, prompts, and model output from transcripts", async () => {
     const transcript: TranscriptEntry[] = []
     const client = await create({ onTranscript: (entry) => transcript.push(entry) })
@@ -84,6 +118,12 @@ describe("Codex app-server subscription client", () => {
   test("rejects a stored API-key account in subscription mode", async () => {
     await expect(create({ env: { FAKE_ACCOUNT_TYPE: "apiKey" } })).rejects.toThrow(
       "Subscription mode requires ChatGPT account auth",
+    )
+  })
+
+  test("reports a clear recovery action when subscription auth is signed out", async () => {
+    await expect(create({ env: { FAKE_ACCOUNT_TYPE: "signedOut" } })).rejects.toThrow(
+      "ChatGPT subscription sign-in is required in Codex app-server",
     )
   })
 

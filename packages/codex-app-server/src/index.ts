@@ -6,9 +6,11 @@ export type {
   LoginStart,
   RateLimitState,
   RateLimitWindow,
+  ServerRequest,
   ThreadHandle,
   TranscriptEntry,
   TurnHandle,
+  TurnNotification,
   TurnResult,
 } from "./client"
 export { inspect, parseManifest, verify } from "./inspect"

@@ -23,7 +23,9 @@ if (args[0] === "app-server" && args[1] === "generate-json-schema") {
 let threadCount = 0
 let turnCount = 0
 let loginCount = 0
+let serverRequestCount = 900
 const pendingTurns = new Map<string, { threadId: string; turnId: string }>()
+const pendingApprovals = new Map<number, { threadId: string; turnId: string }>()
 
 const lines = createInterface({ input: process.stdin, crlfDelay: Infinity })
 for await (const line of lines) {
@@ -32,6 +34,26 @@ for await (const line of lines) {
 }
 
 async function receive(message: Record<string, unknown>) {
+  if (typeof message.id === "number" && pendingApprovals.has(message.id) && "result" in message) {
+    const pending = pendingApprovals.get(message.id)!
+    pendingApprovals.delete(message.id)
+    const decision = record(message.result).decision
+    notify("item/completed", {
+      threadId: pending.threadId,
+      turnId: pending.turnId,
+      item: {
+        type: "commandExecution",
+        id: "command-approved",
+        command: "pwd",
+        cwd: "/tmp/project",
+        status: decision === "accept" ? "completed" : "declined",
+        aggregatedOutput: decision === "accept" ? "/tmp/project\n" : "",
+        exitCode: decision === "accept" ? 0 : null,
+      },
+    })
+    notify("turn/completed", { threadId: pending.threadId, turn: turn(pending.turnId, "completed") })
+    return
+  }
   if (typeof message.id !== "number" || typeof message.method !== "string") return
   const id = message.id
   const method = message.method
@@ -47,6 +69,10 @@ async function receive(message: Record<string, unknown>) {
     return
   }
   if (method === "account/read") {
+    if (process.env.FAKE_ACCOUNT_TYPE === "signedOut") {
+      respond(id, { requiresOpenaiAuth: true, account: null })
+      return
+    }
     const apiKeyAccount = process.env.FAKE_ACCOUNT_TYPE === "apiKey" || Boolean(process.env.OPENAI_API_KEY)
     respond(id, {
       requiresOpenaiAuth: true,
@@ -100,6 +126,53 @@ async function receive(message: Record<string, unknown>) {
     if (input.text === "wait") {
       pendingTurns.set(turnId, { threadId, turnId })
       return
+    }
+    if (input.text === "approval") {
+      const requestId = ++serverRequestCount
+      notify("item/started", {
+        threadId,
+        turnId,
+        item: {
+          type: "commandExecution",
+          id: "command-approved",
+          command: "pwd",
+          cwd: "/tmp/project",
+          status: "inProgress",
+        },
+      })
+      pendingApprovals.set(requestId, { threadId, turnId })
+      write({
+        method: "item/commandExecution/requestApproval",
+        id: requestId,
+        params: { threadId, turnId, itemId: "command-approved", command: "pwd", cwd: "/tmp/project" },
+      })
+      return
+    }
+    if (input.text === "tools") {
+      notify("item/started", {
+        threadId,
+        turnId,
+        item: {
+          type: "commandExecution",
+          id: "command-1",
+          command: "pwd",
+          cwd: "/tmp/project",
+          status: "inProgress",
+        },
+      })
+      notify("item/completed", {
+        threadId,
+        turnId,
+        item: {
+          type: "commandExecution",
+          id: "command-1",
+          command: "pwd",
+          cwd: "/tmp/project",
+          status: "completed",
+          aggregatedOutput: "/tmp/project\n",
+          exitCode: 0,
+        },
+      })
     }
     notify("item/agentMessage/delta", { threadId, turnId, itemId: "message-1", delta: "hello " })
     notify("item/agentMessage/delta", { threadId, turnId, itemId: "message-1", delta: "world" })

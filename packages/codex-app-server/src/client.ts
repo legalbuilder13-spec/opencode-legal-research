@@ -1,4 +1,5 @@
 import { redact, redactText } from "./redact"
+import { existsSync } from "node:fs"
 
 export interface TranscriptEntry {
   direction: "client" | "server"
@@ -15,6 +16,13 @@ export interface ConnectOptions {
   requireSubscription?: boolean
   onTranscript?: (entry: TranscriptEntry) => void
   onStderr?: (text: string) => void
+  onServerRequest?: (request: ServerRequest) => Promise<unknown>
+}
+
+export interface ServerRequest {
+  id: number
+  method: string
+  params: unknown
 }
 
 export interface AccountState {
@@ -52,6 +60,12 @@ export interface TurnResult extends TurnHandle {
   text: string
 }
 
+export interface TurnNotification {
+  sequence: number
+  method: string
+  params: unknown
+}
+
 export interface RateLimitWindow {
   usedPercent: number
   windowDurationMins: number | null
@@ -65,11 +79,7 @@ export interface RateLimitState {
   reachedType: string | null
 }
 
-interface Notification {
-  sequence: number
-  method: string
-  params: unknown
-}
+type Notification = TurnNotification
 
 interface PendingRequest {
   resolve: (value: unknown) => void
@@ -218,14 +228,26 @@ export class Client {
     }
   }
 
-  async startThread(input: { cwd: string; model?: string; ephemeral?: boolean }): Promise<ThreadHandle> {
+  async startThread(input: {
+    cwd: string
+    model?: string
+    ephemeral?: boolean
+    approvalPolicy?: "untrusted" | "on-request" | "never"
+    sandbox?: "read-only" | "workspace-write" | "danger-full-access"
+    baseInstructions?: string
+    developerInstructions?: string
+    serviceName?: string
+  }): Promise<ThreadHandle> {
     const response = requireRecord(
       await this.request("thread/start", {
         cwd: input.cwd,
         model: input.model,
         ephemeral: input.ephemeral ?? false,
-        approvalPolicy: "never",
-        sandbox: "read-only",
+        approvalPolicy: input.approvalPolicy ?? "never",
+        sandbox: input.sandbox ?? "read-only",
+        baseInstructions: input.baseInstructions,
+        developerInstructions: input.developerInstructions,
+        serviceName: input.serviceName,
       }),
       "thread/start response",
     )
@@ -253,18 +275,9 @@ export class Client {
   }
 
   async collectTurn(handle: TurnHandle): Promise<TurnResult> {
-    const deadline = Date.now() + this.options.notificationTimeoutMs
     const chunks: string[] = []
-    let cursor = handle.cursor
 
-    while (true) {
-      const notification = await this.waitForNotification(
-        "*",
-        cursor,
-        (params, method) => matchesTurn(method, params, handle),
-        Math.max(deadline - Date.now(), 1),
-      )
-      cursor = notification.sequence
+    for await (const notification of this.streamTurn(handle)) {
       if (notification.method === "item/agentMessage/delta") {
         const params = requireRecord(notification.params, "agent message delta")
         chunks.push(requireString(params.delta, "agent message delta text"))
@@ -278,6 +291,25 @@ export class Client {
         status: requireTurnStatus(turn.status),
         text: chunks.join(""),
       }
+    }
+
+    throw new Error("Codex app-server turn stream ended without completion")
+  }
+
+  async *streamTurn(handle: TurnHandle): AsyncGenerator<TurnNotification> {
+    const deadline = Date.now() + this.options.notificationTimeoutMs
+    let cursor = handle.cursor
+
+    while (true) {
+      const notification = await this.waitForNotification(
+        "*",
+        cursor,
+        (params, method) => matchesTurn(method, params, handle),
+        Math.max(deadline - Date.now(), 1),
+      )
+      cursor = notification.sequence
+      yield notification
+      if (notification.method === "turn/completed") return
     }
   }
 
@@ -416,7 +448,20 @@ export class Client {
 
     if (typeof value.method !== "string") throw new Error("Invalid app-server message")
     if (typeof value.id === "number") {
-      this.send({ id: value.id, error: { code: -32601, message: `Unsupported server request: ${value.method}` } })
+      const request = { id: value.id, method: value.method, params: value.params } satisfies ServerRequest
+      const handler = this.options.onServerRequest
+      if (!handler) {
+        this.send({ id: value.id, error: { code: -32601, message: `Unsupported server request: ${value.method}` } })
+        return
+      }
+      void handler(request).then(
+        (result) => this.send({ id: value.id, result }),
+        (cause) =>
+          this.send({
+            id: value.id,
+            error: { code: -32000, message: cause instanceof Error ? cause.message : String(cause) },
+          }),
+      )
       return
     }
 
@@ -467,7 +512,7 @@ export async function connect(options: ConnectOptions = {}) {
     ),
   )
   if (options.requireSubscription !== false) delete env.OPENAI_API_KEY
-  const command = options.command ?? [process.env.CODEX_APP_SERVER_BIN ?? "codex", "app-server", "--listen", "stdio://"]
+  const command = options.command ?? [resolveCodexBinary(), "app-server", "--listen", "stdio://"]
   const processHandle = Bun.spawn(command, {
     cwd: options.cwd,
     env,
@@ -485,7 +530,10 @@ export async function connect(options: ConnectOptions = {}) {
     .then(async () => {
       if (options.requireSubscription === false) return client
       const state = await client.account()
-      if (state.account && state.account.type !== "chatgpt") {
+      if (!state.account) {
+        throw new Error("ChatGPT subscription sign-in is required in Codex app-server")
+      }
+      if (state.account.type !== "chatgpt") {
         throw new Error(`Subscription mode requires ChatGPT account auth; received ${state.account.type}`)
       }
       return client
@@ -496,13 +544,26 @@ export async function connect(options: ConnectOptions = {}) {
     })
 }
 
+function resolveCodexBinary() {
+  if (process.env.CODEX_APP_SERVER_BIN) return process.env.CODEX_APP_SERVER_BIN
+  const fromPath = Bun.which("codex")
+  if (fromPath) return fromPath
+  if (process.platform === "darwin") {
+    const applications = [
+      "/Applications/ChatGPT.app/Contents/Resources/codex",
+      "/Applications/Codex.app/Contents/Resources/codex",
+    ]
+    const installed = applications.find(existsSync)
+    if (installed) return installed
+  }
+  return "codex"
+}
+
 function matchesTurn(method: string, params: unknown, handle: TurnHandle) {
-  if (method !== "item/agentMessage/delta" && method !== "turn/completed") return false
   const value = optionalRecord(params)
   if (!value || value.threadId !== handle.threadId) return false
-  if (method === "item/agentMessage/delta") return value.turnId === handle.turnId
-  const turn = optionalRecord(value.turn)
-  return turn?.id === handle.turnId
+  if (method === "turn/completed") return optionalRecord(value.turn)?.id === handle.turnId
+  return value.turnId === handle.turnId
 }
 
 function parseRateLimitWindow(value: unknown, name: string): RateLimitWindow | null {

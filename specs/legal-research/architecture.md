@@ -8,12 +8,12 @@ Local development branch: `legal-research`
 
 Build the legal product as an evidence system around OpenCode, not as a legal system prompt layered on top of a coding agent.
 
-The fork should have two model backends:
+The fork has one ChatGPT-subscription boundary plus explicit non-subscription providers:
 
-1. **ChatGPT subscription (candidate default):** evaluate the documented Codex app-server over local stdio. Let Codex own ChatGPT login, refresh, plan limits, and streamed model events. App-server is the documented embedding interface, but the current official documentation also carries an experimental/unsupported-for-production maturity warning; the subscription spike and ADR must determine whether it is acceptable as the production default.
-2. **OpenCode's existing OpenAI OAuth provider (compatibility/experimental):** retain the current `ChatGPT Pro/Plus` browser and device flows, but do not make them the durability boundary. They currently call a private ChatGPT Codex backend directly and therefore have more change and policy risk than the documented app-server protocol.
+1. **ChatGPT subscription (default):** the documented Codex app-server runs over local stdio and owns ChatGPT login, refresh, plan limits, and streamed model events for ordinary OpenCode chat and legal-workbench synthesis.
+2. **OpenAI API key (explicit alternative):** OpenCode's ordinary API-key provider path remains available for users who deliberately choose usage-based API billing. It is never an automatic fallback from subscription mode.
 
-API-key providers remain optional fallbacks and must not be required for the default product. The ChatGPT subscription covers model use only. CourtListener, Midpage, or other content services can still require their own accounts, licenses, or usage plans. Embeddings, OCR, parsing, and reranking should run locally by default so they do not create a hidden OpenAI API-key dependency.
+Other API-key providers remain optional alternatives and must not be required for the default product. The ChatGPT subscription covers model use only. CourtListener, Midpage, or other content services can still require their own accounts, licenses, or usage plans. Embeddings, OCR, parsing, and reranking run locally by default so they do not create a hidden OpenAI API-key dependency.
 
 ## Evidence invariants
 
@@ -70,22 +70,23 @@ The boundary called `Source materializer` is critical. No web-search result, MCP
 
 ### Current state
 
-OpenCode already exposes these provider choices:
+OpenCode exposes these provider choices:
 
-- `ChatGPT Pro/Plus (browser)`
-- `ChatGPT Pro/Plus (headless)`
+- `ChatGPT subscription (Codex app-server)`
+- `ChatGPT subscription (device code)`
 - `Manually enter API Key`
 
-That is sufficient for an early local spike. It is not the recommended long-term contract because its implementation rewrites requests to `https://chatgpt.com/backend-api/codex/responses`, a private endpoint rather than the documented app-server integration interface.
+Both subscription choices delegate login and credential refresh to Codex app-server. The former direct request rewrite to the private ChatGPT Codex backend has been removed from the subscription provider loader.
 
 ### Recommended adapter
 
-Add a `codex-app-server` execution adapter that:
+The `codex-app-server` execution adapter:
 
 - Starts `codex app-server` (the default `stdio://` transport) as a supervised local child process.
 - Generates and pins TypeScript protocol bindings from the installed Codex version.
-- Maps OpenCode sessions to Codex threads and OpenCode turns to Codex turns.
+- Creates an ephemeral Codex thread per OpenCode inference and lowers the persisted OpenCode conversation into it, avoiding duplicate durable conversation state.
 - Streams `item/agentMessage/delta`, tool lifecycle, approval, and completion events into OpenCode's session model.
+- Runs ordinary sessions in the Codex workspace-write sandbox and routes command/file approval requests through OpenCode's existing permission rules; unsupported requests fail closed.
 - Uses the app-server `account/read`, `account/login/start`, `account/login/completed`, `account/logout`, and `account/rateLimits/read` surfaces for sign-in and usage UI.
 - Starts with the non-experimental app-server API surface. Dynamic tools are experimental, so the first implementation should expose legal tools to Codex through configured local MCP servers or keep tool orchestration in OpenCode and use the existing OAuth provider for that slice.
 - Records the Codex version and generated protocol version and fails clearly on incompatible changes.
@@ -94,10 +95,9 @@ The adapter is accepted only when a clean machine can sign in with ChatGPT, run 
 
 ### Authentication risk posture
 
-Use three labels in settings:
+Use two categories in settings:
 
 - `ChatGPT subscription — Codex app-server` (recommended)
-- `ChatGPT subscription — OpenCode OAuth` (experimental compatibility)
 - `OpenAI API key` (usage-based fallback)
 
 Do not imply that a personal ChatGPT plan supplies general OpenAI API credits. It does not. Also warn before sending privileged or confidential matter content to a personal ChatGPT workspace; the applicable controls follow the selected ChatGPT workspace and plan.
