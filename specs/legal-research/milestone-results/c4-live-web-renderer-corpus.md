@@ -1,6 +1,6 @@
 # Milestone C4: candidate live-web renderer/OCR corpus
 
-Status: local macOS arm64 candidate corpus passed; reviewer adjudication and supported-platform runs pending
+Status: macOS arm64 candidate revalidated; reviewer adjudication and other supported-platform runs pending
 
 Date: 2026-08-24
 
@@ -24,4 +24,4 @@ All three final hosts and HTML assertions passed. The Cornell page attempted adv
 
 ## Remaining gate
 
-This result is evidence about three live pages, not attorney or security approval. Reviewers still need to adjudicate the source/access choices, expected passages, structural/visual agreement, cookie/banner and blocked-subresource behavior, long-page fidelity, acceptable OCR thresholds, and drift policy. The corpus must expand to redirects, adverse failures, multiple legal publishers/courts, and supported operating systems before ING-04 can pass fully.
+The same three sources passed again on macOS arm64 on 2026-08-25. ADR 0026 adds a manual macOS/Windows/Linux workflow that preserves per-platform receipts for review. This result remains evidence about three live pages, not attorney or security approval. Reviewers still need to adjudicate the source/access choices, expected passages, structural/visual agreement, cookie/banner and blocked-subresource behavior, long-page fidelity, acceptable OCR thresholds, and drift policy. The corpus must expand to redirects, adverse failures, multiple legal publishers/courts, and supported operating systems before ING-04 can pass fully.
