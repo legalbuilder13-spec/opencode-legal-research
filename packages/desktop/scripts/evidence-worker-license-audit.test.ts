@@ -22,7 +22,7 @@ describe("packaged evidence-worker license audit", () => {
     const lock = await Bun.file(join(workerRoot, "uv.lock")).text()
 
     expect(project).toContain('url = "https://download.pytorch.org/whl/cpu"')
-    expect(project).toContain('explicit = true')
+    expect(project).toContain("explicit = true")
     expect(lock).toContain('source = { registry = "https://download.pytorch.org/whl/cpu" }')
     for (const name of ["cuda-bindings", "cuda-toolkit", "triton", "nvidia-cudnn-cu13"])
       expect(lock).not.toContain(`name = "${name}"`)
@@ -30,9 +30,7 @@ describe("packaged evidence-worker license audit", () => {
 
   test("recognizes managed CPython license layouts on every packaged platform", () => {
     expect(isManagedPythonLicensePath("cpython-3.14.2-macos-aarch64-none/lib/python3.14/LICENSE.txt")).toBe(true)
-    expect(isManagedPythonLicensePath("cpython-3.14.2-linux-x86_64-gnu/install/lib/python3.14/LICENSE.txt")).toBe(
-      true,
-    )
+    expect(isManagedPythonLicensePath("cpython-3.14.2-linux-x86_64-gnu/install/lib/python3.14/LICENSE.txt")).toBe(true)
     expect(isManagedPythonLicensePath("cpython-3.14.2-windows-x86_64-none/install/LICENSE.txt")).toBe(true)
     expect(isManagedPythonLicensePath("cpython-3.14.2-windows-x86_64-none\\LICENSE")).toBe(true)
     expect(isManagedPythonLicensePath("cpython/lib/python3.14/site-packages/demo/LICENSE.txt")).toBe(false)
@@ -48,6 +46,26 @@ describe("packaged evidence-worker license audit", () => {
     await expect(verifyEvidenceWorkerLicenseReceipt(root, { requireApproved: true })).rejects.toThrow(
       "require counsel approval",
     )
+  })
+
+  test("requires complete checked-in review evidence before release approval", async () => {
+    const root = await fixture()
+    const path = join(root, "packaged-model-policy.json")
+    const policy = await Bun.file(path).json()
+    await Bun.write(path, `${JSON.stringify({ ...policy, reviewStatus: "approved" })}\n`)
+    await expect(auditEvidenceWorkerLicenses(root, { requireApproved: true })).rejects.toThrow("reviewedBy")
+
+    await Bun.write(
+      path,
+      `${JSON.stringify({
+        ...policy,
+        reviewStatus: "approved",
+        reviewedBy: "Example Counsel",
+        reviewedAt: "2026-08-25T00:00:00Z",
+        reviewRecord: "legal-review:example",
+      })}\n`,
+    )
+    expect((await auditEvidenceWorkerLicenses(root, { requireApproved: true })).reviewStatus).toBe("approved")
   })
 
   test("rejects a changed packaged model artifact", async () => {
@@ -101,6 +119,9 @@ async function fixture() {
       {
         contractVersion: 1,
         reviewStatus: "pending-counsel-review",
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewRecord: null,
         models: [
           {
             id: "example",

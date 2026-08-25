@@ -25,9 +25,10 @@ The SPDX `comment` preserves the source commit and license-policy state. Non-nor
 - That complete document passed the canonical SPDX 2.3 JSON schema with zero validation errors.
 - The existing signed Electron release path now requests GitHub's required OIDC and attestation permissions, generates the SBOM after packaging and signature verification, and uses the same subject checksum file for build-provenance and SBOM attestations.
 - The attestation action is pinned to commit `1e69f48acb82d1966a394da916b4c1698aa569d6` (`v4.2.2`), rather than a mutable version tag.
+- GitHub Actions run 32807494360 passed the new SBOM tests together with all legal TypeScript, packaged worker/OCR, dependency, and full-history secret gates.
 
 ## Remaining release gate
 
-This ADR does not claim a signed LegalBuilder release exists. The inherited publish workflow is still restricted to the upstream repository and depends on upstream signing/release credentials. Create or enable a fork-owned release path only after LegalBuilder controls the Apple, Windows, and any applicable Linux signing identities, counsel changes both receipt policies to `approved`, and the release environment is protected. Then run the workflow against the final signed/notarized installers, download those exact bytes, and independently verify both attestations and platform signatures before publishing them.
+This ADR does not claim a signed LegalBuilder release exists. ADR 0025 adds a separate protected, fork-owned release-candidate path because the inherited publisher remains restricted to the upstream repository. Its checked-in policies intentionally block execution until LegalBuilder controls the Apple, Windows, and any applicable Linux signing identities, counsel changes both receipt policies to `approved` with complete review evidence, and the release environment is protected. Then run the workflow against the final signed/notarized installers, download those exact bytes, and independently verify both attestations and platform signatures before publishing them.
 
 Broader upstream-monorepo vulnerability findings still need a reviewed reachability/remediation disposition if those components are deployed beyond the audited legal desktop closure.

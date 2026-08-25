@@ -10,7 +10,7 @@ Generate two deterministic third-party receipts during every desktop build. `THI
 
 Missing declarations, missing declared license files, unexpected model revisions, altered OCR weights, stale exceptions, absent receipts, and receipt/manifest hash mismatches fail the build or installed-resource gate. Model revisions and RapidOCR file hashes are repository-reviewed policy, so a mutable upstream default cannot silently enter an installation.
 
-The receipts deliberately state `pending-counsel-review`. A `--require-approved` mode blocks release until that state is changed through review. Automated metadata collection is evidence for counsel; it is not a legal conclusion about compatibility, attribution, training-data rights, patents, trademarks, or commercial redistribution.
+The receipts deliberately state `pending-counsel-review`. Checked-in desktop and worker/model policy records own that state. An approval is invalid unless it also records a reviewer, ISO review time, and durable review-record reference. A `--require-approved` mode blocks release until those records are complete. Automated metadata collection is evidence for counsel; it is not a legal conclusion about compatibility, attribution, training-data rights, patents, trademarks, or commercial redistribution.
 
 ## Current evidence
 

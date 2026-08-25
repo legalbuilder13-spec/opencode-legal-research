@@ -1,0 +1,242 @@
+name: legal release candidate
+run-name: legal release candidate ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact semantic version for the candidate
+        required: true
+        type: string
+      confirmation:
+        description: Type release-candidate to confirm the protected build
+        required: true
+        type: string
+
+concurrency:
+  group: legal-release-candidate-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  policy:
+    name: release policy gate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Require the fork, protected enablement, and an exact version
+        shell: bash
+        env:
+          LEGAL_RELEASE_ENABLED: ${{ vars.LEGAL_RELEASE_ENABLED }}
+          RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          test "$GITHUB_REPOSITORY" = "legalbuilder13-spec/opencode-legal-research"
+          [[ "$GITHUB_REF" == "refs/heads/legal-research" || "$GITHUB_REF" == refs/tags/legal-v* ]]
+          test "$LEGAL_RELEASE_ENABLED" = "true"
+          test "$RELEASE_CONFIRMATION" = "release-candidate"
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]
+
+      - name: Require complete checked-in counsel approvals
+        working-directory: packages/desktop
+        run: bun ./scripts/legal-release-policy.ts
+
+  build:
+    name: ${{ matrix.name }} protected candidate
+    needs: policy
+    environment: legal-production
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+            platform_flag: --mac --arm64
+            resources_path: dist/mac-arm64/OpenCode.app/Contents/Resources
+          - name: Windows x64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            platform_flag: --win --x64
+            resources_path: dist/win-unpacked/resources
+          - name: Linux x64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            platform_flag: --linux --x64
+            resources_path: dist/linux-unpacked/resources
+    runs-on: ${{ matrix.runner }}
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TRUSTED_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
+      AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE: ${{ secrets.AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE }}
+      AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Import Apple signing certificate
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93 # v2.0.0
+        with:
+          keychain: build
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Install Apple notarization key
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/legalbuilder-apple-api-key.p8"
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Setup pinned uv builder
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: 0.11.13
+          enable-cache: false
+
+      - name: Azure login for Windows signing
+        if: runner.os == 'Windows'
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rpm
+
+      - name: Prepare versioned desktop
+        working-directory: packages/desktop
+        env:
+          OPENCODE_VERSION: ${{ inputs.version }}
+          OPENCODE_CHANNEL: prod
+          RUST_TARGET: ${{ matrix.target }}
+        run: bun ./scripts/prepare.ts
+
+      - name: Build desktop with packaged offline evidence worker
+        working-directory: packages/desktop
+        timeout-minutes: 60
+        env:
+          LEGAL_BUNDLE_EVIDENCE_WORKER: 1
+          NODE_OPTIONS: --max-old-space-size=4096
+          OPENCODE_VERSION: ${{ inputs.version }}
+          OPENCODE_CHANNEL: prod
+          RUST_TARGET: ${{ matrix.target }}
+          UV: uv
+        run: bun run build
+
+      - name: Package signed or platform-native candidate
+        working-directory: packages/desktop
+        timeout-minutes: 60
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ runner.temp }}/legalbuilder-apple-api-key.p8
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          CSC_KEYCHAIN: build.keychain
+          OPENCODE_CHANNEL: prod
+        run: bun x electron-builder ${{ matrix.platform_flag }} --publish never --config electron-builder.config.ts
+
+      - name: Resolve macOS application resources path
+        if: runner.os == 'macOS'
+        id: mac-app
+        working-directory: packages/desktop
+        shell: bash
+        run: |
+          app_path=$(find dist/mac-arm64 -maxdepth 1 -name '*.app' -type d -print -quit)
+          test -n "$app_path"
+          echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
+          echo "resources_path=$app_path/Contents/Resources" >> "$GITHUB_OUTPUT"
+
+      - name: Verify unpacked installed legal resources and offline OCR
+        working-directory: packages/desktop
+        timeout-minutes: 15
+        env:
+          INSTALLED_RESOURCES: ${{ runner.os == 'macOS' && steps.mac-app.outputs.resources_path || matrix.resources_path }}
+        run: bun ./scripts/verify-legal-installation.ts "$INSTALLED_RESOURCES" ../legal-evidence-worker/fixtures/generated/scan_page_1.png
+
+      - name: Verify Apple signature and notarization ticket
+        if: runner.os == 'macOS'
+        working-directory: packages/desktop
+        shell: bash
+        env:
+          APP_PATH: ${{ steps.mac-app.outputs.app_path }}
+        run: |
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          spctl --assess --type execute --verbose=2 "$APP_PATH"
+          for artifact in dist/*.dmg; do xcrun stapler validate "$artifact"; done
+
+      - name: Verify Windows Authenticode signatures
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $files = @()
+          $files += Get-ChildItem "${{ github.workspace }}\packages\desktop\dist\*.exe" | Select-Object -ExpandProperty FullName
+          $files += Get-ChildItem "${{ github.workspace }}\packages\desktop\dist\*unpacked\*.exe" | Select-Object -ExpandProperty FullName
+          foreach ($file in $files | Select-Object -Unique) {
+            $signature = Get-AuthenticodeSignature $file
+            if ($signature.Status -ne "Valid") { throw "Invalid signature for ${file}: $($signature.Status)" }
+          }
+
+      - name: Generate approved release SPDX SBOM and subject checksums
+        working-directory: packages/desktop
+        run: >-
+          bun ./scripts/legal-release-sbom.ts
+          --dist=dist
+          --desktop-receipt=resources/THIRD_PARTY_LICENSES.desktop.json
+          --worker-root=resources/legal-evidence-worker
+          --output=dist/legal-release.spdx.json
+          --checksums=dist/legal-release.subjects.sha256
+          --repository=${{ github.server_url }}/${{ github.repository }}
+          --commit=${{ github.sha }}
+          --require-approved
+
+      - name: Attest release-candidate build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: packages/desktop/dist/legal-release.subjects.sha256
+
+      - name: Attest release-candidate SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: packages/desktop/dist/legal-release.subjects.sha256
+          sbom-path: packages/desktop/dist/legal-release.spdx.json
+
+      - name: Upload candidate artifacts for independent verification
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: legal-release-${{ matrix.target }}-${{ inputs.version }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            packages/desktop/dist/*.AppImage
+            packages/desktop/dist/*.deb
+            packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/*.rpm
+            packages/desktop/dist/*.tar.gz
+            packages/desktop/dist/*.zip
+            packages/desktop/dist/legal-release.spdx.json
+            packages/desktop/dist/legal-release.subjects.sha256

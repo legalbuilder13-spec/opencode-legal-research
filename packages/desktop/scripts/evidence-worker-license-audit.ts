@@ -21,11 +21,41 @@ type RapidOcrPolicy = ModelPolicy & {
   files: Record<string, string>
 }
 
-type LicensePolicy = {
+export type EvidenceWorkerLicensePolicy = {
   contractVersion: number
   reviewStatus: "pending-counsel-review" | "approved"
+  reviewedBy: string | null
+  reviewedAt: string | null
+  reviewRecord: string | null
   models: ModelPolicy[]
   rapidOcr: RapidOcrPolicy
+}
+
+export function validateEvidenceWorkerLicensePolicy(
+  policy: EvidenceWorkerLicensePolicy,
+  options: { requireApproved?: boolean } = {},
+) {
+  assert(policy.contractVersion === 1, "Unsupported packaged model policy contract")
+  assert(
+    policy.reviewStatus === "pending-counsel-review" || policy.reviewStatus === "approved",
+    "Invalid license review status",
+  )
+  if (policy.reviewStatus === "approved") {
+    assert(policy.reviewedBy?.trim(), "Approved worker license policy is missing reviewedBy")
+    assert(
+      policy.reviewedAt && validReviewTime(policy.reviewedAt),
+      "Approved worker license policy is missing reviewedAt",
+    )
+    assert(policy.reviewRecord?.trim(), "Approved worker license policy is missing reviewRecord")
+  } else {
+    assert(
+      policy.reviewedBy === null && policy.reviewedAt === null && policy.reviewRecord === null,
+      "Pending worker license policy cannot claim review metadata",
+    )
+  }
+  if (options.requireApproved)
+    assert(policy.reviewStatus === "approved", "Dependency and model licenses still require counsel approval")
+  return policy
 }
 
 export async function auditEvidenceWorkerLicenses(
@@ -33,14 +63,10 @@ export async function auditEvidenceWorkerLicenses(
   options: { write?: boolean; requireApproved?: boolean } = {},
 ) {
   const root = resolve(rootInput)
-  const policy = await readJson<LicensePolicy>(join(root, policyName))
-  assert(policy.contractVersion === 1, "Unsupported packaged model policy contract")
-  assert(
-    policy.reviewStatus === "pending-counsel-review" || policy.reviewStatus === "approved",
-    "Invalid license review status",
+  const policy = validateEvidenceWorkerLicensePolicy(
+    await readJson<EvidenceWorkerLicensePolicy>(join(root, policyName)),
+    options,
   )
-  if (options.requireApproved)
-    assert(policy.reviewStatus === "approved", "Dependency and model licenses still require counsel approval")
 
   const metadataFiles = (await listFiles(join(root, "python"))).filter((path) => {
     if (basename(path) !== "METADATA" || !basename(dirname(path)).endsWith(".dist-info")) return false
@@ -153,6 +179,10 @@ export async function auditEvidenceWorkerLicenses(
     contractVersion: 1,
     scope: "packaged-legal-evidence-worker",
     reviewStatus: policy.reviewStatus,
+    reviewEvidence:
+      policy.reviewStatus === "approved"
+        ? { reviewedBy: policy.reviewedBy, reviewedAt: policy.reviewedAt, reviewRecord: policy.reviewRecord }
+        : undefined,
     reviewMeaning:
       "Automated completeness and integrity receipt; license compatibility and release approval remain counsel decisions.",
     managedPython: {
@@ -236,6 +266,10 @@ function first(fields: Map<string, string[]>, name: string, required = true) {
   const value = fields.get(name)?.[0]?.trim() ?? ""
   if (required) assert(value, `Missing ${name} metadata field`)
   return value
+}
+
+function validReviewTime(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) && !Number.isNaN(Date.parse(value))
 }
 
 async function readJson<T>(path: string): Promise<T> {

@@ -1,6 +1,6 @@
 # Release gate matrix
 
-Date: 2026-08-24
+Date: 2026-08-25
 
 Legend: **Pass** means the stated automated or documented acceptance evidence exists for its stated fixture scope. **Partial** means a core control exists but the full product, corpus, live-service, or user-flow gate remains. **Open** means no qualifying acceptance evidence exists yet.
 
@@ -47,4 +47,4 @@ The fork is not ready to call the PRD complete or to market as a Harvey/Legora r
 2. run live CourtListener acquisition with an authorized token;
 3. assemble and attorney-adjudicate the full document/question/adversarial corpus and meet its thresholds;
 4. complete worker sandboxing, coverage-guided malformed-input fuzzing, security adjudication of the deterministic corpus, and organizational ChatGPT workspace policy;
-5. smoke-test signed desktop installers, renderer, and OCR worker on every supported platform; obtain counsel approval for the generated dependency/model receipts and two exact-version license overrides; complete reviewed localization; run the full Electron window-to-answer restart gate; and repeat vulnerability/provenance verification against the signed installer SBOM. The Bun workbench companion, Electron renderer, relocatable offline OCR resource, automated license inventories, source dependency audit gates, SPDX generator, and immutable GitHub attestation integration are now built and supervised. The SBOM/attestation path has not yet run against fork-signed production installers.
+5. smoke-test signed desktop installers, renderer, and OCR worker on every supported platform; obtain counsel approval for the generated dependency/model receipts and two exact-version license overrides; complete reviewed localization; run the full Electron window-to-answer restart gate; and repeat vulnerability/provenance verification against the signed installer SBOM. The Bun workbench companion, Electron renderer, relocatable offline OCR resource, automated license inventories, source dependency audit gates, SPDX generator, immutable GitHub attestation integration, checked-in approval records, and protected fork-owned candidate workflow are now built and supervised. The candidate workflow intentionally remains blocked and the SBOM/attestation path has not yet run against fork-signed production installers.

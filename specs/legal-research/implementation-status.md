@@ -1,6 +1,6 @@
 # Legal research implementation status
 
-Last updated: 2026-08-24
+Last updated: 2026-08-25
 
 | Workstream                                        | Status                                                       | Evidence                                                                                                         |
 | ------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
@@ -29,10 +29,11 @@ Last updated: 2026-08-24
 | Worker memory/process containment                 | macOS packaged process and Linux memory/process gates passed | [`milestone-results/c5-worker-resource-containment.md`](./milestone-results/c5-worker-resource-containment.md)   |
 | Primary OpenCode shell route                      | Alpha route implemented                                      | [`adr/0010-primary-shell-route.md`](./adr/0010-primary-shell-route.md)                                           |
 | Unpacked desktop/worker installation              | Linux x64, macOS arm64, and Windows x64 passed               | [`milestone-results/c6-cross-platform-installations.md`](./milestone-results/c6-cross-platform-installations.md) |
-| Signed/notarized installer packaging              | Pending fork-owned credentials                               | [`adr/0020-installed-legal-resource-gates.md`](./adr/0020-installed-legal-resource-gates.md)                     |
+| Signed/notarized installer packaging              | Protected fork workflow built; approvals/credentials pending | [`milestone-results/c11-protected-release-candidates.md`](./milestone-results/c11-protected-release-candidates.md) |
 | Dependency/model license inventory                | Automated receipts passed; counsel approval pending          | [`milestone-results/c7-license-inventory.md`](./milestone-results/c7-license-inventory.md)                       |
 | Dependency vulnerability and secret scanning      | Hosted dependency and full-history secret gates passed       | [`milestone-results/c9-supply-chain-security.md`](./milestone-results/c9-supply-chain-security.md)               |
 | Release SBOM and build provenance                  | Format/integration passed; signed fork run pending            | [`milestone-results/c10-release-sbom-attestations.md`](./milestone-results/c10-release-sbom-attestations.md)     |
+| Fork-owned protected release candidates            | Fail-closed workflow built; first run pending                 | [`adr/0025-protected-fork-release-candidates.md`](./adr/0025-protected-fork-release-candidates.md)               |
 | Evaluation corpus schema and validator            | 0.2 synthetic executable scaffold passed                     | [`corpus/v0/README.md`](./corpus/v0/README.md)                                                                   |
 | Attorney-reviewed release corpus                  | Pending external review                                      | Evaluation plan                                                                                                  |
 | P0 release gate audit                             | Published                                                    | [`release-gates.md`](./release-gates.md)                                                                         |

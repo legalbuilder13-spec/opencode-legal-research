@@ -25,13 +25,41 @@ type LicenseOverrides = {
   overrides: Record<string, { license: string[]; evidence: string; note: string }>
 }
 
+type LicensePolicy = {
+  contractVersion: 1
+  reviewStatus: "pending-counsel-review" | "approved"
+  reviewedBy: string | null
+  reviewedAt: string | null
+  reviewRecord: string | null
+}
+
 export async function auditDesktopLicenses(
   repositoryInput: string,
-  options: { writeTo?: string; requireApproved?: boolean; reviewStatus?: "pending-counsel-review" | "approved" } = {},
+  options: { writeTo?: string; requireApproved?: boolean } = {},
 ) {
   const repository = resolve(repositoryInput)
-  const reviewStatus = options.reviewStatus ?? "pending-counsel-review"
-  if (options.requireApproved && reviewStatus !== "approved")
+  const policy = await readJson<LicensePolicy>(
+    join(repository, "packages", "desktop", "dependency-license-policy.json"),
+  )
+  assert(policy.contractVersion === 1, "Unsupported desktop license policy contract")
+  assert(
+    policy.reviewStatus === "pending-counsel-review" || policy.reviewStatus === "approved",
+    "Invalid desktop license review status",
+  )
+  if (policy.reviewStatus === "approved") {
+    assert(policy.reviewedBy?.trim(), "Approved desktop license policy is missing reviewedBy")
+    assert(
+      policy.reviewedAt && validReviewTime(policy.reviewedAt),
+      "Approved desktop license policy is missing reviewedAt",
+    )
+    assert(policy.reviewRecord?.trim(), "Approved desktop license policy is missing reviewRecord")
+  } else {
+    assert(
+      policy.reviewedBy === null && policy.reviewedAt === null && policy.reviewRecord === null,
+      "Pending desktop license policy cannot claim review metadata",
+    )
+  }
+  if (options.requireApproved && policy.reviewStatus !== "approved")
     throw new Error("Desktop dependency licenses still require counsel approval")
   const overrides = await readJson<LicenseOverrides>(
     join(repository, "packages", "desktop", "dependency-license-overrides.json"),
@@ -128,7 +156,11 @@ export async function auditDesktopLicenses(
   const report = {
     contractVersion: 1,
     scope: "desktop-build-and-runtime-dependency-closure",
-    reviewStatus,
+    reviewStatus: policy.reviewStatus,
+    reviewEvidence:
+      policy.reviewStatus === "approved"
+        ? { reviewedBy: policy.reviewedBy, reviewedAt: policy.reviewedAt, reviewRecord: policy.reviewRecord }
+        : undefined,
     reviewMeaning:
       "Conservative automated dependency inventory. Build-only packages may be included; counsel must approve compatibility and notice obligations before release.",
     roots: [
@@ -148,8 +180,12 @@ export async function auditDesktopLicenses(
   return report
 }
 
-export async function verifyDesktopLicenseReceipt(repository: string, receiptPath: string) {
-  const expected = await auditDesktopLicenses(repository)
+export async function verifyDesktopLicenseReceipt(
+  repository: string,
+  receiptPath: string,
+  options: { requireApproved?: boolean } = {},
+) {
+  const expected = await auditDesktopLicenses(repository, options)
   const actual = await readJson<unknown>(receiptPath)
   assert(
     JSON.stringify(actual) === JSON.stringify(expected),
@@ -207,6 +243,10 @@ function licenseDeclaration(manifest: PackageJson) {
 
 function repositoryUrl(value: PackageJson["repository"]) {
   return typeof value === "string" ? value : value?.url
+}
+
+function validReviewTime(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) && !Number.isNaN(Date.parse(value))
 }
 
 async function readJson<T>(path: string): Promise<T> {

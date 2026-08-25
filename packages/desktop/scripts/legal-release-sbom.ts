@@ -361,8 +361,10 @@ if (import.meta.main) {
     )
 
   const [desktop, worker, subjects] = await Promise.all([
-    verifyDesktopLicenseReceipt(repositoryRoot, desktopReceiptPath),
-    verifyEvidenceWorkerLicenseReceipt(workerRoot),
+    verifyDesktopLicenseReceipt(repositoryRoot, desktopReceiptPath, {
+      requireApproved: Bun.argv.includes("--require-approved"),
+    }),
+    verifyEvidenceWorkerLicenseReceipt(workerRoot, { requireApproved: Bun.argv.includes("--require-approved") }),
     Promise.all(
       subjectPaths.map(async (path) => {
         assert(await Bun.file(path).exists(), `Release subject is missing: ${path}`)

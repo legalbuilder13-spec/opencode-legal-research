@@ -26,6 +26,35 @@ describe("desktop dependency license audit", () => {
     const root = await fixture(false)
     await expect(auditDesktopLicenses(root)).rejects.toThrow("runtime-dependency@1.0.0 has no license declaration")
   })
+
+  test("blocks release use until a complete checked-in counsel record is approved", async () => {
+    const root = await fixture(true)
+    await expect(auditDesktopLicenses(root, { requireApproved: true })).rejects.toThrow("counsel approval")
+
+    await Bun.write(
+      join(root, "packages", "desktop", "dependency-license-policy.json"),
+      `${JSON.stringify({
+        contractVersion: 1,
+        reviewStatus: "approved",
+        reviewedBy: "Example Counsel",
+        reviewedAt: "August 25, 2026",
+        reviewRecord: "legal-review:example",
+      })}\n`,
+    )
+    await expect(auditDesktopLicenses(root, { requireApproved: true })).rejects.toThrow("reviewedAt")
+
+    await Bun.write(
+      join(root, "packages", "desktop", "dependency-license-policy.json"),
+      `${JSON.stringify({
+        contractVersion: 1,
+        reviewStatus: "approved",
+        reviewedBy: "Example Counsel",
+        reviewedAt: "2026-08-25T00:00:00Z",
+        reviewRecord: "legal-review:example",
+      })}\n`,
+    )
+    expect((await auditDesktopLicenses(root, { requireApproved: true })).reviewStatus).toBe("approved")
+  })
 })
 
 async function fixture(licensed: boolean) {
@@ -63,6 +92,10 @@ async function fixture(licensed: boolean) {
   })
   if (licensed) await Bun.write(join(modules, "runtime-dependency", "LICENSE"), "Runtime license")
   await Bun.write(join(desktop, "dependency-license-overrides.json"), '{"contractVersion":1,"overrides":{}}\n')
+  await Bun.write(
+    join(desktop, "dependency-license-policy.json"),
+    '{"contractVersion":1,"reviewStatus":"pending-counsel-review","reviewedBy":null,"reviewedAt":null,"reviewRecord":null}\n',
+  )
   return root
 }
 

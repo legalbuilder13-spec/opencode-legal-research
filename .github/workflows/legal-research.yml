@@ -6,6 +6,7 @@ on:
       - legal-research
     paths:
       - ".github/workflows/legal-research.yml"
+      - ".github/workflows/legal-release-candidate.yml"
       - "packages/codex-app-server/**"
       - "packages/app/src/app.tsx"
       - "packages/app/src/i18n/en.ts"
@@ -23,6 +24,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/legal-research.yml"
+      - ".github/workflows/legal-release-candidate.yml"
       - "packages/codex-app-server/**"
       - "packages/app/src/app.tsx"
       - "packages/app/src/i18n/en.ts"
@@ -115,6 +117,8 @@ jobs:
           ./src/main/legal-web-renderer-policy.test.ts
           ./src/main/legal-web-renderer-proxy.test.ts
           ./src/main/legal-web-renderer-server.test.ts
+          ./scripts/desktop-license-audit.test.ts
+          ./scripts/evidence-worker-license-audit.test.ts
           ./scripts/legal-release-sbom.test.ts
           ./electron-builder.config.test.ts
 

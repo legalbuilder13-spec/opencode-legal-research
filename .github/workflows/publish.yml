@@ -405,6 +405,7 @@ jobs:
           --created=${{ github.event.repository.updated_at }}
           --repository=${{ github.server_url }}/${{ github.repository }}
           --commit=${{ github.sha }}
+          --require-approved
 
       - name: Attest legal release build provenance
         if: needs.version.outputs.release
