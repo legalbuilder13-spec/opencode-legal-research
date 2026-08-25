@@ -115,6 +115,7 @@ jobs:
           ./src/main/legal-web-renderer-policy.test.ts
           ./src/main/legal-web-renderer-proxy.test.ts
           ./src/main/legal-web-renderer-server.test.ts
+          ./scripts/legal-release-sbom.test.ts
           ./electron-builder.config.test.ts
 
   evidence-worker:

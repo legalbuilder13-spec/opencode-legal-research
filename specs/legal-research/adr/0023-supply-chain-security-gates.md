@@ -1,6 +1,6 @@
 # ADR 0023: Fail legal-product builds on known vulnerabilities and committed secrets
 
-Status: Dependency gates accepted; first hosted secret scan pending
+Status: Hosted dependency and secret gates accepted
 
 Date: 2026-08-24
 
@@ -21,8 +21,8 @@ Advisory databases change after a commit is made, so a stored one-time report is
 - The local desktop production audit reports no high or critical findings after the three dependency corrections.
 - The worker's frozen 104-distribution production closure reports no known Python vulnerabilities.
 - The broader root-monorepo audit still reports high and critical findings in upstream services and development dependencies outside the scoped legal desktop audit. Those findings remain visible and cannot be described as remediated by this ADR.
-- The secret workflow is pinned by commit hash and checks full history; its first hosted result remains pending until this change runs in GitHub Actions.
+- The secret workflow is pinned by commit hash, checks full history, and passed in hosted GitHub Actions run 32762422977 together with both dependency gates.
 
 ## Remaining gate
 
-Confirm the hosted secret scan, keep both dependency scans green, produce a machine-readable SBOM from the actual signed installation, bind it to build provenance/attestation, and review every broader monorepo finding for reachability or remediation before any component beyond the audited legal desktop closure is deployed.
+Keep both dependency scans and the full-history secret scan green. ADR 0024 implements and schema-validates a machine-readable SBOM plus build-provenance/SBOM attestation path over exact release hashes. Execute that path against the actual signed fork installers once signing credentials exist, and review every broader monorepo finding for reachability or remediation before any component beyond the audited legal desktop closure is deployed.
