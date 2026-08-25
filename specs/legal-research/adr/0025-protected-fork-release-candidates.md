@@ -31,6 +31,6 @@ Every platform also starts the unpacked installed legal workbench and performs r
 
 ## Remaining release gate
 
-The current checked-in policy state is intentionally `pending-counsel-review`, `LEGAL_RELEASE_ENABLED` must remain unset/false, and no signing secrets are present in source. LegalBuilder must configure and protect the GitHub environment, obtain counsel approval and durable review records, provision Apple and Azure identities, decide whether/how Linux packages will be repository-signed, and run the first candidate.
+The current checked-in policy state is intentionally `pending-counsel-review`, `LEGAL_RELEASE_ENABLED` must remain unset/false, and no signing secrets are present in source. The workflow is currently on `legal-research`, while the fork's default branch is `dev`; GitHub will expose manual dispatch only after the complete reviewed change set reaches the default branch (or a separate reviewed decision changes that default). LegalBuilder must then configure and protect the GitHub environment, obtain counsel approval and durable review records, provision Apple and Azure identities, decide whether/how Linux packages will be repository-signed, and run the first candidate.
 
 After the workflow passes, independently download and verify every candidate, install it on clean supported systems, exercise the complete Electron window-to-answer-restart transaction, and inspect OS trust prompts and updater behavior. Only that later evidence can close the signed-installer gate.

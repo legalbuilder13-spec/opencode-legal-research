@@ -4,6 +4,12 @@ Status: setup instructions; do not enable until the listed approvals exist
 
 The `legal release candidate` workflow builds review artifacts. It does not publish a GitHub Release.
 
+## 0. Activate the workflow through normal branch review
+
+GitHub exposes a manually dispatched workflow only after its workflow file exists on the repository's default branch. As of 2026-08-25, this fork's default branch is `dev`, while the implementation is on `legal-research`.
+
+Merge the complete reviewed `legal-research` change set into `dev`, or deliberately change the repository's default branch through a separately reviewed repository-administration decision. Do not copy only the workflow file: it depends on the policy validators, worker packaging, installation verifier, and SBOM generator from the same commit history.
+
 ## 1. Record legal approval
 
 Counsel must review the generated desktop dependency receipt, Python dependencies, packaged model sources/terms, notice obligations, and the two exact-version dependency overrides. Store the signed or otherwise durable review record in the organization's approved system.
@@ -48,7 +54,7 @@ Use workload identity/federation and least-privilege roles. Do not add signing m
 
 Only after the policy commit and environment protections are merged, set the repository variable `LEGAL_RELEASE_ENABLED` to `true`.
 
-From GitHub Actions, choose `legal release candidate`, select `legal-research` or an approved `legal-v*` tag, enter the exact version, and type `release-candidate`. Approve the protected environment only after checking the source commit and policy records.
+After Section 0 is complete, choose `legal release candidate` in GitHub Actions, select `legal-research` or an approved `legal-v*` tag, enter the exact version, and type `release-candidate`. Approve the protected environment only after checking the source commit and policy records.
 
 The run should produce separate 14-day artifacts for macOS arm64, Windows x64, and Linux x64. It should not create a release or change a tag.
 

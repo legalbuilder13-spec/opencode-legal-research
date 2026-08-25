@@ -12,4 +12,4 @@ The protected matrix defines macOS arm64 signing/notarization, Windows x64 Azure
 
 Local verification passed 12 focused policy/license/SBOM tests and desktop typechecking. YAML parsing passed, and actionlint 1.7.12 reported no findings in the new workflow. The downloaded validator matched its published SHA-256.
 
-No production candidate was built. Counsel approval, protected-environment configuration, Apple/Windows signing identities, the Linux distribution-signing decision, and clean-machine signed-installer testing remain external gates.
+No production candidate was built. The workflow must first reach the fork's current default branch (`dev`) through normal review before GitHub exposes manual dispatch. Counsel approval, protected-environment configuration, Apple/Windows signing identities, the Linux distribution-signing decision, and clean-machine signed-installer testing remain external gates.
