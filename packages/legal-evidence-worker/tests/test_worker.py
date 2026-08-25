@@ -130,7 +130,7 @@ class IngestionSafetyTests(unittest.TestCase):
                 self.applied.append((resource, limits))
 
         resource = FakeResource()
-        apply_process_limits(resource)
+        apply_process_limits(resource, platform_name="linux")
         self.assertEqual(len(resource.applied), 6)
         self.assertIn((resource.RLIMIT_CORE, (0, 0)), resource.applied)
         self.assertIn((resource.RLIMIT_CPU, (300, 330)), resource.applied)
@@ -160,7 +160,7 @@ class IngestionSafetyTests(unittest.TestCase):
                 self.applied.append((resource, limits))
 
         resource = FakeResource()
-        apply_process_limits(resource)
+        apply_process_limits(resource, platform_name="linux")
         self.assertEqual(len(resource.applied), 4)
 
     def test_process_resource_limits_tolerate_rejected_optional_platform_limits(self) -> None:
@@ -184,12 +184,37 @@ class IngestionSafetyTests(unittest.TestCase):
                 self.applied.append((resource, limits))
 
         resource = FakeResource()
-        apply_process_limits(resource)
+        apply_process_limits(resource, platform_name="linux")
         self.assertEqual(len(resource.applied), 5)
         self.assertIn(
             (resource.RLIMIT_NPROC, (MAX_PROCESS_COUNT, MAX_PROCESS_COUNT)),
             resource.applied,
         )
+
+    def test_macos_does_not_apply_per_user_optional_limits(self) -> None:
+        class FakeResource:
+            RLIMIT_CORE = 1
+            RLIMIT_CPU = 2
+            RLIMIT_FSIZE = 3
+            RLIMIT_NOFILE = 4
+            RLIMIT_AS = 5
+            RLIMIT_NPROC = 6
+
+            def __init__(self) -> None:
+                self.applied: list[tuple[int, tuple[int, int]]] = []
+
+            def getrlimit(self, _resource: int) -> tuple[int, int]:
+                return (-1, -1)
+
+            def setrlimit(self, resource: int, limits: tuple[int, int]) -> None:
+                self.applied.append((resource, limits))
+
+        resource = FakeResource()
+        apply_process_limits(resource, platform_name="darwin")
+        self.assertEqual(len(resource.applied), 4)
+        applied_ids = {resource_id for resource_id, _limits in resource.applied}
+        self.assertNotIn(resource.RLIMIT_AS, applied_ids)
+        self.assertNotIn(resource.RLIMIT_NPROC, applied_ids)
 
     def test_supervised_server_applies_limits_before_accepting_work(self) -> None:
         from legal_evidence_worker import server

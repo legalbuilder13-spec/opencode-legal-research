@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Protocol
 
 MAX_ADDRESS_SPACE_BYTES = 8 * 1024 * 1024 * 1024
@@ -17,9 +18,14 @@ class ResourceModule(Protocol):
     def setrlimit(self, resource: int, limits: tuple[int, int]) -> None: ...
 
 
-def apply_process_limits(resource_module: ResourceModule | None = None) -> None:
+def apply_process_limits(
+    resource_module: ResourceModule | None = None,
+    *,
+    platform_name: str | None = None,
+) -> None:
     """Apply portable OS limits before any document parser is imported."""
 
+    platform_name = platform_name or sys.platform
     if resource_module is None:
         try:
             import resource as resource_module
@@ -37,8 +43,12 @@ def apply_process_limits(resource_module: ResourceModule | None = None) -> None:
         (resource_module.RLIMIT_NOFILE, 512, 512, True),
     ]
     optional_policies = (
-        ("RLIMIT_AS", MAX_ADDRESS_SPACE_BYTES, MAX_ADDRESS_SPACE_BYTES),
-        ("RLIMIT_NPROC", MAX_PROCESS_COUNT, MAX_PROCESS_COUNT),
+        (
+            ("RLIMIT_AS", MAX_ADDRESS_SPACE_BYTES, MAX_ADDRESS_SPACE_BYTES),
+            ("RLIMIT_NPROC", MAX_PROCESS_COUNT, MAX_PROCESS_COUNT),
+        )
+        if platform_name.startswith("linux")
+        else ()
     )
     for name, requested_soft, requested_hard in optional_policies:
         resource_id = getattr(resource_module, name, None)

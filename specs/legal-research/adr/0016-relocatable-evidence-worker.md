@@ -31,4 +31,4 @@ Electron Builder includes `legal-evidence-worker/**`. Release prebuilds create t
 - Linux x64, macOS arm64, and Windows x64 have clean-runner unpacked-installation evidence. Signed/notarized installer smoke tests and any additional retained architectures remain open.
 - Latin-script OCR is the packaged alpha scope. Additional scripts require explicit model inventory, reviewed fixtures, and manifest changes.
 - Dependency/model licenses and notices remain a release audit even though the frozen requirements, lockfile, Python distribution license files, and model files are preserved in the resource.
-- ADR 0019 adds Linux address-space/process ceilings and a macOS process ceiling. Enforceable macOS/Windows memory containment plus network and filesystem isolation remain required before production release.
+- ADR 0019 adds Linux address-space/process ceilings while retaining portable CPU/file/descriptor limits on macOS. Enforceable macOS/Windows memory/process-tree containment plus network and filesystem isolation remain required before production release.
